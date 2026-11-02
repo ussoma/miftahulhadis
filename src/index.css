@@ -1,13 +1,12 @@
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Manrope:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap');
 
 :root {
-  font-family: 'DM Sans', 'Manrope', sans-serif;
+  font-family: 'Lato', sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-optical-sizing: auto;
   font-weight: 400;
   color: #183b2b;
   background: #f4f8f5;
@@ -29,7 +28,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -56,7 +56,13 @@ button {
   overflow: hidden;
   color: var(--text);
   background: var(--page);
+  font-family: 'Lato', sans-serif;
+  font-weight: 400;
   transition: background .25s ease, color .25s ease;
+}
+
+.app[dir="rtl"] {
+  text-align: right;
 }
 
 /* WHITE THEME */
@@ -70,19 +76,19 @@ button {
   --card-text: #183b2b;
 }
 
-/* FULL SATURATED GREEN THEME */
+/* DARK GREEN THEME */
 
 .app.theme-green {
-  --page: #087a43;
-  --surface: #096b3d;
+  --page: #041F15;
+  --surface: #0a3022;
   --text: #ffffff;
-  --muted: #d7f0df;
-  --border: rgba(255,255,255,.2);
+  --muted: #c4d9cd;
+  --border: rgba(255,255,255,.16);
   --card-text: #ffffff;
   --green: #ffffff;
   --green-dark: #e6f6eb;
-  --green-soft: rgba(255,255,255,.13);
-  --shadow: 0 5px 18px rgba(0,0,0,.12);
+  --green-soft: rgba(255,255,255,.12);
+  --shadow: 0 5px 18px rgba(0,0,0,.18);
 }
 
 /* HEADER */
@@ -126,7 +132,8 @@ button {
   margin: 2px 0 0;
   font-family: 'Noto Naskh Arabic', serif;
   font-size: 20px;
-  line-height: 1.5;
+  font-weight: 700;
+  line-height: 1.8;
   direction: rtl;
 }
 
@@ -139,23 +146,49 @@ button {
   margin-bottom: 8px;
   color: #d1f2dc;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 1.7px;
 }
 
 .header-welcome h2 {
   margin: 0;
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Lato', sans-serif;
   font-size: 27px;
-  font-weight: 800;
-  line-height: 1.25;
+  font-weight: 900;
+  line-height: 1.35;
 }
 
 .header-welcome p {
   margin: 8px 0 0;
   color: #e1f4e7;
   font-size: 14px;
+  font-weight: 700;
   line-height: 1.7;
+}
+
+/* LANGUAGE SELECTOR */
+
+.language-selector {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 18px 17px 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.language-select {
+  max-width: 170px;
+  padding: 10px 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* MAIN CONTENT */
@@ -177,13 +210,14 @@ button {
   margin: 0;
   color: var(--text);
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .section-heading p {
   margin: 5px 0 0;
   color: var(--muted);
   font-size: 12px;
+  font-weight: 700;
 }
 
 .section-count {
@@ -192,7 +226,7 @@ button {
   background: var(--green-soft);
   border-radius: 20px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 900;
   white-space: nowrap;
 }
 
@@ -225,11 +259,13 @@ button {
   background: transparent;
   border: none;
   outline: none;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .search-box input::placeholder {
   color: var(--muted);
+  font-weight: 400;
 }
 
 .clear-search {
@@ -281,7 +317,7 @@ button {
   flex-shrink: 0;
   color: var(--muted);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .card-icon {
@@ -307,7 +343,7 @@ button {
 .card-text strong {
   color: var(--card-text);
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1.5;
 }
 
@@ -315,7 +351,8 @@ button {
   color: var(--muted);
   font-family: 'Noto Naskh Arabic', serif;
   font-size: 14px;
-  line-height: 1.6;
+  font-weight: 700;
+  line-height: 1.8;
   direction: rtl;
   text-align: left;
 }
@@ -324,7 +361,7 @@ button {
   margin-left: 8px;
   color: var(--green);
   font-size: 27px;
-  font-weight: 700;
+  font-weight: 900;
 }
 
 /* SECTION PAGE */
@@ -340,7 +377,7 @@ button {
   border: none;
   border-radius: 12px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
 }
 
@@ -373,13 +410,14 @@ button {
   margin: 0;
   color: var(--text);
   font-size: 23px;
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1.5;
 }
 
 .section-intro p {
   color: var(--muted);
   font-size: 14px;
+  font-weight: 700;
   line-height: 1.8;
 }
 
@@ -398,7 +436,7 @@ mark {
   color: #3d3000;
   background: #ffe36b;
   border-radius: 4px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 /* EMPTY RESULT */
@@ -418,6 +456,7 @@ mark {
 
 .empty-result p {
   font-size: 13px;
+  font-weight: 700;
 }
 
 /* FOOTER */
@@ -433,19 +472,20 @@ mark {
   color: var(--green);
   font-family: 'Manrope', sans-serif;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .footer p {
   margin: 6px 0 10px;
   font-size: 12px;
+  font-weight: 700;
 }
 
 .footer small {
   font-size: 10px;
 }
 
-/* THEME SWITCH - READY FOR NEXT STEP */
+/* THEME SWITCH */
 
 .theme-toggle {
   display: inline-flex;
@@ -458,27 +498,28 @@ mark {
   border: 1px solid var(--border);
   border-radius: 12px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
 }
 
 /* GREEN THEME DETAILS */
 
 .app.theme-green .header {
-  background: #075b35;
+  background: linear-gradient(145deg, #0a3022, #041F15);
 }
 
 .app.theme-green .brand-icon {
-  color: #087a43;
+  color: #041F15;
   background: #ffffff;
 }
 
 .app.theme-green .menu-card,
 .app.theme-green .search-box,
 .app.theme-green .section-intro,
-.app.theme-green .empty-result {
-  background: #096b3d;
-  border-color: rgba(255,255,255,.2);
+.app.theme-green .empty-result,
+.app.theme-green .language-select {
+  background: #0a3022;
+  border-color: rgba(255,255,255,.16);
 }
 
 .app.theme-green .card-icon,
@@ -488,18 +529,41 @@ mark {
 .app.theme-green .coming-soon,
 .app.theme-green .theme-toggle {
   color: #ffffff;
-  background: rgba(255,255,255,.14);
+  background: rgba(255,255,255,.12);
 }
 
 .app.theme-green .card-text strong,
 .app.theme-green .section-intro h2,
 .app.theme-green .section-heading h2,
-.app.theme-green .search-box input {
+.app.theme-green .search-box input,
+.app.theme-green .language-select {
   color: #ffffff;
 }
 
 .app.theme-green .search-box input::placeholder {
-  color: #d7f0df;
+  color: #c4d9cd;
+}
+
+/* ARABIC TEXT */
+
+[dir="rtl"] .card-text small,
+.arabic-title {
+  font-family: 'Noto Naskh Arabic', serif;
+  font-weight: 700;
+}
+
+[dir="rtl"] .menu-card {
+  text-align: right;
+}
+
+[dir="rtl"] .card-icon {
+  margin-right: 0;
+  margin-left: 12px;
+}
+
+[dir="rtl"] .card-arrow {
+  margin-left: 0;
+  margin-right: 8px;
 }
 
 /* MOBILE */
@@ -534,8 +598,18 @@ mark {
     margin-right: 9px;
   }
 
+  [dir="rtl"] .card-icon {
+    margin-right: 0;
+    margin-left: 9px;
+  }
+
   .card-text strong {
     font-size: 13px;
+  }
+
+  .language-selector {
+    margin-right: 13px;
+    margin-left: 13px;
   }
 }
 
