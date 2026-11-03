@@ -20,18 +20,218 @@ const sections = [
   ['sunnah', '🌱', 'Суннатҳо', 'السُّنَن']
 ]
 
-const tables = [
-  { name: 'sections', title: '11 бахш' },
-  { name: 'books', title: 'Китобҳо' },
-  { name: 'hadith', title: 'Ҳадисҳо' },
-  { name: 'prophets', title: 'Қиссаи паёмбарон' }
-]
+const translations = {
+  tg: {
+    language: 'Забон',
+    themeGreen: '🌙 Сабз',
+    themeWhite: '☀️ Сафед',
+    welcomeLabel: 'КИТОБХОНАИ ИСЛОМӢ',
+    welcome: 'Илм биомӯз, ба он амал кун.',
+    description: 'Қуръон, ҳадис, дуо ва азкор — дар як ҷо.',
+    heading: 'Бахшҳои исломӣ',
+    choose: 'Бахши дилхоҳро интихоб кунед',
+    admin: 'Панели админ',
+    back: 'Бозгашт',
+    empty: 'Мундариҷаи ин бахш ҳоло омода нест.',
+    loginTitle: 'Вуруди админ',
+    email: 'Email',
+    password: 'Парол',
+    wait: 'Лутфан интизор шавед...',
+    signIn: 'Ворид шудан',
+    logout: 'Баромадан',
+    adminTitle: 'Панели админ',
+    adminDescription: 'Идоракунии маълумоти Miftahulhadis',
+    sections: '11 бахш',
+    books: 'Китобҳо',
+    hadith: 'Ҳадисҳо',
+    prophets: 'Қиссаи паёмбарон',
+    table: 'Ҷадвал',
+    add: 'Иловаи сабти нав',
+    noRecords: 'Дар ин ҷадвал ҳоло сабт нест.',
+    edit: 'Таҳрири сабт',
+    newRecord: 'Сабти нав',
+    jsonInfo: 'Маълумотро дар формати JSON ворид кун:',
+    saving: 'Нигоҳ дошта истодааст...',
+    save: '💾 Нигоҳ доштан',
+    delete: 'Нест кардан',
+    confirmDelete: 'Ин сабтро нест мекунӣ?',
+    saved: 'Сабт бомуваффақият нигоҳ дошта шуд.',
+    deleted: 'Сабт нест карда шуд.',
+    invalidJson: 'JSON бояд объект бошад.',
+    jsonError: 'Хатои JSON: ',
+    noConfig: 'Танзимоти Supabase дар Vercel пур карда нашудаанд.',
+    noUrl: 'VITE_SUPABASE_URL ёфт нашуд.',
+    noKey: 'VITE_SUPABASE_ANON_KEY ёфт нашуд.',
+    noAdmin: 'Ин ҳисоб иҷозати админ надорад.',
+    footer: 'Манбаи дониш ва омӯзиши исломӣ',
+    count: 'бахш',
+    databaseError: 'Хатои пойгоҳи маълумот: '
+  },
+
+  ru: {
+    language: 'Язык',
+    themeGreen: '🌙 Зелёная',
+    themeWhite: '☀️ Белая',
+    welcomeLabel: 'ИСЛАМСКАЯ БИБЛИОТЕКА',
+    welcome: 'Изучай знания и следуй им.',
+    description: 'Коран, хадисы, дуа и азкары — в одном месте.',
+    heading: 'Исламские разделы',
+    choose: 'Выберите нужный раздел',
+    admin: 'Панель администратора',
+    back: 'Назад',
+    empty: 'Содержимое этого раздела пока не готово.',
+    loginTitle: 'Вход администратора',
+    email: 'Email',
+    password: 'Пароль',
+    wait: 'Пожалуйста, подождите...',
+    signIn: 'Войти',
+    logout: 'Выйти',
+    adminTitle: 'Панель администратора',
+    adminDescription: 'Управление данными Miftahulhadis',
+    sections: '11 разделов',
+    books: 'Книги',
+    hadith: 'Хадисы',
+    prophets: 'Истории пророков',
+    table: 'Таблица',
+    add: 'Добавить новую запись',
+    noRecords: 'В этой таблице пока нет записей.',
+    edit: 'Редактировать запись',
+    newRecord: 'Новая запись',
+    jsonInfo: 'Введите данные в формате JSON:',
+    saving: 'Сохранение...',
+    save: '💾 Сохранить',
+    delete: 'Удалить',
+    confirmDelete: 'Удалить эту запись?',
+    saved: 'Запись успешно сохранена.',
+    deleted: 'Запись удалена.',
+    invalidJson: 'JSON должен быть объектом.',
+    jsonError: 'Ошибка JSON: ',
+    noConfig: 'Настройки Supabase не заполнены в Vercel.',
+    noUrl: 'Не найдена VITE_SUPABASE_URL.',
+    noKey: 'Не найдена VITE_SUPABASE_ANON_KEY.',
+    noAdmin: 'У этой учётной записи нет прав администратора.',
+    footer: 'Источник знаний и исламского обучения',
+    count: 'разделов',
+    databaseError: 'Ошибка базы данных: '
+  },
+
+  ar: {
+    language: 'اللغة',
+    themeGreen: '🌙 أخضر',
+    themeWhite: '☀️ أبيض',
+    welcomeLabel: 'المكتبة الإسلامية',
+    welcome: 'تعلّم العلم واعمل به.',
+    description: 'القرآن والحديث والدعاء والأذكار في مكان واحد.',
+    heading: 'الأقسام الإسلامية',
+    choose: 'اختر القسم المناسب',
+    admin: 'لوحة الإدارة',
+    back: 'رجوع',
+    empty: 'محتوى هذا القسم غير جاهز بعد.',
+    loginTitle: 'دخول المسؤول',
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    wait: 'يرجى الانتظار...',
+    signIn: 'تسجيل الدخول',
+    logout: 'تسجيل الخروج',
+    adminTitle: 'لوحة الإدارة',
+    adminDescription: 'إدارة بيانات Miftahulhadis',
+    sections: '١١ قسمًا',
+    books: 'الكتب',
+    hadith: 'الأحاديث',
+    prophets: 'قصص الأنبياء',
+    table: 'الجدول',
+    add: 'إضافة سجل جديد',
+    noRecords: 'لا توجد سجلات في هذا الجدول حاليًا.',
+    edit: 'تعديل السجل',
+    newRecord: 'سجل جديد',
+    jsonInfo: 'أدخل البيانات بصيغة JSON:',
+    saving: 'جارٍ الحفظ...',
+    save: '💾 حفظ',
+    delete: 'حذف',
+    confirmDelete: 'هل تريد حذف هذا السجل؟',
+    saved: 'تم حفظ السجل بنجاح.',
+    deleted: 'تم حذف السجل.',
+    invalidJson: 'يجب أن يكون JSON كائنًا.',
+    jsonError: 'خطأ في JSON: ',
+    noConfig: 'لم يتم إعداد Supabase في Vercel.',
+    noUrl: 'لم يتم العثور على VITE_SUPABASE_URL.',
+    noKey: 'لم يتم العثور على VITE_SUPABASE_ANON_KEY.',
+    noAdmin: 'هذا الحساب لا يملك صلاحيات المسؤول.',
+    footer: 'مصدر للعلم والتعلم الإسلامي',
+    count: 'أقسام',
+    databaseError: 'خطأ في قاعدة البيانات: '
+  }
+}
+
+const sectionTranslations = {
+  tg: {
+    quran: 'Қуръони Карим',
+    hadith: 'Ҳадисҳо',
+    scholars: 'Суханони Солеҳин',
+    duas: 'Дуоҳо',
+    adhkar: 'Азкор',
+    prophets: 'Қиссаи Паёмбарон',
+    seerah: 'Сирати Расулуллоҳ ﷺ',
+    companions: 'Сирати саҳоба',
+    lessons: 'Дарсҳои Исломӣ',
+    questions: 'Саволҳои Исломӣ',
+    sunnah: 'Суннатҳо'
+  },
+  ru: {
+    quran: 'Священный Коран',
+    hadith: 'Хадисы',
+    scholars: 'Слова праведных предшественников',
+    duas: 'Дуа',
+    adhkar: 'Азкары',
+    prophets: 'Истории пророков',
+    seerah: 'Жизнеописание Посланника Аллаха ﷺ',
+    companions: 'Жизнеописание сподвижников',
+    lessons: 'Исламские уроки',
+    questions: 'Исламские вопросы',
+    sunnah: 'Сунны'
+  },
+  ar: {
+    quran: 'القرآن الكريم',
+    hadith: 'الأحاديث النبوية',
+    scholars: 'أقوال السلف الصالح',
+    duas: 'الأدعية',
+    adhkar: 'الأذكار',
+    prophets: 'قصص الأنبياء',
+    seerah: 'السيرة النبوية',
+    companions: 'سيرة الصحابة',
+    lessons: 'الدروس الإسلامية',
+    questions: 'الأسئلة الإسلامية',
+    sunnah: 'السُّنَن'
+  }
+}
+
+const tableNames = {
+  sections: 'sections',
+  books: 'books',
+  hadith: 'hadith',
+  prophets: 'prophets'
+}
 
 export default function App() {
   const [page, setPage] = useState('home')
   const [active, setActive] = useState(null)
-  const [language, setLanguage] = useState('tg')
-  const [theme, setTheme] = useState('white')
+
+  const [language, setLanguage] = useState(() => {
+    try {
+      return localStorage.getItem('miftahulhadis-language') || 'tg'
+    } catch {
+      return 'tg'
+    }
+  })
+
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('miftahulhadis-theme') || 'white'
+    } catch {
+      return 'white'
+    }
+  })
+
   const [login, setLogin] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -44,52 +244,42 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [search, setSearch] = useState('')
 
-  const tr = {
-    tg: {
-      heading: 'Бахшҳои исломӣ',
-      choose: 'Бахши дилхоҳро интихоб кунед',
-      welcome: 'Илм биомӯз, ба он амал кун.',
-      description: 'Қуръон, ҳадис, дуо ва азкор — дар як ҷо.',
-      admin: 'Панели админ',
-      back: 'Бозгашт',
-      empty: 'Мундариҷаи ин бахш ҳоло омода нест.'
-    },
-    ru: {
-      heading: 'Исламские разделы',
-      choose: 'Выберите нужный раздел',
-      welcome: 'Изучай знания и следуй им.',
-      description: 'Коран, хадисы, дуа и азкары — в одном месте.',
-      admin: 'Панель администратора',
-      back: 'Назад',
-      empty: 'Содержимое раздела пока не готово.'
-    },
-    ar: {
-      heading: 'الأقسام الإسلامية',
-      choose: 'اختر القسم المناسب',
-      welcome: 'تعلّم العلم واعمل به.',
-      description: 'القرآن والحديث والدعاء والأذكار في مكان واحد.',
-      admin: 'لوحة الإدارة',
-      back: 'رجوع',
-      empty: 'المحتوى غير جاهز بعد.'
-    }
-  }[language]
+  const tr = translations[language] || translations.tg
+  const isArabic = language === 'ar'
+
+  const tableTitles = {
+    sections: tr.sections,
+    books: tr.books,
+    hadith: tr.hadith,
+    prophets: tr.prophets
+  }
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('miftahulhadis-language')
-    const savedTheme = localStorage.getItem('miftahulhadis-theme')
-    if (savedLanguage) setLanguage(savedLanguage)
-    if (savedTheme) setTheme(savedTheme)
-  }, [])
+    document.documentElement.lang = language
+    document.documentElement.dir = isArabic ? 'rtl' : 'ltr'
+  }, [language, isArabic])
 
   async function signIn(e) {
     e.preventDefault()
     setMessage('')
+
+    if (!URL) {
+      setMessage(tr.noUrl)
+      return
+    }
+
+    if (!KEY) {
+      setMessage(tr.noKey)
+      return
+    }
+
     if (!db) {
-      setMessage('Танзимоти Supabase дар Vercel пур карда нашудаанд.')
+      setMessage(tr.noConfig)
       return
     }
 
     setBusy(true)
+
     const { data, error } = await db.auth.signInWithPassword({
       email,
       password
@@ -109,7 +299,7 @@ export default function App() {
 
     if (profileError || profile?.role !== 'admin') {
       await db.auth.signOut()
-      setMessage('Ин ҳисоб иҷозати админ надорад.')
+      setMessage(tr.noAdmin)
       setBusy(false)
       return
     }
@@ -118,25 +308,28 @@ export default function App() {
     setLogin(false)
     setPage('admin')
     setMessage('')
+    await loadRows(table)
     setBusy(false)
-    loadRows(table)
   }
 
   async function loadRows(tableName = table) {
-    if (!db || !admin) return
+    if (!db) return
+
     setBusy(true)
     setMessage('')
+
     const { data, error } = await db
       .from(tableName)
       .select('*')
       .limit(200)
 
     if (error) {
-      setMessage(error.message)
+      setMessage(tr.databaseError + error.message)
       setRows([])
     } else {
       setRows(data || [])
     }
+
     setSelected(null)
     setJson('{}')
     setBusy(false)
@@ -144,15 +337,17 @@ export default function App() {
 
   async function saveRow() {
     if (!db || !admin) return
+
     let value
 
     try {
       value = JSON.parse(json)
+
       if (!value || Array.isArray(value) || typeof value !== 'object') {
-        throw new Error('JSON бояд объект бошад.')
+        throw new Error(tr.invalidJson)
       }
     } catch (error) {
-      setMessage('Хатои JSON: ' + error.message)
+      setMessage(tr.jsonError + error.message)
       return
     }
 
@@ -169,9 +364,9 @@ export default function App() {
     }
 
     if (result.error) {
-      setMessage(result.error.message)
+      setMessage(tr.databaseError + result.error.message)
     } else {
-      setMessage('Сабт бомуваффақият нигоҳ дошта шуд.')
+      setMessage(tr.saved)
       await loadRows(table)
     }
 
@@ -180,25 +375,32 @@ export default function App() {
 
   async function deleteRow(row) {
     if (!db || !admin || !row?.id) return
-    if (!window.confirm('Ин сабтро нест мекунӣ?')) return
+    if (!window.confirm(tr.confirmDelete)) return
 
     setBusy(true)
+
     const { error } = await db.from(table).delete().eq('id', row.id)
 
-    if (error) setMessage(error.message)
-    else {
-      setMessage('Сабт нест карда шуд.')
+    if (error) {
+      setMessage(tr.databaseError + error.message)
+    } else {
+      setMessage(tr.deleted)
       await loadRows(table)
     }
+
     setBusy(false)
   }
 
   async function logout() {
     if (db) await db.auth.signOut()
+
     setAdmin(false)
     setPage('home')
     setRows([])
     setSelected(null)
+    setLogin(false)
+    setPassword('')
+    setMessage('')
   }
 
   function chooseTable(name) {
@@ -214,39 +416,62 @@ export default function App() {
   }
 
   function changeLanguage(value) {
+    if (!translations[value]) return
+
     setLanguage(value)
-    localStorage.setItem('miftahulhadis-language', value)
+
+    try {
+      localStorage.setItem('miftahulhadis-language', value)
+    } catch {
+      // Танзимот дар хотираи ҷорӣ боқӣ мемонад.
+    }
   }
 
   function changeTheme() {
     const value = theme === 'white' ? 'green' : 'white'
     setTheme(value)
-    localStorage.setItem('miftahulhadis-theme', value)
+
+    try {
+      localStorage.setItem('miftahulhadis-theme', value)
+    } catch {
+      // Танзимот дар хотираи ҷорӣ боқӣ мемонад.
+    }
   }
 
+  const currentSection = active
+    ? sectionTranslations[language][active.key]
+    : ''
+
   return (
-    <main className={`app theme-${theme}`}>
+    <main
+      className={`app theme-${theme}`}
+      dir={isArabic ? 'rtl' : 'ltr'}
+      lang={language}
+    >
       <header className="header">
         <div className="header-top">
           <div className="brand-icon">م</div>
+
           <div>
             <h1>Miftahulhadis</h1>
             <p className="arabic-title">مفتاح الحديث</p>
           </div>
+
           <button className="theme-toggle" onClick={changeTheme}>
-            {theme === 'white' ? '🌙 Сабз' : '☀️ Сафед'}
+            {theme === 'white' ? tr.themeGreen : tr.themeWhite}
           </button>
         </div>
 
         <div className="header-welcome">
-          <span className="welcome-label">КИТОБХОНАИ ИСЛОМӢ</span>
+          <span className="welcome-label">{tr.welcomeLabel}</span>
           <h2>{tr.welcome}</h2>
           <p>{tr.description}</p>
         </div>
       </header>
 
       <div className="language-selector">
-        <label>Забон: </label>
+        <label>{tr.language}: </label>
+
         <select
           className="language-select"
           value={language}
@@ -265,7 +490,10 @@ export default function App() {
               <h2>{tr.heading}</h2>
               <p>{tr.choose}</p>
             </div>
-            <span className="section-count">11 бахш</span>
+
+            <span className="section-count">
+              {language === 'ar' ? '١١' : '11'} {tr.count}
+            </span>
           </div>
 
           <div className="menu">
@@ -281,17 +509,26 @@ export default function App() {
                 <span className="card-number">
                   {String(index + 1).padStart(2, '0')}
                 </span>
+
                 <span className="card-icon">{icon}</span>
+
                 <span className="card-text">
-                  <strong>{title}</strong>
+                  <strong>{sectionTranslations[language][key]}</strong>
                   <small>{arabic}</small>
                 </span>
+
                 <span className="card-arrow">‹</span>
               </button>
             ))}
           </div>
 
-          <button className="back-button" onClick={() => setLogin(true)}>
+          <button
+            className="back-button"
+            onClick={() => {
+              setLogin(true)
+              setMessage('')
+            }}
+          >
             🔐 {tr.admin}
           </button>
         </section>
@@ -302,9 +539,10 @@ export default function App() {
           <button className="back-button" onClick={() => setPage('home')}>
             ← {tr.back}
           </button>
+
           <div className="section-intro">
             <div className="section-icon">{active.icon}</div>
-            <h2>{active.title}</h2>
+            <h2>{currentSection}</h2>
             <p className="arabic-title">{active.arabic}</p>
             <p>{tr.empty}</p>
           </div>
@@ -313,30 +551,41 @@ export default function App() {
 
       {login && !admin && (
         <section className="content-page">
-          <button className="back-button" onClick={() => setLogin(false)}>
+          <button
+            className="back-button"
+            onClick={() => {
+              setLogin(false)
+              setMessage('')
+            }}
+          >
             ← {tr.back}
           </button>
+
           <div className="section-intro">
-            <h2>🔐 Вуруди админ</h2>
+            <h2>🔐 {tr.loginTitle}</h2>
+
             <form onSubmit={signIn} className="admin-form">
               <input
                 type="email"
-                placeholder="Email"
+                placeholder={tr.email}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
               />
+
               <input
                 type="password"
-                placeholder="Парол"
+                placeholder={tr.password}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
               />
+
               <button className="back-button" disabled={busy}>
-                {busy ? 'Лутфан интизор шавед...' : 'Ворид шудан'}
+                {busy ? tr.wait : tr.signIn}
               </button>
             </form>
+
             {message && <p className="coming-soon">{message}</p>}
           </div>
         </section>
@@ -345,13 +594,13 @@ export default function App() {
       {page === 'admin' && admin && (
         <section className="content-page">
           <button className="back-button" onClick={logout}>
-            Баромадан
+            {tr.logout}
           </button>
 
           <div className="section-heading">
             <div>
-              <h2>Панели админ</h2>
-              <p>Идоракунии маълумоти Miftahulhadis</p>
+              <h2>{tr.adminTitle}</h2>
+              <p>{tr.adminDescription}</p>
             </div>
           </div>
 
@@ -362,20 +611,22 @@ export default function App() {
                 className="back-button"
                 onClick={() => chooseTable(item.name)}
               >
-                {item.title}
+                {tableTitles[item.name]}
               </button>
             ))}
           </div>
 
-          <h3>Ҷадвал: {table}</h3>
+          <h3>{tr.table}: {tableTitles[table]}</h3>
+
           <button
             className="back-button"
             onClick={() => {
               setSelected(null)
               setJson('{}')
+              setMessage('')
             }}
           >
-            + Иловаи сабти нав
+            + {tr.add}
           </button>
 
           <div className="admin-records">
@@ -385,34 +636,43 @@ export default function App() {
                   className="record-select"
                   onClick={() => chooseRow(row)}
                 >
-                  {row.name || row.title || row.hadith_number || row.id || `Сабт ${index + 1}`}
+                  {row.name ||
+                    row.title ||
+                    row.hadith_number ||
+                    row.id ||
+                    `${tr.newRecord} ${index + 1}`}
                 </button>
+
                 <button
                   className="delete-button"
                   onClick={() => deleteRow(row)}
                 >
-                  Нест кардан
+                  {tr.delete}
                 </button>
               </div>
             ))}
-            {!rows.length && <p>Дар ин ҷадвал ҳоло сабт нест.</p>}
+
+            {!rows.length && <p>{tr.noRecords}</p>}
           </div>
 
-          <h3>{selected ? 'Таҳрири сабт' : 'Сабти нав'}</h3>
-          <p>Маълумотро дар формати JSON ворид кун:</p>
+          <h3>{selected ? tr.edit : tr.newRecord}</h3>
+          <p>{tr.jsonInfo}</p>
+
           <textarea
             className="admin-json"
             value={json}
             onChange={e => setJson(e.target.value)}
             rows={12}
             spellCheck="false"
+            dir="auto"
           />
+
           <button
             className="back-button"
             onClick={saveRow}
             disabled={busy}
           >
-            {busy ? 'Нигоҳ дошта истодааст...' : '💾 Нигоҳ доштан'}
+            {busy ? tr.saving : tr.save}
           </button>
 
           {message && <p className="coming-soon">{message}</p>}
@@ -421,7 +681,7 @@ export default function App() {
 
       <footer className="footer">
         <div className="footer-brand">Miftahulhadis</div>
-        <p>Манбаи дониш ва омӯзиши исломӣ</p>
+        <p>{tr.footer}</p>
         <small>© {new Date().getFullYear()} Miftahulhadis</small>
       </footer>
     </main>
