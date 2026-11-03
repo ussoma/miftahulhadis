@@ -40,6 +40,10 @@ button:disabled {
   opacity: 0.55;
 }
 
+/* =========================
+   THEME VARIABLES
+========================= */
+
 .app {
   --bg: #f5f7f4;
   --surface: #ffffff;
@@ -55,8 +59,8 @@ button:disabled {
   --shadow: 0 8px 28px rgba(30, 60, 35, 0.07);
 
   min-height: 100vh;
-  background: var(--bg);
   color: var(--text);
+  background: var(--bg);
   transition: background 0.25s ease, color 0.25s ease;
 }
 
@@ -90,21 +94,6 @@ button:disabled {
   --shadow: 0 8px 28px rgba(20, 65, 35, 0.09);
 }
 
-.app.theme-dark {
-  --bg: #111914;
-  --surface: #1b2720;
-  --surface-soft: #243329;
-  --text: #edf4ed;
-  --muted: #a1b0a3;
-  --border: #34483a;
-  --primary: #58a875;
-  --primary-hover: #70bd8d;
-  --primary-soft: #263f30;
-  --accent: #d8b45d;
-  --danger: #ef7777;
-  --shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
-}
-
 .app[dir='rtl'] {
   text-align: right;
 }
@@ -113,6 +102,10 @@ button:disabled {
 .app[dir='rtl'] textarea {
   text-align: right;
 }
+
+/* =========================
+   HEADER
+========================= */
 
 .header {
   width: 100%;
@@ -169,6 +162,28 @@ button:disabled {
   border-color: var(--primary);
 }
 
+.header-action {
+  min-height: 38px;
+  padding: 8px 13px;
+  color: var(--text);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.header-action:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* =========================
+   SETTINGS
+========================= */
+
 .settings-bar {
   width: min(100% - 32px, 1100px);
   margin: 18px auto;
@@ -216,6 +231,10 @@ button:disabled {
   border-color: var(--primary);
 }
 
+/* =========================
+   MAIN CONTENT
+========================= */
+
 .main-content {
   width: min(100% - 32px, 1100px);
   margin: 0 auto;
@@ -227,6 +246,63 @@ button:disabled {
   max-width: 900px;
   margin: 0 auto;
 }
+
+/* =========================
+   MIFTAHULHADIS BANNER
+========================= */
+
+.miftah-banner {
+  width: 100%;
+  margin-bottom: 24px;
+  padding: 30px 20px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.miftah-banner-title {
+  margin: 0 0 14px;
+  color: var(--primary);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(30px, 6vw, 43px);
+  font-weight: 700;
+}
+
+.miftah-banner-arabic {
+  margin: 12px 0;
+  color: var(--text);
+  font-family: 'Noto Naskh Arabic', serif;
+  font-size: clamp(24px, 5vw, 32px);
+  line-height: 2;
+  direction: rtl;
+}
+
+.miftah-banner-translation {
+  margin: 8px 0;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.miftah-banner-subtitle {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.miftah-banner-source {
+  margin: 17px 0 0;
+  padding-top: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+/* =========================
+   HERO
+========================= */
 
 .hero {
   padding: 35px 20px;
@@ -259,6 +335,10 @@ button:disabled {
   direction: rtl;
 }
 
+/* =========================
+   SEARCH
+========================= */
+
 .search-box {
   width: 100%;
   margin: 0 0 25px;
@@ -282,6 +362,16 @@ button:disabled {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
+
+.search-box .primary-button {
+  min-width: 115px;
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+/* =========================
+   MAIN MENU
+========================= */
 
 .menu {
   display: grid;
@@ -339,6 +429,10 @@ button:disabled {
   font-size: 22px;
 }
 
+/* =========================
+   SECTION
+========================= */
+
 .section-intro {
   margin-bottom: 22px;
   padding: 22px;
@@ -362,6 +456,10 @@ button:disabled {
 .back-button {
   margin-bottom: 18px;
 }
+
+/* =========================
+   PUBLIC CONTENT
+========================= */
 
 .public-list {
   display: flex;
@@ -425,6 +523,10 @@ button:disabled {
   border-radius: 14px;
 }
 
+/* =========================
+   PAGINATION
+========================= */
+
 .pagination {
   margin: 25px 0;
   display: flex;
@@ -449,6 +551,10 @@ button:disabled {
   background: var(--primary);
   border-color: var(--primary);
 }
+
+/* =========================
+   ADMIN PAGE
+========================= */
 
 .admin-page {
   width: min(100% - 32px, 1100px);
@@ -503,6 +609,10 @@ button:disabled {
   background: var(--primary);
   border-color: var(--primary);
 }
+
+/* =========================
+   ADMIN FORMS
+========================= */
 
 .admin-form {
   margin-bottom: 25px;
@@ -573,6 +683,10 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+/* =========================
+   BUTTONS
+========================= */
+
 .primary-button,
 .secondary-button,
 .danger-button {
@@ -614,6 +728,10 @@ button:disabled {
   filter: brightness(0.9);
 }
 
+/* =========================
+   NOTICES
+========================= */
+
 .notice {
   margin: 15px 0;
   padding: 12px 15px;
@@ -630,6 +748,10 @@ button:disabled {
   background: rgba(190, 50, 50, 0.08);
   border-color: rgba(190, 50, 50, 0.25);
 }
+
+/* =========================
+   ADMIN LIST
+========================= */
 
 .admin-list {
   display: flex;
@@ -672,6 +794,10 @@ button:disabled {
   font-size: 12px;
 }
 
+/* =========================
+   LOGIN
+========================= */
+
 .login-page {
   width: min(100% - 32px, 420px);
   min-height: 75vh;
@@ -708,6 +834,10 @@ button:disabled {
   margin-top: 10px;
 }
 
+/* =========================
+   FOOTER
+========================= */
+
 .footer {
   margin-top: 45px;
   padding: 22px 15px;
@@ -717,6 +847,10 @@ button:disabled {
   font-size: 12px;
   line-height: 1.8;
 }
+
+/* =========================
+   STATES
+========================= */
 
 .loading {
   padding: 40px 15px;
@@ -734,6 +868,10 @@ button:disabled {
 .hidden {
   display: none !important;
 }
+
+/* =========================
+   RESPONSIVE
+========================= */
 
 @media (max-width: 700px) {
   .header {
@@ -832,6 +970,23 @@ button:disabled {
 
   .search-box button {
     width: 100%;
+  }
+
+  .miftah-banner {
+    padding: 25px 14px;
+    border-radius: 16px;
+  }
+
+  .miftah-banner-title {
+    font-size: 30px;
+  }
+
+  .miftah-banner-arabic {
+    font-size: 24px;
+  }
+
+  .miftah-banner-translation {
+    font-size: 14px;
   }
 
   .public-item .arabic-text {
