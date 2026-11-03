@@ -66,7 +66,6 @@ const T = {
     saveError: 'Сабт нашуд.',
     saved: 'Маълумот сабт шуд.',
     searchResults: 'Натиҷаҳои ҷустуҷӯ',
-    theme: 'Намуди зоҳирӣ',
     language: 'Забон',
     adminContent: 'Маводи бахшҳо',
     adminHadith: 'Идораи ҳадисҳо',
@@ -81,7 +80,6 @@ const T = {
     light: 'Сафед',
     green: 'Сабзи торик',
     sound: 'Садо',
-    settings: 'Танзимот',
     on: 'Фаъол',
     off: 'Хомӯш',
     loading: 'Маълумот бор шуда истодааст...',
@@ -89,10 +87,9 @@ const T = {
     hadithRequired: 'Китоб, рақам ва матни тоҷикӣ ҳатмист.',
     numberError: 'Рақами ҳадис бояд адади мусбат бошад.',
     titleRequired: 'Сарлавҳа ҳатмист.',
-    contentRequired: 'Матнро ворид кунед.',
-    hadithTranslation: 'Аз ман бирасонед, ҳарчанд як оят бошад.',
-    library: 'китобхонаи донишҳои исломӣ'
+    contentRequired: 'Матнро ворид кунед.'
   },
+
   ru: {
     title: '𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔',
     welcome: 'Библиотека исламских знаний',
@@ -129,7 +126,6 @@ const T = {
     saveError: 'Не удалось сохранить.',
     saved: 'Данные сохранены.',
     searchResults: 'Результаты поиска',
-    theme: 'Оформление',
     language: 'Язык',
     adminContent: 'Материалы разделов',
     adminHadith: 'Управление хадисами',
@@ -144,7 +140,6 @@ const T = {
     light: 'Светлая',
     green: 'Тёмно-зелёная',
     sound: 'Звук',
-    settings: 'Настройки',
     on: 'Включён',
     off: 'Выключен',
     loading: 'Загрузка данных...',
@@ -152,10 +147,9 @@ const T = {
     hadithRequired: 'Книга, номер и основной текст обязательны.',
     numberError: 'Номер хадиса должен быть положительным числом.',
     titleRequired: 'Заголовок обязателен.',
-    contentRequired: 'Введите текст.',
-    hadithTranslation: 'Передавайте от меня хотя бы один аят.',
-    library: 'библиотека исламских знаний'
+    contentRequired: 'Введите текст.'
   },
+
   ar: {
     title: '𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔',
     welcome: 'مكتبة العلوم الإسلامية',
@@ -192,7 +186,6 @@ const T = {
     saveError: 'تعذر الحفظ.',
     saved: 'تم حفظ البيانات.',
     searchResults: 'نتائج البحث',
-    theme: 'المظهر',
     language: 'اللغة',
     adminContent: 'مواد الأقسام',
     adminHadith: 'إدارة الأحاديث',
@@ -207,7 +200,6 @@ const T = {
     light: 'فاتح',
     green: 'أخضر داكن',
     sound: 'الصوت',
-    settings: 'الإعدادات',
     on: 'مفعل',
     off: 'متوقف',
     loading: 'جارٍ تحميل البيانات...',
@@ -215,9 +207,7 @@ const T = {
     hadithRequired: 'الكتاب والرقم والنص الأساسي مطلوبة.',
     numberError: 'يجب أن يكون رقم الحديث عدداً موجباً.',
     titleRequired: 'العنوان مطلوب.',
-    contentRequired: 'أدخل النص.',
-    hadithTranslation: 'بلغوا عني ولو آية.',
-    library: 'مكتبة العلوم الإسلامية'
+    contentRequired: 'أدخل النص.'
   }
 }
 
@@ -286,7 +276,9 @@ function App() {
   const [searching, setSearching] = useState(false)
 
   const [admin, setAdmin] = useState(false)
+  const [adminAccess, setAdminAccess] = useState(false)
   const [login, setLogin] = useState(false)
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -358,6 +350,34 @@ function App() {
     setTheme(current => current === 'green' ? 'white' : 'green')
   }
 
+  // Санҷиши ҳуқуқи админ барои намоён кардани тугма.
+  const checkAdminAccess = useCallback(async () => {
+    if (!db) {
+      setAdminAccess(false)
+      return false
+    }
+
+    const { data: sessionData, error: sessionError } = await db.auth.getSession()
+
+    if (sessionError || !sessionData?.session?.user) {
+      setAdminAccess(false)
+      return false
+    }
+
+    const user = sessionData.session.user
+
+    const { data: profile, error: profileError } = await db
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const allowed = !profileError && profile?.role === 'admin'
+    setAdminAccess(allowed)
+
+    return allowed
+  }, [])
+
   const loadPublicData = useCallback(async () => {
     if (!db) return
 
@@ -405,10 +425,17 @@ function App() {
         .range(0, 199)
     ])
 
-    const errors = [bookRes.error, hadithRes.error, contentRes.error].filter(Boolean)
+    const errors = [
+      bookRes.error,
+      hadithRes.error,
+      contentRes.error
+    ].filter(Boolean)
 
     if (errors.length) {
-      say(`${tr.loadError} ${errors.map(error => error.message).join(' | ')}`, 'error')
+      say(
+        `${tr.loadError} ${errors.map(error => error.message).join(' | ')}`,
+        'error'
+      )
     } else {
       setBooks(bookRes.data || [])
       setHadithRows(hadithRes.data || [])
@@ -421,6 +448,7 @@ function App() {
   const verifyAdmin = useCallback(async () => {
     if (!db) {
       setAdmin(false)
+      setAdminAccess(false)
       setLogin(true)
       return false
     }
@@ -429,6 +457,7 @@ function App() {
 
     if (sessionError || !sessionData?.session?.user) {
       setAdmin(false)
+      setAdminAccess(false)
       setLogin(true)
       setPage('home')
       return false
@@ -444,14 +473,17 @@ function App() {
 
     if (profileError || profile?.role !== 'admin') {
       setAdmin(false)
+      setAdminAccess(false)
       setLogin(true)
       setPage('home')
       return false
     }
 
     setAdmin(true)
+    setAdminAccess(true)
     setLogin(false)
     setPage('admin')
+
     return true
   }, [])
 
@@ -464,16 +496,28 @@ function App() {
     loadPublicData()
   }, [loadPublicData])
 
+  // Санҷиши сессия ва ҳуқуқи админ ҳангоми кушодани барнома.
   useEffect(() => {
-    if (!db) return
+    if (!db) {
+      setAdminAccess(false)
+      return
+    }
 
     let alive = true
+
+    checkAdminAccess()
 
     const { data: listener } = db.auth.onAuthStateChange((_event, session) => {
       if (!alive) return
 
       if (!session?.user) {
         setAdmin(false)
+        setAdminAccess(false)
+      } else {
+        // Санҷиши нақши корбар баъд аз тағйири сессия.
+        setTimeout(() => {
+          if (alive) checkAdminAccess()
+        }, 0)
       }
     })
 
@@ -497,7 +541,7 @@ function App() {
       listener.subscription.unsubscribe()
       window.removeEventListener('hashchange', handleHashChange)
     }
-  }, [verifyAdmin])
+  }, [verifyAdmin, checkAdminAccess])
 
   useEffect(() => {
     if (admin && page === 'admin') {
@@ -536,12 +580,14 @@ function App() {
     if (profileError || profile?.role !== 'admin') {
       await db.auth.signOut()
       setAdmin(false)
+      setAdminAccess(false)
       say(tr.loginError, 'error')
       setLoading(false)
       return
     }
 
     setAdmin(true)
+    setAdminAccess(true)
     setLogin(false)
     setPage('admin')
     setPassword('')
@@ -554,6 +600,7 @@ function App() {
     setLogin(false)
     setSelectedSection(null)
     say('')
+
     window.history.replaceState(
       null,
       '',
@@ -565,6 +612,7 @@ function App() {
     if (db) await db.auth.signOut()
 
     setAdmin(false)
+    setAdminAccess(false)
     setLogin(false)
     setPage('home')
     setPassword('')
@@ -680,16 +728,24 @@ function App() {
     setLoading(true)
     say('')
 
+    const oldHadith = editingHadith
+      ? hadithRows.find(item => item.id === editingHadith)
+      : null
+
     const payload = {
+      ...(oldHadith || {}),
       book_id: hadithForm.book_id,
       hadith_number: number,
       tajik_text: hadithForm.tajik_text.trim(),
-      arabic_text: '',
-      source_note: '',
-      commentary: '',
-      is_published: true,
+      arabic_text: oldHadith?.arabic_text || '',
+      source_note: oldHadith?.source_note || '',
+      commentary: oldHadith?.commentary || '',
+      is_published: oldHadith?.is_published ?? true,
       updated_at: new Date().toISOString()
     }
+
+    delete payload.id
+    delete payload.created_at
 
     const result = editingHadith
       ? await db.from('hadith').update(payload).eq('id', editingHadith)
@@ -742,24 +798,32 @@ function App() {
     setLoading(true)
     say('')
 
+    const oldContent = editingContent
+      ? contentRows.find(item => item.id === editingContent)
+      : null
+
     const payload = {
+      ...(oldContent || {}),
       section_slug: contentForm.section_slug,
       title: contentForm.title.trim(),
       content_text: mainText,
       question_text: contentForm.section_slug === 'questions'
         ? contentForm.title.trim()
-        : '',
-      answer_text: '',
-      arabic_text: '',
+        : (oldContent?.question_text || ''),
+      answer_text: oldContent?.answer_text || '',
+      arabic_text: oldContent?.arabic_text || '',
       tajik_text: mainText,
-      russian_text: '',
-      source_note: '',
-      commentary: '',
-      media_url: '',
-      is_published: true,
+      russian_text: oldContent?.russian_text || '',
+      source_note: oldContent?.source_note || '',
+      commentary: oldContent?.commentary || '',
+      media_url: oldContent?.media_url || '',
+      is_published: oldContent?.is_published ?? true,
       sort_order: Number(contentForm.sort_order || 0),
       updated_at: new Date().toISOString()
     }
+
+    delete payload.id
+    delete payload.created_at
 
     const result = editingContent
       ? await db.from('content_items').update(payload).eq('id', editingContent)
@@ -839,46 +903,6 @@ function App() {
     [contentRows, selectedSection]
   )
 
-  const renderSettings = () => (
-    <section className="section-intro settings-panel">
-      <h3>{tr.settings}</h3>
-
-      <label style={fieldStyle}>
-        {tr.language}
-        <select
-          style={inputStyle}
-          value={lang}
-          onChange={event => setLang(event.target.value)}
-        >
-          <option value="tg">Тоҷикӣ</option>
-          <option value="ru">Русский</option>
-          <option value="ar">العربية</option>
-        </select>
-      </label>
-
-      <label style={fieldStyle}>
-        {tr.theme}
-        <select
-          style={inputStyle}
-          value={theme}
-          onChange={event => setTheme(event.target.value)}
-        >
-          <option value="green">{tr.green}</option>
-          <option value="white">{tr.light}</option>
-        </select>
-      </label>
-
-      <label className="check-line">
-        <input
-          type="checkbox"
-          checked={sound}
-          onChange={event => setSound(event.target.checked)}
-        />
-        {tr.sound}: {sound ? tr.on : tr.off}
-      </label>
-    </section>
-  )
-
   const renderLogin = () => (
     <main className="content-page login-page">
       <button
@@ -887,6 +911,7 @@ function App() {
           setLogin(false)
           setPage('home')
           say('')
+
           window.history.replaceState(
             null,
             '',
@@ -932,8 +957,6 @@ function App() {
           {loading ? '...' : tr.enter}
         </button>
       </form>
-
-      {renderSettings()}
     </main>
   )
 
@@ -1117,8 +1140,6 @@ function App() {
         </button>
       </div>
 
-      {renderSettings()}
-
       <div className="button-row admin-tabs">
         <button
           className={adminTab === 'content' ? 'primary-button' : 'secondary-button'}
@@ -1171,6 +1192,7 @@ function App() {
           {contentRows.map(item => (
             <article key={item.id} className="section-intro admin-item">
               <strong>{item.title || '(Бе сарлавҳа)'}</strong>
+
               <p>
                 {sectionName(
                   SECTIONS.find(section => section.slug === item.section_slug)
@@ -1424,7 +1446,7 @@ function App() {
                   color: theme === 'green' ? '#B7C9BE' : '#718077'
                 }}
               >
-                {tr.library}
+                Китобхонаи донишҳои исломӣ
               </p>
 
               <div
@@ -1473,37 +1495,15 @@ function App() {
               type="button"
               className="secondary-button"
               onClick={toggleTheme}
-              title={tr.theme}
+              title={tr.green}
             >
               {theme === 'green' ? '☀️' : '🌿'} {theme === 'green' ? tr.light : tr.green}
-            </button>
-
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => setPage('settings')}
-              title={tr.settings}
-            >
-              ⚙
             </button>
           </div>
         </>
       )}
 
       {login && renderLogin()}
-
-      {page === 'settings' && (
-        <main className="content-page">
-          <button
-            className="back-button"
-            onClick={() => setPage('home')}
-          >
-            ‹ {tr.back}
-          </button>
-
-          {renderSettings()}
-        </main>
-      )}
 
       {page === 'admin' && admin && renderAdmin()}
 
@@ -1543,15 +1543,17 @@ function App() {
               </button>
             </form>
 
-            <div className="button-row home-admin-row">
-              <button
-                type="button"
-                className="secondary-button admin-open-button"
-                onClick={openAdmin}
-              >
-                🔐 {tr.admin}
-              </button>
-            </div>
+            {adminAccess && (
+              <div className="button-row home-admin-row">
+                <button
+                  type="button"
+                  className="secondary-button admin-open-button"
+                  onClick={openAdmin}
+                >
+                  🔐 {tr.admin}
+                </button>
+              </div>
+            )}
 
             {search.trim() ? (
               <>
