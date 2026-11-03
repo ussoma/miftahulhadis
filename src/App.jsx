@@ -2,10 +2,27 @@
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
-const URL = import.meta.env.VITE_SUPABASE_URL
-const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
-const db = URL && KEY ? createClient(URL, KEY) : null
+// Supabase configuration
+const URL = String(import.meta.env.VITE_SUPABASE_URL || '').trim()
+const KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
 
+let db = null
+
+if (URL && KEY) {
+  try {
+    db = createClient(URL, KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    })
+  } catch (error) {
+    console.error('Supabase initialization error:', error)
+  }
+}
+
+// 11 main sections
 const sections = [
   ['quran', '📖', 'Қуръони Карим', 'القرآن الكريم'],
   ['hadith', '📚', 'Ҳадисҳо', 'الأحاديث النبوية'],
@@ -20,6 +37,7 @@ const sections = [
   ['sunnah', '🌱', 'Суннатҳо', 'السُّنَن']
 ]
 
+// Interface translations
 const translations = {
   tg: {
     language: 'Забон',
@@ -41,7 +59,7 @@ const translations = {
     logout: 'Баромадан',
     adminTitle: 'Панели админ',
     adminDescription: 'Идоракунии маълумоти Miftahulhadis',
-    sections: '11 бахш',
+    sections: 'Бахшҳо',
     books: 'Китобҳо',
     hadith: 'Ҳадисҳо',
     prophets: 'Қиссаи паёмбарон',
@@ -65,7 +83,8 @@ const translations = {
     noAdmin: 'Ин ҳисоб иҷозати админ надорад.',
     footer: 'Манбаи дониш ва омӯзиши исломӣ',
     count: 'бахш',
-    databaseError: 'Хатои пойгоҳи маълумот: '
+    databaseError: 'Хатои пойгоҳи маълумот: ',
+    unknownError: 'Хатои номаълум рух дод.'
   },
 
   ru: {
@@ -88,7 +107,7 @@ const translations = {
     logout: 'Выйти',
     adminTitle: 'Панель администратора',
     adminDescription: 'Управление данными Miftahulhadis',
-    sections: '11 разделов',
+    sections: 'Разделы',
     books: 'Книги',
     hadith: 'Хадисы',
     prophets: 'Истории пророков',
@@ -112,7 +131,8 @@ const translations = {
     noAdmin: 'У этой учётной записи нет прав администратора.',
     footer: 'Источник знаний и исламского обучения',
     count: 'разделов',
-    databaseError: 'Ошибка базы данных: '
+    databaseError: 'Ошибка базы данных: ',
+    unknownError: 'Произошла неизвестная ошибка.'
   },
 
   ar: {
@@ -135,7 +155,7 @@ const translations = {
     logout: 'تسجيل الخروج',
     adminTitle: 'لوحة الإدارة',
     adminDescription: 'إدارة بيانات Miftahulhadis',
-    sections: '١١ قسمًا',
+    sections: 'الأقسام',
     books: 'الكتب',
     hadith: 'الأحاديث',
     prophets: 'قصص الأنبياء',
@@ -159,10 +179,12 @@ const translations = {
     noAdmin: 'هذا الحساب لا يملك صلاحيات المسؤول.',
     footer: 'مصدر للعلم والتعلم الإسلامي',
     count: 'أقسام',
-    databaseError: 'خطأ في قاعدة البيانات: '
+    databaseError: 'خطأ في قاعدة البيانات: ',
+    unknownError: 'حدث خطأ غير معروف.'
   }
 }
 
+// Section names in each language
 const sectionTranslations = {
   tg: {
     quran: 'Қуръони Карим',
@@ -205,6 +227,7 @@ const sectionTranslations = {
   }
 }
 
+// Tables available in the current Supabase database
 const tableNames = {
   sections: 'sections',
   books: 'books',
@@ -212,13 +235,17 @@ const tableNames = {
   prophets: 'prophets'
 }
 
+// IMPORTANT: This array is used by the admin tabs.
+const tables = Object.keys(tableNames).map(name => ({ name }))
+
 export default function App() {
   const [page, setPage] = useState('home')
   const [active, setActive] = useState(null)
 
   const [language, setLanguage] = useState(() => {
     try {
-      return localStorage.getItem('miftahulhadis-language') || 'tg'
+      const saved = localStorage.getItem('miftahulhadis-language')
+      return translations[saved] ? saved : 'tg'
     } catch {
       return 'tg'
     }
@@ -226,7 +253,8 @@ export default function App() {
 
   const [theme, setTheme] = useState(() => {
     try {
-      return localStorage.getItem('miftahulhadis-theme') || 'white'
+      const saved = localStorage.getItem('miftahulhadis-theme')
+      return saved === 'green' ? 'green' : 'white'
     } catch {
       return 'white'
     }
@@ -236,13 +264,14 @@ export default function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [admin, setAdmin] = useState(false)
+
   const [table, setTable] = useState('sections')
   const [rows, setRows] = useState([])
   const [selected, setSelected] = useState(null)
   const [json, setJson] = useState('{}')
+
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
-  const [search, setSearch] = useState('')
 
   const tr = translations[language] || translations.tg
   const isArabic = language === 'ar'
@@ -254,96 +283,177 @@ export default function App() {
     prophets: tr.prophets
   }
 
+  const currentSection = active
+    ? sectionTranslations[language]?.[active.key] || active.title
+    : ''
+
+  // Set document language and direction
   useEffect(() => {
     document.documentElement.lang = language
     document.documentElement.dir = isArabic ? 'rtl' : 'ltr'
   }, [language, isArabic])
 
+  // Restore the current Supabase session and check admin permissions
+  useEffect(() => {
+    let mounted = true
+
+    async function restoreSession() {
+      if (!db) return
+
+      try {
+        const { data, error } = await db.auth.getSession()
+
+        if (error || !data?.session?.user || !mounted) return
+
+        const user = data.session.user
+
+        const { data: profile, error: profileError } = await db
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (!mounted) return
+
+        if (!profileError && profile?.role === 'admin') {
+          setAdmin(true)
+        }
+      } catch (error) {
+        console.error('Session restore error:', error)
+      }
+    }
+
+    restoreSession()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  function getConfigError() {
+    if (!URL) return tr.noUrl
+    if (!KEY) return tr.noKey
+    if (!db) return tr.noConfig
+    return ''
+  }
+
+  // Administrator login
   async function signIn(e) {
     e.preventDefault()
     setMessage('')
 
-    if (!URL) {
-      setMessage(tr.noUrl)
-      return
-    }
+    const configError = getConfigError()
 
-    if (!KEY) {
-      setMessage(tr.noKey)
-      return
-    }
-
-    if (!db) {
-      setMessage(tr.noConfig)
+    if (configError) {
+      setMessage(configError)
       return
     }
 
     setBusy(true)
 
-    const { data, error } = await db.auth.signInWithPassword({
-      email,
-      password
-    })
+    try {
+      const { data, error } = await db.auth.signInWithPassword({
+        email: email.trim(),
+        password
+      })
 
-    if (error) {
-      setMessage(error.message)
+      if (error) {
+        setMessage(error.message)
+        return
+      }
+
+      if (!data?.user) {
+        setMessage(tr.noAdmin)
+        return
+      }
+
+      const { data: profile, error: profileError } = await db
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        await db.auth.signOut()
+        setMessage(tr.databaseError + profileError.message)
+        return
+      }
+
+      if (profile?.role !== 'admin') {
+        await db.auth.signOut()
+        setMessage(tr.noAdmin)
+        return
+      }
+
+      setAdmin(true)
+      setLogin(false)
+      setPage('admin')
+      setMessage('')
+
+      await loadRows(table)
+    } catch (error) {
+      setMessage(error?.message || tr.unknownError)
+    } finally {
       setBusy(false)
-      return
     }
-
-    const { data: profile, error: profileError } = await db
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .maybeSingle()
-
-    if (profileError || profile?.role !== 'admin') {
-      await db.auth.signOut()
-      setMessage(tr.noAdmin)
-      setBusy(false)
-      return
-    }
-
-    setAdmin(true)
-    setLogin(false)
-    setPage('admin')
-    setMessage('')
-    await loadRows(table)
-    setBusy(false)
   }
 
+  // Load records from a Supabase table
   async function loadRows(tableName = table) {
-    if (!db) return
+    if (!db) {
+      setMessage(getConfigError())
+      setRows([])
+      return
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(tableNames, tableName)) {
+      setMessage(tr.unknownError)
+      return
+    }
 
     setBusy(true)
     setMessage('')
 
-    const { data, error } = await db
-      .from(tableName)
-      .select('*')
-      .limit(200)
+    try {
+      const { data, error } = await db
+        .from(tableNames[tableName])
+        .select('*')
+        .limit(200)
 
-    if (error) {
-      setMessage(tr.databaseError + error.message)
+      if (error) {
+        setMessage(tr.databaseError + error.message)
+        setRows([])
+      } else {
+        setRows(data || [])
+      }
+
+      setSelected(null)
+      setJson('{}')
+    } catch (error) {
       setRows([])
-    } else {
-      setRows(data || [])
+      setMessage(error?.message || tr.unknownError)
+    } finally {
+      setBusy(false)
     }
-
-    setSelected(null)
-    setJson('{}')
-    setBusy(false)
   }
 
+  // Save a new record or update an existing one
   async function saveRow() {
-    if (!db || !admin) return
+    if (!db || !admin) {
+      setMessage(getConfigError() || tr.noAdmin)
+      return
+    }
 
     let value
 
     try {
       value = JSON.parse(json)
 
-      if (!value || Array.isArray(value) || typeof value !== 'object') {
+      if (
+        !value ||
+        Array.isArray(value) ||
+        typeof value !== 'object'
+      ) {
         throw new Error(tr.invalidJson)
       }
     } catch (error) {
@@ -354,67 +464,105 @@ export default function App() {
     setBusy(true)
     setMessage('')
 
-    let result
+    try {
+      let result
 
-    if (selected?.id) {
-      const { id, ...updates } = value
-      result = await db.from(table).update(updates).eq('id', selected.id)
-    } else {
-      result = await db.from(table).insert(value)
+      if (selected?.id) {
+        const { id, ...updates } = value
+
+        result = await db
+          .from(tableNames[table])
+          .update(updates)
+          .eq('id', selected.id)
+      } else {
+        result = await db
+          .from(tableNames[table])
+          .insert(value)
+      }
+
+      if (result.error) {
+        setMessage(tr.databaseError + result.error.message)
+      } else {
+        setMessage(tr.saved)
+        await loadRows(table)
+      }
+    } catch (error) {
+      setMessage(error?.message || tr.unknownError)
+    } finally {
+      setBusy(false)
     }
-
-    if (result.error) {
-      setMessage(tr.databaseError + result.error.message)
-    } else {
-      setMessage(tr.saved)
-      await loadRows(table)
-    }
-
-    setBusy(false)
   }
 
+  // Delete a record
   async function deleteRow(row) {
     if (!db || !admin || !row?.id) return
+
     if (!window.confirm(tr.confirmDelete)) return
 
     setBusy(true)
-
-    const { error } = await db.from(table).delete().eq('id', row.id)
-
-    if (error) {
-      setMessage(tr.databaseError + error.message)
-    } else {
-      setMessage(tr.deleted)
-      await loadRows(table)
-    }
-
-    setBusy(false)
-  }
-
-  async function logout() {
-    if (db) await db.auth.signOut()
-
-    setAdmin(false)
-    setPage('home')
-    setRows([])
-    setSelected(null)
-    setLogin(false)
-    setPassword('')
     setMessage('')
+
+    try {
+      const { error } = await db
+        .from(tableNames[table])
+        .delete()
+        .eq('id', row.id)
+
+      if (error) {
+        setMessage(tr.databaseError + error.message)
+      } else {
+        setMessage(tr.deleted)
+        await loadRows(table)
+      }
+    } catch (error) {
+      setMessage(error?.message || tr.unknownError)
+    } finally {
+      setBusy(false)
+    }
   }
 
+  // Logout
+  async function logout() {
+    setBusy(true)
+
+    try {
+      if (db) {
+        const { error } = await db.auth.signOut()
+        if (error) console.error('Logout error:', error)
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setAdmin(false)
+      setPage('home')
+      setRows([])
+      setSelected(null)
+      setLogin(false)
+      setPassword('')
+      setMessage('')
+      setBusy(false)
+    }
+  }
+
+  // Change admin table
   function chooseTable(name) {
+    if (!Object.prototype.hasOwnProperty.call(tableNames, name)) return
+
     setTable(name)
     setSelected(null)
     setJson('{}')
+    setMessage('')
     loadRows(name)
   }
 
+  // Select a record for editing
   function chooseRow(row) {
     setSelected(row)
     setJson(JSON.stringify(row, null, 2))
+    setMessage('')
   }
 
+  // Change interface language
   function changeLanguage(value) {
     if (!translations[value]) return
 
@@ -422,25 +570,23 @@ export default function App() {
 
     try {
       localStorage.setItem('miftahulhadis-language', value)
-    } catch {
-      // Танзимот дар хотираи ҷорӣ боқӣ мемонад.
+    } catch (error) {
+      console.warn('Could not save language:', error)
     }
   }
 
+  // Change interface theme
   function changeTheme() {
     const value = theme === 'white' ? 'green' : 'white'
+
     setTheme(value)
 
     try {
       localStorage.setItem('miftahulhadis-theme', value)
-    } catch {
-      // Танзимот дар хотираи ҷорӣ боқӣ мемонад.
+    } catch (error) {
+      console.warn('Could not save theme:', error)
     }
   }
-
-  const currentSection = active
-    ? sectionTranslations[language][active.key]
-    : ''
 
   return (
     <main
@@ -457,7 +603,11 @@ export default function App() {
             <p className="arabic-title">مفتاح الحديث</p>
           </div>
 
-          <button className="theme-toggle" onClick={changeTheme}>
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={changeTheme}
+          >
             {theme === 'white' ? tr.themeGreen : tr.themeWhite}
           </button>
         </div>
@@ -470,9 +620,10 @@ export default function App() {
       </header>
 
       <div className="language-selector">
-        <label>{tr.language}: </label>
+        <label htmlFor="language-select">{tr.language}: </label>
 
         <select
+          id="language-select"
           className="language-select"
           value={language}
           onChange={e => changeLanguage(e.target.value)}
@@ -483,6 +634,7 @@ export default function App() {
         </select>
       </div>
 
+      {/* Home page */}
       {page === 'home' && (
         <section className="main-content">
           <div className="section-heading">
@@ -499,6 +651,7 @@ export default function App() {
           <div className="menu">
             {sections.map(([key, icon, title, arabic], index) => (
               <button
+                type="button"
                 className="menu-card"
                 key={key}
                 onClick={() => {
@@ -513,7 +666,9 @@ export default function App() {
                 <span className="card-icon">{icon}</span>
 
                 <span className="card-text">
-                  <strong>{sectionTranslations[language][key]}</strong>
+                  <strong>
+                    {sectionTranslations[language][key]}
+                  </strong>
                   <small>{arabic}</small>
                 </span>
 
@@ -523,6 +678,7 @@ export default function App() {
           </div>
 
           <button
+            type="button"
             className="back-button"
             onClick={() => {
               setLogin(true)
@@ -534,9 +690,14 @@ export default function App() {
         </section>
       )}
 
+      {/* Section page */}
       {page === 'section' && active && (
         <section className="content-page">
-          <button className="back-button" onClick={() => setPage('home')}>
+          <button
+            type="button"
+            className="back-button"
+            onClick={() => setPage('home')}
+          >
             ← {tr.back}
           </button>
 
@@ -549,9 +710,11 @@ export default function App() {
         </section>
       )}
 
+      {/* Admin login */}
       {login && !admin && (
         <section className="content-page">
           <button
+            type="button"
             className="back-button"
             onClick={() => {
               setLogin(false)
@@ -570,6 +733,7 @@ export default function App() {
                 placeholder={tr.email}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
+                autoComplete="username"
                 required
               />
 
@@ -578,22 +742,37 @@ export default function App() {
                 placeholder={tr.password}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                autoComplete="current-password"
                 required
               />
 
-              <button className="back-button" disabled={busy}>
+              <button
+                type="submit"
+                className="back-button"
+                disabled={busy}
+              >
                 {busy ? tr.wait : tr.signIn}
               </button>
             </form>
 
-            {message && <p className="coming-soon">{message}</p>}
+            {message && (
+              <p className="coming-soon" role="alert">
+                {message}
+              </p>
+            )}
           </div>
         </section>
       )}
 
+      {/* Admin panel */}
       {page === 'admin' && admin && (
         <section className="content-page">
-          <button className="back-button" onClick={logout}>
+          <button
+            type="button"
+            className="back-button"
+            onClick={logout}
+            disabled={busy}
+          >
             {tr.logout}
           </button>
 
@@ -607,19 +786,25 @@ export default function App() {
           <div className="admin-tabs">
             {tables.map(item => (
               <button
+                type="button"
                 key={item.name}
                 className="back-button"
                 onClick={() => chooseTable(item.name)}
+                disabled={busy}
               >
                 {tableTitles[item.name]}
               </button>
             ))}
           </div>
 
-          <h3>{tr.table}: {tableTitles[table]}</h3>
+          <h3>
+            {tr.table}: {tableTitles[table]}
+          </h3>
 
           <button
+            type="button"
             className="back-button"
+            disabled={busy}
             onClick={() => {
               setSelected(null)
               setJson('{}')
@@ -631,10 +816,15 @@ export default function App() {
 
           <div className="admin-records">
             {rows.map((row, index) => (
-              <div className="admin-record" key={row.id || index}>
+              <div
+                className="admin-record"
+                key={row.id || index}
+              >
                 <button
+                  type="button"
                   className="record-select"
                   onClick={() => chooseRow(row)}
+                  disabled={busy}
                 >
                   {row.name ||
                     row.title ||
@@ -644,15 +834,19 @@ export default function App() {
                 </button>
 
                 <button
+                  type="button"
                   className="delete-button"
                   onClick={() => deleteRow(row)}
+                  disabled={busy}
                 >
                   {tr.delete}
                 </button>
               </div>
             ))}
 
-            {!rows.length && <p>{tr.noRecords}</p>}
+            {!rows.length && (
+              <p>{busy ? tr.wait : tr.noRecords}</p>
+            )}
           </div>
 
           <h3>{selected ? tr.edit : tr.newRecord}</h3>
@@ -668,6 +862,7 @@ export default function App() {
           />
 
           <button
+            type="button"
             className="back-button"
             onClick={saveRow}
             disabled={busy}
@@ -675,7 +870,11 @@ export default function App() {
             {busy ? tr.saving : tr.save}
           </button>
 
-          {message && <p className="coming-soon">{message}</p>}
+          {message && (
+            <p className="coming-soon" role="alert">
+              {message}
+            </p>
+          )}
         </section>
       )}
 
