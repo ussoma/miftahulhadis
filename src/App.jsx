@@ -1,329 +1,256 @@
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+const URL = import.meta.env.VITE_SUPABASE_URL
+const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const db = URL && KEY ? createClient(URL, KEY) : null
 
 const sections = [
-  {
-    id: 1,
-    key: 'quran',
-    subtitle: 'القرآن الكريم',
-    icon: '📖'
-  },
-  {
-    id: 2,
-    key: 'hadith',
-    subtitle: 'الأحاديث النبوية',
-    icon: '📚'
-  },
-  {
-    id: 3,
-    key: 'scholars',
-    subtitle: 'أقوال السلف الصالح',
-    icon: '🌿'
-  },
-  {
-    id: 4,
-    key: 'duas',
-    subtitle: 'الأدعية',
-    icon: '🤲'
-  },
-  {
-    id: 5,
-    key: 'adhkar',
-    subtitle: 'الأذكار',
-    icon: '📿'
-  },
-  {
-    id: 6,
-    key: 'prophets',
-    subtitle: 'قصص الأنبياء',
-    icon: '🕌'
-  },
-  {
-    id: 7,
-    key: 'seerah',
-    subtitle: 'السيرة النبوية',
-    icon: '🌙'
-  },
-  {
-    id: 8,
-    key: 'companions',
-    subtitle: 'سيرة الصحابة',
-    icon: '⭐'
-  },
-  {
-    id: 9,
-    key: 'lessons',
-    subtitle: 'الدروس الإسلامية',
-    icon: '🎧'
-  },
-  {
-    id: 10,
-    key: 'questions',
-    subtitle: 'الأسئلة الإسلامية',
-    icon: '💬'
-  },
-  {
-    id: 11,
-    key: 'sunnah',
-    subtitle: 'السُّنَن',
-    icon: '🌱'
-  }
+  ['quran', '📖', 'Қуръони Карим', 'القرآن الكريم'],
+  ['hadith', '📚', 'Ҳадисҳо', 'الأحاديث النبوية'],
+  ['scholars', '🌿', 'Суханони Солеҳин', 'أقوال السلف الصالح'],
+  ['duas', '🤲', 'Дуоҳо', 'الأدعية'],
+  ['adhkar', '📿', 'Азкор', 'الأذكار'],
+  ['prophets', '🕌', 'Қиссаи Паёмбарон', 'قصص الأنبياء'],
+  ['seerah', '🌙', 'Сирати Расулуллоҳ ﷺ', 'السيرة النبوية'],
+  ['companions', '⭐', 'Сирати саҳоба', 'سيرة الصحابة'],
+  ['lessons', '🎧', 'Дарсҳои Исломӣ', 'الدروس الإسلامية'],
+  ['questions', '💬', 'Саволҳои Исломӣ', 'الأسئلة الإسلامية'],
+  ['sunnah', '🌱', 'Суннатҳо', 'السُّنَن']
 ]
 
-const translations = {
-  tg: {
-    quran: 'Қуръони Карим',
-    hadith: 'Ҳадисҳо',
-    scholars: 'Суханони Солеҳин',
-    duas: 'Дуоҳо',
-    adhkar: 'Азкор',
-    prophets: 'Қиссаи Паёмбарон عليهم السلام',
-    seerah: 'Сирати Расулуллоҳ ﷺ',
-    companions: 'Сирати саҳоба رضي الله عنهم',
-    lessons: 'Дарсҳои Исломӣ',
-    questions: 'Саволҳои Исломӣ',
-    sunnah: 'Суннатҳо',
-
-    quranDesc: 'Қуръони Карим, сураҳо ва оятҳо',
-    hadithDesc: 'Ҳадисҳои Расулуллоҳ ﷺ',
-    scholarsDesc: 'Суханони донишмандон ва солеҳон',
-    duasDesc: 'Дуоҳои Қуръон ва Суннат',
-    adhkarDesc: 'Азкорҳои субҳу шом ва дигар азкор',
-    prophetsDesc: 'Қиссаҳои паёмбарон عليهم السلام',
-    seerahDesc: 'Зиндагии Расулуллоҳ ﷺ',
-    companionsDesc: 'Зиндагии саҳоба رضي الله عنهم',
-    lessonsDesc: 'Дарсҳои аудиоӣ ва видеоӣ',
-    questionsDesc: 'Савол фиристед ва ҷавоб гиред',
-    sunnahDesc: 'Суннатҳои рӯзмарраи Расулуллоҳ ﷺ',
-
-    welcomeLabel: 'КИТОБХОНАИ ИСЛОМӢ',
-    welcomeTitle: 'Илм биомӯз, ба он амал кун.',
-    welcomeText: 'Қуръон, ҳадис, дуо ва азкор — дар як ҷо.',
-    selected: 'БАХШИ ИНТИХОБШУДА',
-    heading: 'Бахшҳои исломӣ',
-    choose: 'Бахши дилхоҳро интихоб кунед',
-    search: 'Ҷустуҷӯи бахш...',
-    back: 'Бозгашт ба меню',
-    empty: 'Ягон бахш ёфт нашуд.',
-    preparing: 'Мундариҷаи ин бахш дар марҳилаи омодасозӣ қарор дорад.',
-    footer: 'Манбаи дониш ва омӯзиши исломӣ',
-    green: '🌙 Сабз',
-    white: '☀️ Сафед',
-    count: 'бахш',
-    language: 'Забон'
-  },
-
-  ru: {
-    quran: 'Священный Коран',
-    hadith: 'Хадисы',
-    scholars: 'Слова праведных предшественников',
-    duas: 'Дуа',
-    adhkar: 'Азкары',
-    prophets: 'Истории пророков عليهم السلام',
-    seerah: 'Жизнеописание Посланника Аллаха ﷺ',
-    companions: 'Жизнеописание сподвижников رضي الله عنهم',
-    lessons: 'Исламские уроки',
-    questions: 'Исламские вопросы',
-    sunnah: 'Сунны',
-
-    quranDesc: 'Священный Коран, суры и аяты',
-    hadithDesc: 'Хадисы Посланника Аллаха ﷺ',
-    scholarsDesc: 'Высказывания ученых и праведников',
-    duasDesc: 'Дуа из Корана и Сунны',
-    adhkarDesc: 'Утренние, вечерние и другие азкары',
-    prophetsDesc: 'Истории пророков عليهم السلام',
-    seerahDesc: 'Жизнь Посланника Аллаха ﷺ',
-    companionsDesc: 'Жизнь сподвижников رضي الله عنهم',
-    lessonsDesc: 'Аудио- и видеоуроки',
-    questionsDesc: 'Задайте вопрос и получите ответ',
-    sunnahDesc: 'Повседневные сунны Посланника Аллаха ﷺ',
-
-    welcomeLabel: 'ИСЛАМСКАЯ БИБЛИОТЕКА',
-    welcomeTitle: 'Изучай знания и следуй им.',
-    welcomeText: 'Коран, хадисы, дуа и азкары — в одном месте.',
-    selected: 'ВЫБРАННЫЙ РАЗДЕЛ',
-    heading: 'Исламские разделы',
-    choose: 'Выберите нужный раздел',
-    search: 'Поиск раздела...',
-    back: 'Вернуться в меню',
-    empty: 'Разделы не найдены.',
-    preparing: 'Содержимое этого раздела находится в стадии подготовки.',
-    footer: 'Источник знаний и исламского обучения',
-    green: '🌙 Зеленая',
-    white: '☀️ Белая',
-    count: 'разделов',
-    language: 'Язык'
-  },
-
-  ar: {
-    quran: 'القرآن الكريم',
-    hadith: 'الأحاديث',
-    scholars: 'أقوال السلف الصالح',
-    duas: 'الأدعية',
-    adhkar: 'الأذكار',
-    prophets: 'قصص الأنبياء',
-    seerah: 'السيرة النبوية',
-    companions: 'سيرة الصحابة',
-    lessons: 'الدروس الإسلامية',
-    questions: 'الأسئلة الإسلامية',
-    sunnah: 'السُّنَن',
-
-    quranDesc: 'القرآن الكريم والسور والآيات',
-    hadithDesc: 'أحاديث رسول الله ﷺ',
-    scholarsDesc: 'أقوال العلماء والصالحين',
-    duasDesc: 'أدعية القرآن والسنة',
-    adhkarDesc: 'أذكار الصباح والمساء وغيرها',
-    prophetsDesc: 'قصص الأنبياء عليهم السلام',
-    seerahDesc: 'سيرة رسول الله ﷺ',
-    companionsDesc: 'سيرة الصحابة رضي الله عنهم',
-    lessonsDesc: 'دروس صوتية ومرئية',
-    questionsDesc: 'أرسل سؤالك واحصل على إجابة',
-    sunnahDesc: 'سنن رسول الله ﷺ اليومية',
-
-    welcomeLabel: 'المكتبة الإسلامية',
-    welcomeTitle: 'تعلّم العلم واعمل به.',
-    welcomeText: 'القرآن والحديث والدعاء والأذكار في مكان واحد.',
-    selected: 'القسم المختار',
-    heading: 'الأقسام الإسلامية',
-    choose: 'اختر القسم المناسب',
-    search: 'البحث عن قسم...',
-    back: 'العودة إلى القائمة',
-    empty: 'لم يتم العثور على أقسام.',
-    preparing: 'محتوى هذا القسم قيد الإعداد.',
-    footer: 'مصدر للعلم والتعليم الإسلامي',
-    green: '🌙 أخضر',
-    white: '☀️ أبيض',
-    count: 'أقسام',
-    language: 'اللغة'
-  }
-}
+const tables = [
+  { name: 'sections', title: '11 бахш' },
+  { name: 'books', title: 'Китобҳо' },
+  { name: 'hadith', title: 'Ҳадисҳо' },
+  { name: 'prophets', title: 'Қиссаи паёмбарон' }
+]
 
 export default function App() {
-  const [activeSection, setActiveSection] = useState(null)
+  const [page, setPage] = useState('home')
+  const [active, setActive] = useState(null)
+  const [language, setLanguage] = useState('tg')
+  const [theme, setTheme] = useState('white')
+  const [login, setLogin] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [admin, setAdmin] = useState(false)
+  const [table, setTable] = useState('sections')
+  const [rows, setRows] = useState([])
+  const [selected, setSelected] = useState(null)
+  const [json, setJson] = useState('{}')
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
   const [search, setSearch] = useState('')
 
-  const [language, setLanguage] = useState(() => {
-    try {
-      return localStorage.getItem('miftahulhadis-language') || 'tg'
-    } catch {
-      return 'tg'
+  const tr = {
+    tg: {
+      heading: 'Бахшҳои исломӣ',
+      choose: 'Бахши дилхоҳро интихоб кунед',
+      welcome: 'Илм биомӯз, ба он амал кун.',
+      description: 'Қуръон, ҳадис, дуо ва азкор — дар як ҷо.',
+      admin: 'Панели админ',
+      back: 'Бозгашт',
+      empty: 'Мундариҷаи ин бахш ҳоло омода нест.'
+    },
+    ru: {
+      heading: 'Исламские разделы',
+      choose: 'Выберите нужный раздел',
+      welcome: 'Изучай знания и следуй им.',
+      description: 'Коран, хадисы, дуа и азкары — в одном месте.',
+      admin: 'Панель администратора',
+      back: 'Назад',
+      empty: 'Содержимое раздела пока не готово.'
+    },
+    ar: {
+      heading: 'الأقسام الإسلامية',
+      choose: 'اختر القسم المناسب',
+      welcome: 'تعلّم العلم واعمل به.',
+      description: 'القرآن والحديث والدعاء والأذكار في مكان واحد.',
+      admin: 'لوحة الإدارة',
+      back: 'رجوع',
+      empty: 'المحتوى غير جاهز بعد.'
     }
-  })
+  }[language]
 
-  const [theme, setTheme] = useState(() => {
-    try {
-      return localStorage.getItem('miftahulhadis-theme') || 'white'
-    } catch {
-      return 'white'
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('miftahulhadis-language')
+    const savedTheme = localStorage.getItem('miftahulhadis-theme')
+    if (savedLanguage) setLanguage(savedLanguage)
+    if (savedTheme) setTheme(savedTheme)
+  }, [])
+
+  async function signIn(e) {
+    e.preventDefault()
+    setMessage('')
+    if (!db) {
+      setMessage('Танзимоти Supabase дар Vercel пур карда нашудаанд.')
+      return
     }
-  })
 
-  const t = translations[language] || translations.tg
+    setBusy(true)
+    const { data, error } = await db.auth.signInWithPassword({
+      email,
+      password
+    })
 
-  const isArabic = language === 'ar'
+    if (error) {
+      setMessage(error.message)
+      setBusy(false)
+      return
+    }
 
-  const toggleTheme = () => {
-    const nextTheme = theme === 'white' ? 'green' : 'white'
-    setTheme(nextTheme)
+    const { data: profile, error: profileError } = await db
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .maybeSingle()
+
+    if (profileError || profile?.role !== 'admin') {
+      await db.auth.signOut()
+      setMessage('Ин ҳисоб иҷозати админ надорад.')
+      setBusy(false)
+      return
+    }
+
+    setAdmin(true)
+    setLogin(false)
+    setPage('admin')
+    setMessage('')
+    setBusy(false)
+    loadRows(table)
+  }
+
+  async function loadRows(tableName = table) {
+    if (!db || !admin) return
+    setBusy(true)
+    setMessage('')
+    const { data, error } = await db
+      .from(tableName)
+      .select('*')
+      .limit(200)
+
+    if (error) {
+      setMessage(error.message)
+      setRows([])
+    } else {
+      setRows(data || [])
+    }
+    setSelected(null)
+    setJson('{}')
+    setBusy(false)
+  }
+
+  async function saveRow() {
+    if (!db || !admin) return
+    let value
 
     try {
-      localStorage.setItem('miftahulhadis-theme', nextTheme)
-    } catch {}
+      value = JSON.parse(json)
+      if (!value || Array.isArray(value) || typeof value !== 'object') {
+        throw new Error('JSON бояд объект бошад.')
+      }
+    } catch (error) {
+      setMessage('Хатои JSON: ' + error.message)
+      return
+    }
+
+    setBusy(true)
+    setMessage('')
+
+    let result
+
+    if (selected?.id) {
+      const { id, ...updates } = value
+      result = await db.from(table).update(updates).eq('id', selected.id)
+    } else {
+      result = await db.from(table).insert(value)
+    }
+
+    if (result.error) {
+      setMessage(result.error.message)
+    } else {
+      setMessage('Сабт бомуваффақият нигоҳ дошта шуд.')
+      await loadRows(table)
+    }
+
+    setBusy(false)
   }
 
-  const changeLanguage = event => {
-    const nextLanguage = event.target.value
-    setLanguage(nextLanguage)
+  async function deleteRow(row) {
+    if (!db || !admin || !row?.id) return
+    if (!window.confirm('Ин сабтро нест мекунӣ?')) return
 
-    try {
-      localStorage.setItem('miftahulhadis-language', nextLanguage)
-    } catch {}
+    setBusy(true)
+    const { error } = await db.from(table).delete().eq('id', row.id)
+
+    if (error) setMessage(error.message)
+    else {
+      setMessage('Сабт нест карда шуд.')
+      await loadRows(table)
+    }
+    setBusy(false)
   }
 
-  const translatedSections = useMemo(() => {
-    return sections.map(section => ({
-      ...section,
-      title: t[section.key],
-      description: t[section.key + 'Desc']
-    }))
-  }, [language])
-
-  const filteredSections = useMemo(() => {
-    const value = search.trim().toLowerCase()
-
-    if (!value) return translatedSections
-
-    return translatedSections.filter(section =>
-      `${section.title} ${section.subtitle} ${section.description}`
-        .toLowerCase()
-        .includes(value)
-    )
-  }, [search, translatedSections])
-
-  const openSection = section => {
-    setActiveSection(section)
-    setSearch('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  async function logout() {
+    if (db) await db.auth.signOut()
+    setAdmin(false)
+    setPage('home')
+    setRows([])
+    setSelected(null)
   }
 
-  const goHome = () => {
-    setActiveSection(null)
-    setSearch('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  function chooseTable(name) {
+    setTable(name)
+    setSelected(null)
+    setJson('{}')
+    loadRows(name)
+  }
+
+  function chooseRow(row) {
+    setSelected(row)
+    setJson(JSON.stringify(row, null, 2))
+  }
+
+  function changeLanguage(value) {
+    setLanguage(value)
+    localStorage.setItem('miftahulhadis-language', value)
+  }
+
+  function changeTheme() {
+    const value = theme === 'white' ? 'green' : 'white'
+    setTheme(value)
+    localStorage.setItem('miftahulhadis-theme', value)
   }
 
   return (
-    <main
-      className={`app theme-${theme}`}
-      dir={isArabic ? 'rtl' : 'ltr'}
-    >
+    <main className={`app theme-${theme}`}>
       <header className="header">
         <div className="header-top">
           <div className="brand-icon">م</div>
-
           <div>
             <h1>Miftahulhadis</h1>
             <p className="arabic-title">مفتاح الحديث</p>
           </div>
-
-          <button
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label="Тағйир додани мавзӯи ранг"
-          >
-            {theme === 'white' ? t.green : t.white}
+          <button className="theme-toggle" onClick={changeTheme}>
+            {theme === 'white' ? '🌙 Сабз' : '☀️ Сафед'}
           </button>
         </div>
 
         <div className="header-welcome">
-          {activeSection ? (
-            <>
-              <span className="welcome-label">{t.selected}</span>
-              <h2>{activeSection.title}</h2>
-              <p className="arabic-title">
-                {activeSection.subtitle}
-              </p>
-            </>
-          ) : (
-            <>
-              <span className="welcome-label">
-                {t.welcomeLabel}
-              </span>
-              <h2>{t.welcomeTitle}</h2>
-              <p>{t.welcomeText}</p>
-            </>
-          )}
+          <span className="welcome-label">КИТОБХОНАИ ИСЛОМӢ</span>
+          <h2>{tr.welcome}</h2>
+          <p>{tr.description}</p>
         </div>
       </header>
 
       <div className="language-selector">
-        <label htmlFor="app-language">{t.language}:</label>
-
+        <label>Забон: </label>
         <select
-          id="app-language"
           className="language-select"
           value={language}
-          onChange={changeLanguage}
+          onChange={e => changeLanguage(e.target.value)}
         >
           <option value="tg">Тоҷикӣ 🇹🇯</option>
           <option value="ru">Русский 🇷🇺</option>
@@ -331,110 +258,171 @@ export default function App() {
         </select>
       </div>
 
-      {activeSection ? (
-        <section className="content-page">
-          <button className="back-button" onClick={goHome}>
-            <span>←</span> {t.back}
-          </button>
-
-          <div className="section-intro">
-            <div className="section-icon">
-              {activeSection.icon}
-            </div>
-
-            <h2>{activeSection.title}</h2>
-
-            <p className="arabic-title">
-              {activeSection.subtitle}
-            </p>
-
-            <p>{activeSection.description}</p>
-
-            {activeSection.key === 'quran' ? (
-              <p className="coming-soon">
-                {t.preparing}
-              </p>
-            ) : (
-              <p className="coming-soon">
-                {t.preparing}
-              </p>
-            )}
-          </div>
-        </section>
-      ) : (
+      {page === 'home' && (
         <section className="main-content">
           <div className="section-heading">
             <div>
-              <h2>{t.heading}</h2>
-              <p>{t.choose}</p>
+              <h2>{tr.heading}</h2>
+              <p>{tr.choose}</p>
             </div>
-
-            <span className="section-count">
-              {sections.length} {t.count}
-            </span>
+            <span className="section-count">11 бахш</span>
           </div>
 
-          <div className="search-box">
-            <span>⌕</span>
-
-            <input
-              type="search"
-              placeholder={t.search}
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-            />
-
-            {search && (
+          <div className="menu">
+            {sections.map(([key, icon, title, arabic], index) => (
               <button
-                className="clear-search"
-                onClick={() => setSearch('')}
-                aria-label="Clear search"
+                className="menu-card"
+                key={key}
+                onClick={() => {
+                  setActive({ key, icon, title, arabic })
+                  setPage('section')
+                }}
               >
-                ×
+                <span className="card-number">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span className="card-icon">{icon}</span>
+                <span className="card-text">
+                  <strong>{title}</strong>
+                  <small>{arabic}</small>
+                </span>
+                <span className="card-arrow">‹</span>
               </button>
-            )}
+            ))}
           </div>
 
-          <section className="menu">
-            {filteredSections.length > 0 ? (
-              filteredSections.map(section => (
+          <button className="back-button" onClick={() => setLogin(true)}>
+            🔐 {tr.admin}
+          </button>
+        </section>
+      )}
+
+      {page === 'section' && active && (
+        <section className="content-page">
+          <button className="back-button" onClick={() => setPage('home')}>
+            ← {tr.back}
+          </button>
+          <div className="section-intro">
+            <div className="section-icon">{active.icon}</div>
+            <h2>{active.title}</h2>
+            <p className="arabic-title">{active.arabic}</p>
+            <p>{tr.empty}</p>
+          </div>
+        </section>
+      )}
+
+      {login && !admin && (
+        <section className="content-page">
+          <button className="back-button" onClick={() => setLogin(false)}>
+            ← {tr.back}
+          </button>
+          <div className="section-intro">
+            <h2>🔐 Вуруди админ</h2>
+            <form onSubmit={signIn} className="admin-form">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Парол"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <button className="back-button" disabled={busy}>
+                {busy ? 'Лутфан интизор шавед...' : 'Ворид шудан'}
+              </button>
+            </form>
+            {message && <p className="coming-soon">{message}</p>}
+          </div>
+        </section>
+      )}
+
+      {page === 'admin' && admin && (
+        <section className="content-page">
+          <button className="back-button" onClick={logout}>
+            Баромадан
+          </button>
+
+          <div className="section-heading">
+            <div>
+              <h2>Панели админ</h2>
+              <p>Идоракунии маълумоти Miftahulhadis</p>
+            </div>
+          </div>
+
+          <div className="admin-tabs">
+            {tables.map(item => (
+              <button
+                key={item.name}
+                className="back-button"
+                onClick={() => chooseTable(item.name)}
+              >
+                {item.title}
+              </button>
+            ))}
+          </div>
+
+          <h3>Ҷадвал: {table}</h3>
+          <button
+            className="back-button"
+            onClick={() => {
+              setSelected(null)
+              setJson('{}')
+            }}
+          >
+            + Иловаи сабти нав
+          </button>
+
+          <div className="admin-records">
+            {rows.map((row, index) => (
+              <div className="admin-record" key={row.id || index}>
                 <button
-                  className="menu-card"
-                  key={section.id}
-                  onClick={() => openSection(section)}
+                  className="record-select"
+                  onClick={() => chooseRow(row)}
                 >
-                  <span className="card-number">
-                    {String(section.id).padStart(2, '0')}
-                  </span>
-
-                  <span className="card-icon">
-                    {section.icon}
-                  </span>
-
-                  <span className="card-text">
-                    <strong>{section.title}</strong>
-                    <small>{section.subtitle}</small>
-                  </span>
-
-                  <span className="card-arrow">‹</span>
+                  {row.name || row.title || row.hadith_number || row.id || `Сабт ${index + 1}`}
                 </button>
-              ))
-            ) : (
-              <div className="empty-result">
-                <span>🔎</span>
-                <p>{t.empty}</p>
+                <button
+                  className="delete-button"
+                  onClick={() => deleteRow(row)}
+                >
+                  Нест кардан
+                </button>
               </div>
-            )}
-          </section>
+            ))}
+            {!rows.length && <p>Дар ин ҷадвал ҳоло сабт нест.</p>}
+          </div>
+
+          <h3>{selected ? 'Таҳрири сабт' : 'Сабти нав'}</h3>
+          <p>Маълумотро дар формати JSON ворид кун:</p>
+          <textarea
+            className="admin-json"
+            value={json}
+            onChange={e => setJson(e.target.value)}
+            rows={12}
+            spellCheck="false"
+          />
+          <button
+            className="back-button"
+            onClick={saveRow}
+            disabled={busy}
+          >
+            {busy ? 'Нигоҳ дошта истодааст...' : '💾 Нигоҳ доштан'}
+          </button>
+
+          {message && <p className="coming-soon">{message}</p>}
         </section>
       )}
 
       <footer className="footer">
         <div className="footer-brand">Miftahulhadis</div>
-        <p>{t.footer}</p>
-        <small>
-          © {new Date().getFullYear()} Miftahulhadis
-        </small>
+        <p>Манбаи дониш ва омӯзиши исломӣ</p>
+        <small>© {new Date().getFullYear()} Miftahulhadis</small>
       </footer>
     </main>
   )
