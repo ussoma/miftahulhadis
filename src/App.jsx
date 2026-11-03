@@ -4,11 +4,17 @@ import './index.css'
 
 const URL = String(import.meta.env.VITE_SUPABASE_URL || '').trim()
 const KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
-const db = URL && KEY ? createClient(URL, KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-}) : null
 
-// ҲАМАИ 11 БАХШ — тартиб ва slug-ҳо як ҷо муайян шудаанд.
+const db = URL && KEY
+  ? createClient(URL, KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    })
+  : null
+
 const SECTIONS = [
   { slug: 'quran', icon: '📖', tg: 'Қуръони Карим', ru: 'Священный Коран', ar: 'القرآن الكريم' },
   { slug: 'hadith', icon: '📚', tg: 'Ҳадисҳо', ru: 'Хадисы', ar: 'الأحاديث' },
@@ -25,135 +31,277 @@ const SECTIONS = [
 
 const T = {
   tg: {
-    title: 'Miftahulhadis', welcome: 'Китобхонаи исломӣ',
+    title: 'Miftahulhadis',
+    welcome: 'Китобхонаи исломӣ',
     description: 'Сарчашмаҳои исломӣ барои омӯзиши дониш ва татбиқи он дар зиндагӣ.',
-    sections: 'Бахшҳои исломӣ', search: 'Ҷустуҷӯ дар тамоми бахшҳо...',
-    back: 'Бозгашт', empty: 'Дар ин бахш ҳоло мавод нест.',
-    noResults: 'Натиҷае ёфт нашуд.', admin: 'Панели админ',
-    login: 'Воридшавии админ', email: 'Почтаи электронӣ', password: 'Парол',
-    enter: 'Ворид шудан', logout: 'Баромадан аз ҳисоб', close: 'Пӯшидани панел',
-    hadith: 'Ҳадис', add: 'Илова кардан', edit: 'Таҳрир кардан',
-    delete: 'Нест кардан', save: 'Сабт кардан', cancel: 'Бекор кардан',
-    book: 'Китоб', number: 'Рақами ҳадис', arabic: 'Матни арабӣ',
-    tajik: 'Тарҷумаи тоҷикӣ', source: 'Манбаъ', commentary: 'Шарҳ',
-    titleField: 'Ном ё сарлавҳа', content: 'Матн', russian: 'Тарҷумаи русӣ',
-    published: 'Нашр шудааст', draft: 'Лоиҳа / нашр нашудааст',
-    selectSection: 'Бахшро интихоб кунед', items: 'Мавод',
+    sections: 'Бахшҳои исломӣ',
+    search: 'Ҷустуҷӯ дар тамоми бахшҳо...',
+    back: 'Бозгашт',
+    empty: 'Дар ин бахш ҳоло мавод нест.',
+    noResults: 'Натиҷае ёфт нашуд.',
+    admin: 'Панели админ',
+    login: 'Воридшавии админ',
+    email: 'Почтаи электронӣ',
+    password: 'Парол',
+    enter: 'Ворид шудан',
+    logout: 'Баромадан аз ҳисоб',
+    close: 'Пӯшидани панел',
+    hadith: 'Ҳадис',
+    add: 'Илова кардан',
+    edit: 'Таҳрир кардан',
+    delete: 'Нест кардан',
+    save: 'Сабт кардан',
+    cancel: 'Бекор кардан',
+    book: 'Китоб',
+    number: 'Рақами ҳадис',
+    tajik: 'Матни тоҷикӣ',
+    titleField: 'Ном ё сарлавҳа',
+    content: 'Матн',
+    selectSection: 'Бахшро интихоб кунед',
+    items: 'Мавод',
     confirmDelete: 'Ин маводро нест мекунед?',
     loginError: 'Почта ё парол нодуруст аст ё ин ҳисоб ҳуқуқи админ надорад.',
     loadError: 'Ҳангоми гирифтани маълумот хато рӯй дод.',
-    saveError: 'Сабт нашуд.', saved: 'Маълумот сабт шуд.',
-    searchResults: 'Натиҷаҳои ҷустуҷӯ', theme: 'Тағйир додани намуди зоҳирӣ',
-    language: 'Забон', adminContent: 'Маводи бахшҳо',
-    adminHadith: 'Идораи ҳадисҳо', addHadith: 'Иловаи ҳадис',
-    addContent: 'Иловаи мавод', show: 'Нашр кардан', hide: 'Пинҳон кардан',
+    saveError: 'Сабт нашуд.',
+    saved: 'Маълумот сабт шуд.',
+    searchResults: 'Натиҷаҳои ҷустуҷӯ',
+    theme: 'Намуди зоҳирӣ',
+    language: 'Забон',
+    adminContent: 'Маводи бахшҳо',
+    adminHadith: 'Идораи ҳадисҳо',
+    addHadith: 'Иловаи ҳадис',
+    addContent: 'Иловаи мавод',
+    show: 'Нашр кардан',
+    hide: 'Пинҳон кардан',
     chooseBook: 'Китобро интихоб кунед',
-    hadithSeparate: 'Ҳадисҳо дар ҷадвали алоҳида нигоҳ дошта мешаванд. Барои илова ё таҳрири ҳадис ба бахши «Идораи ҳадисҳо» гузаред.',
+    hadithSeparate: 'Ҳадисҳо дар ҷадвали алоҳида нигоҳ дошта мешаванд.',
     quranInfo: 'Маводи Қуръонро дар ҳамин бахш илова кунед.',
-    configError: 'Пайвасти Supabase танзим нашудааст.'
+    configError: 'Пайвасти Supabase танзим нашудааст.',
+    light: 'Сафед',
+    green: 'Сабз',
+    dark: 'Торик',
+    sound: 'Овози тугмаҳо',
+    settings: 'Танзимот',
+    on: 'Фаъол',
+    off: 'Хомӯш',
+    loading: 'Маълумот бор шуда истодааст...',
+    noHadith: 'Дар ин бахш ҳоло ҳадис нест.',
+    hadithRequired: 'Китоб, рақам ва матни тоҷикӣ ҳатмист.',
+    numberError: 'Рақами ҳадис бояд адади мусбат бошад.',
+    titleRequired: 'Сарлавҳа ҳатмист.',
+    contentRequired: 'Матнро ворид кунед.'
   },
   ru: {
-    title: 'Miftahulhadis', welcome: 'Исламская библиотека',
+    title: 'Miftahulhadis',
+    welcome: 'Исламская библиотека',
     description: 'Исламские источники для изучения знаний и применения их в жизни.',
-    sections: 'Исламские разделы', search: 'Поиск по всем разделам...',
-    back: 'Назад', empty: 'В этом разделе пока нет материалов.',
-    noResults: 'Ничего не найдено.', admin: 'Панель администратора',
-    login: 'Вход администратора', email: 'Электронная почта', password: 'Пароль',
-    enter: 'Войти', logout: 'Выйти из аккаунта', close: 'Закрыть панель',
-    hadith: 'Хадис', add: 'Добавить', edit: 'Редактировать',
-    delete: 'Удалить', save: 'Сохранить', cancel: 'Отмена',
-    book: 'Книга', number: 'Номер хадиса', arabic: 'Арабский текст',
-    tajik: 'Таджикский перевод', source: 'Источник', commentary: 'Комментарий',
-    titleField: 'Название или заголовок', content: 'Текст', russian: 'Русский перевод',
-    published: 'Опубликовано', draft: 'Черновик / не опубликовано',
-    selectSection: 'Выберите раздел', items: 'Материалы',
+    sections: 'Исламские разделы',
+    search: 'Поиск по всем разделам...',
+    back: 'Назад',
+    empty: 'В этом разделе пока нет материалов.',
+    noResults: 'Ничего не найдено.',
+    admin: 'Панель администратора',
+    login: 'Вход администратора',
+    email: 'Электронная почта',
+    password: 'Пароль',
+    enter: 'Войти',
+    logout: 'Выйти из аккаунта',
+    close: 'Закрыть панель',
+    hadith: 'Хадис',
+    add: 'Добавить',
+    edit: 'Редактировать',
+    delete: 'Удалить',
+    save: 'Сохранить',
+    cancel: 'Отмена',
+    book: 'Книга',
+    number: 'Номер хадиса',
+    tajik: 'Основной текст',
+    titleField: 'Название или заголовок',
+    content: 'Текст',
+    selectSection: 'Выберите раздел',
+    items: 'Материалы',
     confirmDelete: 'Удалить этот материал?',
     loginError: 'Неверная почта или пароль либо у аккаунта нет прав администратора.',
-    loadError: 'Не удалось загрузить данные.', saveError: 'Не удалось сохранить.',
-    saved: 'Данные сохранены.', searchResults: 'Результаты поиска',
-    theme: 'Изменить оформление', language: 'Язык',
-    adminContent: 'Материалы разделов', adminHadith: 'Управление хадисами',
-    addHadith: 'Добавить хадис', addContent: 'Добавить материал',
-    show: 'Опубликовать', hide: 'Скрыть', chooseBook: 'Выберите книгу',
-    hadithSeparate: 'Хадисы хранятся отдельно. Для добавления или редактирования перейдите во вкладку управления хадисами.',
+    loadError: 'Не удалось загрузить данные.',
+    saveError: 'Не удалось сохранить.',
+    saved: 'Данные сохранены.',
+    searchResults: 'Результаты поиска',
+    theme: 'Оформление',
+    language: 'Язык',
+    adminContent: 'Материалы разделов',
+    adminHadith: 'Управление хадисами',
+    addHadith: 'Добавить хадис',
+    addContent: 'Добавить материал',
+    show: 'Опубликовать',
+    hide: 'Скрыть',
+    chooseBook: 'Выберите книгу',
+    hadithSeparate: 'Хадисы хранятся в отдельной таблице.',
     quranInfo: 'Материалы Корана добавляйте в этом разделе.',
-    configError: 'Подключение Supabase не настроено.'
+    configError: 'Подключение Supabase не настроено.',
+    light: 'Светлая',
+    green: 'Зелёная',
+    dark: 'Тёмная',
+    sound: 'Звук кнопок',
+    settings: 'Настройки',
+    on: 'Включён',
+    off: 'Выключен',
+    loading: 'Загрузка данных...',
+    noHadith: 'В этом разделе пока нет хадисов.',
+    hadithRequired: 'Книга, номер и основной текст обязательны.',
+    numberError: 'Номер хадиса должен быть положительным числом.',
+    titleRequired: 'Заголовок обязателен.',
+    contentRequired: 'Введите текст.'
   },
   ar: {
-    title: 'Miftahulhadis', welcome: 'المكتبة الإسلامية',
+    title: 'Miftahulhadis',
+    welcome: 'المكتبة الإسلامية',
     description: 'مصادر إسلامية لطلب العلم والعمل به.',
-    sections: 'الأقسام الإسلامية', search: 'البحث في جميع الأقسام...',
-    back: 'رجوع', empty: 'لا توجد مواد في هذا القسم حالياً.',
-    noResults: 'لم يتم العثور على نتائج.', admin: 'لوحة الإدارة',
-    login: 'دخول المسؤول', email: 'البريد الإلكتروني', password: 'كلمة المرور',
-    enter: 'دخول', logout: 'تسجيل الخروج', close: 'إغلاق اللوحة',
-    hadith: 'حديث', add: 'إضافة', edit: 'تعديل', delete: 'حذف',
-    save: 'حفظ', cancel: 'إلغاء', book: 'الكتاب', number: 'رقم الحديث',
-    arabic: 'النص العربي', tajik: 'الترجمة الطاجيكية', source: 'المصدر',
-    commentary: 'الشرح', titleField: 'العنوان', content: 'النص',
-    russian: 'الترجمة الروسية', published: 'منشور', draft: 'مسودة',
-    selectSection: 'اختر القسم', items: 'المواد',
+    sections: 'الأقسام الإسلامية',
+    search: 'البحث في جميع الأقسام...',
+    back: 'رجوع',
+    empty: 'لا توجد مواد في هذا القسم حالياً.',
+    noResults: 'لم يتم العثور على نتائج.',
+    admin: 'لوحة الإدارة',
+    login: 'دخول المسؤول',
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    enter: 'دخول',
+    logout: 'تسجيل الخروج',
+    close: 'إغلاق اللوحة',
+    hadith: 'حديث',
+    add: 'إضافة',
+    edit: 'تعديل',
+    delete: 'حذف',
+    save: 'حفظ',
+    cancel: 'إلغاء',
+    book: 'الكتاب',
+    number: 'رقم الحديث',
+    tajik: 'النص الأساسي',
+    titleField: 'العنوان',
+    content: 'النص',
+    selectSection: 'اختر القسم',
+    items: 'المواد',
     confirmDelete: 'هل تريد حذف هذه المادة؟',
     loginError: 'بيانات الدخول غير صحيحة أو لا توجد صلاحية إدارة.',
-    loadError: 'حدث خطأ أثناء تحميل البيانات.', saveError: 'تعذر الحفظ.',
-    saved: 'تم حفظ البيانات.', searchResults: 'نتائج البحث',
-    theme: 'تغيير المظهر', language: 'اللغة',
-    adminContent: 'مواد الأقسام', adminHadith: 'إدارة الأحاديث',
-    addHadith: 'إضافة حديث', addContent: 'إضافة مادة',
-    show: 'نشر', hide: 'إخفاء', chooseBook: 'اختر الكتاب',
-    hadithSeparate: 'تُحفظ الأحاديث في جدول منفصل. انتقل إلى إدارة الأحاديث.',
+    loadError: 'حدث خطأ أثناء تحميل البيانات.',
+    saveError: 'تعذر الحفظ.',
+    saved: 'تم حفظ البيانات.',
+    searchResults: 'نتائج البحث',
+    theme: 'المظهر',
+    language: 'اللغة',
+    adminContent: 'مواد الأقسام',
+    adminHadith: 'إدارة الأحاديث',
+    addHadith: 'إضافة حديث',
+    addContent: 'إضافة مادة',
+    show: 'نشر',
+    hide: 'إخفاء',
+    chooseBook: 'اختر الكتاب',
+    hadithSeparate: 'تُحفظ الأحاديث في جدول منفصل.',
     quranInfo: 'أضف مواد القرآن في هذا القسم.',
-    configError: 'لم يتم إعداد اتصال Supabase.'
+    configError: 'لم يتم إعداد اتصال Supabase.',
+    light: 'فاتح',
+    green: 'أخضر',
+    dark: 'داكن',
+    sound: 'صوت الأزرار',
+    settings: 'الإعدادات',
+    on: 'مفعل',
+    off: 'متوقف',
+    loading: 'جارٍ تحميل البيانات...',
+    noHadith: 'لا توجد أحاديث في هذا القسم حالياً.',
+    hadithRequired: 'الكتاب والرقم والنص الأساسي مطلوبة.',
+    numberError: 'يجب أن يكون رقم الحديث عدداً موجباً.',
+    titleRequired: 'العنوان مطلوب.',
+    contentRequired: 'أدخل النص.'
   }
 }
 
 const emptyHadith = {
-  book_id: '', hadith_number: '', arabic_text: '', tajik_text: '',
-  source_note: '', commentary: '', is_published: false
+  book_id: '',
+  hadith_number: '',
+  tajik_text: ''
 }
 
 const emptyContent = {
-  section_slug: 'sunnah', title: '', content_text: '', question_text: '',
-  answer_text: '', arabic_text: '', tajik_text: '', russian_text: '',
-  source_note: '', commentary: '', media_url: '', is_published: false,
+  section_slug: 'sunnah',
+  title: '',
+  content_text: '',
+  question_text: '',
+  answer_text: '',
+  arabic_text: '',
+  tajik_text: '',
+  russian_text: '',
+  source_note: '',
+  commentary: '',
+  media_url: '',
+  is_published: true,
   sort_order: 0
 }
 
 const fieldStyle = {
-  display: 'block', marginBottom: 13, fontSize: 13, fontWeight: 700
+  display: 'block',
+  marginBottom: 13,
+  fontSize: 13,
+  fontWeight: 700
 }
+
 const inputStyle = {
-  width: '100%', padding: 12, border: '1px solid #dce7df',
-  borderRadius: 10, fontSize: 14, color: '#183b2b',
-  background: '#fff', marginTop: 5, boxSizing: 'border-box'
+  width: '100%',
+  padding: 12,
+  border: '1px solid var(--border)',
+  borderRadius: 10,
+  fontSize: 14,
+  color: 'var(--text)',
+  background: 'var(--surface)',
+  marginTop: 5,
+  boxSizing: 'border-box'
 }
 
 function App() {
-  const [lang, setLang] = useState('tg')
-  const [theme, setTheme] = useState('white')
+  const [lang, setLang] = useState(() => localStorage.getItem('miftah_lang') || 'tg')
+  const [theme, setTheme] = useState(() => localStorage.getItem('miftah_theme') || 'white')
+  const [sound, setSound] = useState(() => localStorage.getItem('miftah_sound') !== 'false')
+
   const [page, setPage] = useState('home')
   const [selectedSection, setSelectedSection] = useState(null)
+
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
+
   const [admin, setAdmin] = useState(false)
-  const [login, setLogin] = useState(window.location.hash === '#admin')
+  const [login, setLogin] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('info')
   const [loading, setLoading] = useState(false)
+
   const [books, setBooks] = useState([])
   const [hadithRows, setHadithRows] = useState([])
   const [contentRows, setContentRows] = useState([])
+
   const [adminTab, setAdminTab] = useState('content')
   const [editingHadith, setEditingHadith] = useState(null)
   const [editingContent, setEditingContent] = useState(null)
+
   const [hadithForm, setHadithForm] = useState(emptyHadith)
   const [contentForm, setContentForm] = useState(emptyContent)
 
-  const tr = T[lang]
+  const tr = T[lang] || T.tg
   const isRTL = lang === 'ar'
+
+  useEffect(() => {
+    localStorage.setItem('miftah_lang', lang)
+  }, [lang])
+
+  useEffect(() => {
+    localStorage.setItem('miftah_theme', theme)
+  }, [theme])
+
+  useEffect(() => {
+    localStorage.setItem('miftah_sound', String(sound))
+  }, [sound])
 
   const say = (text, type = 'info') => {
     setMessage(text)
@@ -162,16 +310,52 @@ function App() {
 
   const sectionName = (section) => section?.[lang] || section?.tg || ''
 
+  const playClick = () => {
+    if (!sound) return
+
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext
+      if (!AudioContextClass) return
+
+      const audio = new AudioContextClass()
+      const oscillator = audio.createOscillator()
+      const gain = audio.createGain()
+
+      oscillator.type = 'sine'
+      oscillator.frequency.setValueAtTime(650, audio.currentTime)
+      gain.gain.setValueAtTime(0.035, audio.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.045)
+
+      oscillator.connect(gain)
+      gain.connect(audio.destination)
+
+      oscillator.start()
+      oscillator.stop(audio.currentTime + 0.05)
+      oscillator.onended = () => audio.close()
+    } catch {
+      // Овоз дар баъзе браузерҳо дастгирӣ намешавад.
+    }
+  }
+
   const loadPublicData = useCallback(async () => {
     if (!db) return
 
     const [booksRes, hadithRes, contentRes] = await Promise.all([
-      db.from('books').select('id,name,is_active,sort_order')
+      db.from('books')
+        .select('id,name,is_active,sort_order')
         .order('sort_order', { ascending: true }),
-      db.from('hadith').select('*').eq('is_published', true)
-        .order('created_at', { ascending: false }).range(0, 49),
-      db.from('content_items').select('*').eq('is_published', true)
-        .order('sort_order', { ascending: true }).range(0, 99)
+
+      db.from('hadith')
+        .select('*')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .range(0, 49),
+
+      db.from('content_items')
+        .select('*')
+        .eq('is_published', true)
+        .order('sort_order', { ascending: true })
+        .range(0, 99)
     ])
 
     if (booksRes.data) setBooks(booksRes.data)
@@ -185,11 +369,19 @@ function App() {
     setLoading(true)
 
     const [bookRes, hadithRes, contentRes] = await Promise.all([
-      db.from('books').select('*').order('sort_order', { ascending: true }),
-      db.from('hadith').select('*')
-        .order('created_at', { ascending: false }).range(0, 99),
-      db.from('content_items').select('*')
-        .order('sort_order', { ascending: true }).range(0, 199)
+      db.from('books')
+        .select('*')
+        .order('sort_order', { ascending: true }),
+
+      db.from('hadith')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(0, 99),
+
+      db.from('content_items')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .range(0, 199)
     ])
 
     const errors = [bookRes.error, hadithRes.error, contentRes.error].filter(Boolean)
@@ -205,6 +397,43 @@ function App() {
     setLoading(false)
   }, [tr.loadError])
 
+  const verifyAdmin = useCallback(async () => {
+    if (!db) {
+      setAdmin(false)
+      setLogin(true)
+      return false
+    }
+
+    const { data: sessionData, error: sessionError } = await db.auth.getSession()
+
+    if (sessionError || !sessionData?.session?.user) {
+      setAdmin(false)
+      setLogin(true)
+      setPage('home')
+      return false
+    }
+
+    const user = sessionData.session.user
+
+    const { data: profile, error: profileError } = await db
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profileError || profile?.role !== 'admin') {
+      setAdmin(false)
+      setLogin(true)
+      setPage('home')
+      return false
+    }
+
+    setAdmin(true)
+    setLogin(false)
+    setPage('admin')
+    return true
+  }, [])
+
   useEffect(() => {
     loadPublicData()
   }, [loadPublicData])
@@ -214,49 +443,53 @@ function App() {
 
     let alive = true
 
-    const checkAdmin = async (user) => {
-      if (!user) {
-        if (alive) setAdmin(false)
+    const { data: listener } = db.auth.onAuthStateChange((_event, session) => {
+      if (!alive) return
+
+      if (!session?.user) {
+        setAdmin(false)
         return
       }
 
-      const { data, error } = await db.from('profiles')
-        .select('role').eq('id', user.id).maybeSingle()
+      // Сессияи админ худ аз худ панели админро намекушояд.
+      // Панел танҳо ҳангоми кушодани #admin намоён мешавад.
+    })
 
-      if (!alive) return
-
-      if (!error && data?.role === 'admin') {
-        setAdmin(true)
-        setLogin(false)
-        setPage('admin')
+    const handleHashChange = () => {
+      if (window.location.hash === '#admin') {
+        verifyAdmin()
       } else {
-        setAdmin(false)
+        setLogin(false)
+        setPage(current => current === 'admin' ? 'home' : current)
       }
     }
 
-    db.auth.getSession().then(({ data }) => {
-      if (alive && data?.session?.user) checkAdmin(data.session.user)
-    })
+    if (window.location.hash === '#admin') {
+      verifyAdmin()
+    }
 
-    const { data: listener } = db.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) checkAdmin(session.user)
-      else if (alive) setAdmin(false)
-    })
+    window.addEventListener('hashchange', handleHashChange)
 
     return () => {
       alive = false
       listener.subscription.unsubscribe()
+      window.removeEventListener('hashchange', handleHashChange)
     }
-  }, [])
+  }, [verifyAdmin])
 
   useEffect(() => {
-    if (admin) loadAdminData()
-  }, [admin, loadAdminData])
+    if (admin && page === 'admin') {
+      loadAdminData()
+    }
+  }, [admin, page, loadAdminData])
 
   const doLogin = async (event) => {
     event.preventDefault()
 
-    if (!db) return say(tr.configError, 'error')
+    if (!db) {
+      say(tr.configError, 'error')
+      return
+    }
 
     setLoading(true)
     say('')
@@ -267,16 +500,20 @@ function App() {
     })
 
     if (error || !data?.user) {
-      say(`${tr.loginError}${error?.message ? ` (${error.message})` : ''}`, 'error')
+      say(tr.loginError, 'error')
       setLoading(false)
       return
     }
 
     const { data: profile, error: profileError } = await db
-      .from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .maybeSingle()
 
     if (profileError || profile?.role !== 'admin') {
       await db.auth.signOut()
+      setAdmin(false)
       say(tr.loginError, 'error')
       setLoading(false)
       return
@@ -285,6 +522,7 @@ function App() {
     setAdmin(true)
     setLogin(false)
     setPage('admin')
+    setPassword('')
     say('')
     setLoading(false)
   }
@@ -292,16 +530,29 @@ function App() {
   const closeAdmin = () => {
     setPage('home')
     setLogin(false)
+    setSelectedSection(null)
     say('')
+    window.history.replaceState(
+      null,
+      '',
+      window.location.pathname + window.location.search
+    )
   }
 
   const logout = async () => {
     if (db) await db.auth.signOut()
+
     setAdmin(false)
     setLogin(false)
     setPage('home')
+    setPassword('')
     say('')
-    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+
+    window.history.replaceState(
+      null,
+      '',
+      window.location.pathname + window.location.search
+    )
   }
 
   const openSection = (section) => {
@@ -321,26 +572,41 @@ function App() {
     }
 
     setSearching(true)
-    const term = value.trim()
+
+    const term = value.trim().replace(/[%_,]/g, ' ')
 
     const [contentRes, hadithRes] = await Promise.all([
-      db.from('content_items').select('*').eq('is_published', true)
+      db.from('content_items')
+        .select('*')
+        .eq('is_published', true)
         .or(`title.ilike.%${term}%,content_text.ilike.%${term}%,tajik_text.ilike.%${term}%,russian_text.ilike.%${term}%,arabic_text.ilike.%${term}%`)
         .range(0, 49),
-      db.from('hadith').select('*').eq('is_published', true)
+
+      db.from('hadith')
+        .select('*')
+        .eq('is_published', true)
         .or(`tajik_text.ilike.%${term}%,arabic_text.ilike.%${term}%,source_note.ilike.%${term}%`)
         .range(0, 49)
     ])
 
     const found = [
-      ...(hadithRes.data || []).map(item => ({ ...item, resultType: 'hadith' })),
-      ...(contentRes.data || []).map(item => ({ ...item, resultType: 'content' }))
+      ...(hadithRes.data || []).map(item => ({
+        ...item,
+        resultType: 'hadith'
+      })),
+      ...(contentRes.data || []).map(item => ({
+        ...item,
+        resultType: 'content'
+      }))
     ]
 
     setSearchResults(found)
 
     if (contentRes.error || hadithRes.error) {
-      say(`${tr.loadError} ${(contentRes.error || hadithRes.error).message}`, 'error')
+      say(
+        `${tr.loadError} ${(contentRes.error || hadithRes.error).message}`,
+        'error'
+      )
     }
 
     setSearching(false)
@@ -348,6 +614,7 @@ function App() {
 
   const highlight = (text) => {
     const value = String(text || '')
+
     if (!search.trim()) return value
 
     const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -362,16 +629,25 @@ function App() {
   const saveHadith = async (event) => {
     event.preventDefault()
 
-    if (!db) return say(tr.configError, 'error')
+    if (!db) {
+      say(tr.configError, 'error')
+      return
+    }
 
-    if (!hadithForm.book_id || !String(hadithForm.hadith_number).trim() || !hadithForm.tajik_text.trim()) {
-      return say(tr.saveError + ' Китоб, рақам ва тарҷумаи тоҷикӣ ҳатмист.', 'error')
+    if (
+      !hadithForm.book_id ||
+      !String(hadithForm.hadith_number).trim() ||
+      !String(hadithForm.tajik_text).trim()
+    ) {
+      say(tr.hadithRequired, 'error')
+      return
     }
 
     const number = Number(hadithForm.hadith_number)
 
     if (!Number.isInteger(number) || number < 1) {
-      return say('Рақами ҳадис бояд адади мусбат бошад.', 'error')
+      say(tr.numberError, 'error')
+      return
     }
 
     setLoading(true)
@@ -380,11 +656,11 @@ function App() {
     const payload = {
       book_id: hadithForm.book_id,
       hadith_number: number,
-      arabic_text: hadithForm.arabic_text.trim(),
       tajik_text: hadithForm.tajik_text.trim(),
-      source_note: hadithForm.source_note.trim(),
-      commentary: hadithForm.commentary.trim(),
-      is_published: Boolean(hadithForm.is_published),
+      arabic_text: '',
+      source_note: '',
+      commentary: '',
+      is_published: true,
       updated_at: new Date().toISOString()
     }
 
@@ -408,15 +684,32 @@ function App() {
   const saveContent = async (event) => {
     event.preventDefault()
 
-    if (!db) return say(tr.configError, 'error')
+    if (!db) {
+      say(tr.configError, 'error')
+      return
+    }
 
     if (contentForm.section_slug === 'hadith') {
       setAdminTab('hadith')
-      return say(tr.hadithSeparate, 'info')
+      say(tr.hadithSeparate, 'info')
+      return
     }
 
     if (!contentForm.title.trim()) {
-      return say(tr.saveError + ' Сарлавҳа ҳатмист.', 'error')
+      say(tr.titleRequired, 'error')
+      return
+    }
+
+    const mainText = String(
+      contentForm.content_text ||
+      contentForm.tajik_text ||
+      contentForm.answer_text ||
+      ''
+    ).trim()
+
+    if (!mainText) {
+      say(tr.contentRequired, 'error')
+      return
     }
 
     setLoading(true)
@@ -425,16 +718,18 @@ function App() {
     const payload = {
       section_slug: contentForm.section_slug,
       title: contentForm.title.trim(),
-      content_text: contentForm.content_text,
-      question_text: contentForm.question_text,
-      answer_text: contentForm.answer_text,
-      arabic_text: contentForm.arabic_text,
-      tajik_text: contentForm.tajik_text,
-      russian_text: contentForm.russian_text,
-      source_note: contentForm.source_note,
-      commentary: contentForm.commentary,
-      media_url: contentForm.media_url,
-      is_published: Boolean(contentForm.is_published),
+      content_text: mainText,
+      question_text: contentForm.section_slug === 'questions'
+        ? contentForm.title.trim()
+        : '',
+      answer_text: '',
+      arabic_text: '',
+      tajik_text: mainText,
+      russian_text: '',
+      source_note: '',
+      commentary: '',
+      media_url: '',
+      is_published: true,
       sort_order: Number(contentForm.sort_order || 0),
       updated_at: new Date().toISOString()
     }
@@ -460,18 +755,20 @@ function App() {
     setHadithForm({
       book_id: item.book_id || '',
       hadith_number: item.hadith_number ?? '',
-      arabic_text: item.arabic_text || '',
-      tajik_text: item.tajik_text || '',
-      source_note: item.source_note || '',
-      commentary: item.commentary || '',
-      is_published: Boolean(item.is_published)
+      tajik_text: item.tajik_text || ''
     })
+
     setEditingHadith(item.id)
     say('')
   }
 
   const editContent = (item) => {
-    setContentForm({ ...emptyContent, ...item })
+    setContentForm({
+      ...emptyContent,
+      ...item,
+      content_text: item.content_text || item.tajik_text || item.answer_text || ''
+    })
+
     setEditingContent(item.id)
     say('')
   }
@@ -515,33 +812,102 @@ function App() {
     [contentRows, selectedSection]
   )
 
+  const renderSettings = () => (
+    <section className="section-intro settings-panel">
+      <h3>{tr.settings}</h3>
+
+      <label style={fieldStyle}>
+        {tr.language}
+        <select
+          style={inputStyle}
+          value={lang}
+          onChange={event => setLang(event.target.value)}
+        >
+          <option value="tg">Тоҷикӣ</option>
+          <option value="ru">Русский</option>
+          <option value="ar">العربية</option>
+        </select>
+      </label>
+
+      <label style={fieldStyle}>
+        {tr.theme}
+        <select
+          style={inputStyle}
+          value={theme}
+          onChange={event => setTheme(event.target.value)}
+        >
+          <option value="white">{tr.light}</option>
+          <option value="green">{tr.green}</option>
+          <option value="dark">{tr.dark}</option>
+        </select>
+      </label>
+
+      <label className="check-line">
+        <input
+          type="checkbox"
+          checked={sound}
+          onChange={event => setSound(event.target.checked)}
+        />
+        {tr.sound}: {sound ? tr.on : tr.off}
+      </label>
+    </section>
+  )
+
   const renderLogin = () => (
     <main className="content-page login-page">
-      <button className="back-button" onClick={() => {
-        setLogin(false)
-        setPage('home')
-        window.history.replaceState(null, '', window.location.pathname + window.location.search)
-      }}>‹ {tr.back}</button>
+      <button
+        className="back-button"
+        onClick={() => {
+          setLogin(false)
+          setPage('home')
+          say('')
+          window.history.replaceState(
+            null,
+            '',
+            window.location.pathname + window.location.search
+          )
+        }}
+      >
+        ‹ {tr.back}
+      </button>
 
       <form onSubmit={doLogin} className="section-intro admin-form">
         <h2>{tr.login}</h2>
 
-        <label style={fieldStyle}>{tr.email}
-          <input style={inputStyle} type="email" autoComplete="username"
-            value={email} onChange={event => setEmail(event.target.value)} required />
+        <label style={fieldStyle}>
+          {tr.email}
+          <input
+            style={inputStyle}
+            type="email"
+            autoComplete="username"
+            value={email}
+            onChange={event => setEmail(event.target.value)}
+            required
+          />
         </label>
 
-        <label style={fieldStyle}>{tr.password}
-          <input style={inputStyle} type="password" autoComplete="current-password"
-            value={password} onChange={event => setPassword(event.target.value)} required />
+        <label style={fieldStyle}>
+          {tr.password}
+          <input
+            style={inputStyle}
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={event => setPassword(event.target.value)}
+            required
+          />
         </label>
 
-        {message && <p className={`notice ${messageType}`}>{message}</p>}
+        {message && (
+          <p className={`notice ${messageType}`}>{message}</p>
+        )}
 
         <button className="primary-button" disabled={loading}>
           {loading ? '...' : tr.enter}
         </button>
       </form>
+
+      {renderSettings()}
     </main>
   )
 
@@ -549,60 +915,74 @@ function App() {
     <form onSubmit={saveHadith} className="section-intro admin-form">
       <h3>{editingHadith ? tr.edit : tr.addHadith}</h3>
 
-      <label style={fieldStyle}>{tr.book}
-        <select style={inputStyle} value={hadithForm.book_id}
-          onChange={event => setHadithForm({ ...hadithForm, book_id: event.target.value })} required>
+      <label style={fieldStyle}>
+        {tr.book}
+        <select
+          style={inputStyle}
+          value={hadithForm.book_id}
+          onChange={event => setHadithForm({
+            ...hadithForm,
+            book_id: event.target.value
+          })}
+          required
+        >
           <option value="">{tr.chooseBook}</option>
-          {books.filter(book => book.is_active !== false).map(book =>
-            <option value={book.id} key={book.id}>{book.name}</option>
-          )}
+
+          {books
+            .filter(book => book.is_active !== false)
+            .map(book => (
+              <option value={book.id} key={book.id}>
+                {book.name}
+              </option>
+            ))}
         </select>
       </label>
 
-      <label style={fieldStyle}>{tr.number}
-        <input style={inputStyle} type="number" min="1" step="1"
+      <label style={fieldStyle}>
+        {tr.number}
+        <input
+          style={inputStyle}
+          type="number"
+          min="1"
+          step="1"
           value={hadithForm.hadith_number}
-          onChange={event => setHadithForm({ ...hadithForm, hadith_number: event.target.value })}
-          required />
+          onChange={event => setHadithForm({
+            ...hadithForm,
+            hadith_number: event.target.value
+          })}
+          required
+        />
       </label>
 
-      <label style={fieldStyle}>{tr.arabic}
-        <textarea style={{ ...inputStyle, minHeight: 110 }} dir="rtl" className="arabic-field"
-          value={hadithForm.arabic_text}
-          onChange={event => setHadithForm({ ...hadithForm, arabic_text: event.target.value })} />
-      </label>
-
-      <label style={fieldStyle}>{tr.tajik}
-        <textarea style={{ ...inputStyle, minHeight: 130 }}
+      <label style={fieldStyle}>
+        {tr.tajik}
+        <textarea
+          style={{ ...inputStyle, minHeight: 150 }}
           value={hadithForm.tajik_text}
-          onChange={event => setHadithForm({ ...hadithForm, tajik_text: event.target.value })}
-          required />
-      </label>
-
-      <label style={fieldStyle}>{tr.source}
-        <input style={inputStyle} value={hadithForm.source_note}
-          onChange={event => setHadithForm({ ...hadithForm, source_note: event.target.value })} />
-      </label>
-
-      <label style={fieldStyle}>{tr.commentary}
-        <textarea style={{ ...inputStyle, minHeight: 90 }}
-          value={hadithForm.commentary}
-          onChange={event => setHadithForm({ ...hadithForm, commentary: event.target.value })} />
-      </label>
-
-      <label className="check-line">
-        <input type="checkbox" checked={hadithForm.is_published}
-          onChange={event => setHadithForm({ ...hadithForm, is_published: event.target.checked })} />
-        {tr.published}
+          onChange={event => setHadithForm({
+            ...hadithForm,
+            tajik_text: event.target.value
+          })}
+          required
+        />
       </label>
 
       <div className="button-row">
-        <button className="primary-button" disabled={loading}>{tr.save}</button>
-        <button type="button" className="secondary-button" onClick={() => {
-          setHadithForm(emptyHadith)
-          setEditingHadith(null)
-          say('')
-        }}>{tr.cancel}</button>
+        <button className="primary-button" disabled={loading}>
+          {loading ? '...' : tr.save}
+        </button>
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => {
+            setHadithForm(emptyHadith)
+            setEditingHadith(null)
+            say('')
+          }}
+        >
+          {tr.cancel}
+        </button>
       </div>
     </form>
   )
@@ -611,20 +991,35 @@ function App() {
     <form onSubmit={saveContent} className="section-intro admin-form">
       <h3>{editingContent ? tr.edit : tr.addContent}</h3>
 
-      <label style={fieldStyle}>{tr.selectSection}
-        <select style={inputStyle} value={contentForm.section_slug}
-          onChange={event => setContentForm({ ...contentForm, section_slug: event.target.value })}>
-          {SECTIONS.map(section =>
-            <option value={section.slug} key={section.slug}>{sectionName(section)}</option>
-          )}
+      <label style={fieldStyle}>
+        {tr.selectSection}
+        <select
+          style={inputStyle}
+          value={contentForm.section_slug}
+          onChange={event => setContentForm({
+            ...contentForm,
+            section_slug: event.target.value
+          })}
+        >
+          {SECTIONS.map(section => (
+            <option value={section.slug} key={section.slug}>
+              {sectionName(section)}
+            </option>
+          ))}
         </select>
       </label>
 
       {contentForm.section_slug === 'hadith' && (
         <div className="notice info">
           {tr.hadithSeparate}
-          <button type="button" className="secondary-button inline-action"
-            onClick={() => { setAdminTab('hadith'); setEditingContent(null) }}>
+          <button
+            type="button"
+            className="secondary-button inline-action"
+            onClick={() => {
+              setAdminTab('hadith')
+              setEditingContent(null)
+            }}
+          >
             {tr.adminHadith}
           </button>
         </div>
@@ -634,84 +1029,51 @@ function App() {
         <p className="notice info">{tr.quranInfo}</p>
       )}
 
-      <label style={fieldStyle}>{tr.titleField}
-        <input style={inputStyle} value={contentForm.title}
-          onChange={event => setContentForm({ ...contentForm, title: event.target.value })}
-          required />
+      <label style={fieldStyle}>
+        {tr.titleField}
+        <input
+          style={inputStyle}
+          value={contentForm.title}
+          onChange={event => setContentForm({
+            ...contentForm,
+            title: event.target.value
+          })}
+          required
+        />
       </label>
 
-      {contentForm.section_slug === 'questions' && <>
-        <label style={fieldStyle}>Савол
-          <textarea style={{ ...inputStyle, minHeight: 90 }}
-            value={contentForm.question_text}
-            onChange={event => setContentForm({ ...contentForm, question_text: event.target.value })} />
-        </label>
-        <label style={fieldStyle}>Ҷавоб
-          <textarea style={{ ...inputStyle, minHeight: 120 }}
-            value={contentForm.answer_text}
-            onChange={event => setContentForm({ ...contentForm, answer_text: event.target.value })} />
-        </label>
-      </>}
-
-      <label style={fieldStyle}>{tr.arabic}
-        <textarea style={{ ...inputStyle, minHeight: 100 }} dir="rtl" className="arabic-field"
-          value={contentForm.arabic_text}
-          onChange={event => setContentForm({ ...contentForm, arabic_text: event.target.value })} />
-      </label>
-
-      <label style={fieldStyle}>{tr.tajik}
-        <textarea style={{ ...inputStyle, minHeight: 120 }}
-          value={contentForm.tajik_text}
-          onChange={event => setContentForm({ ...contentForm, tajik_text: event.target.value })} />
-      </label>
-
-      <label style={fieldStyle}>{tr.russian}
-        <textarea style={{ ...inputStyle, minHeight: 100 }}
-          value={contentForm.russian_text}
-          onChange={event => setContentForm({ ...contentForm, russian_text: event.target.value })} />
-      </label>
-
-      <label style={fieldStyle}>{tr.content}
-        <textarea style={{ ...inputStyle, minHeight: 130 }}
+      <label style={fieldStyle}>
+        {tr.content}
+        <textarea
+          style={{ ...inputStyle, minHeight: 170 }}
           value={contentForm.content_text}
-          onChange={event => setContentForm({ ...contentForm, content_text: event.target.value })} />
-      </label>
-
-      <label style={fieldStyle}>{tr.source}
-        <input style={inputStyle} value={contentForm.source_note}
-          onChange={event => setContentForm({ ...contentForm, source_note: event.target.value })} />
-      </label>
-
-      <label style={fieldStyle}>{tr.commentary}
-        <textarea style={{ ...inputStyle, minHeight: 90 }}
-          value={contentForm.commentary}
-          onChange={event => setContentForm({ ...contentForm, commentary: event.target.value })} />
-      </label>
-
-      <label style={fieldStyle}>Суроғаи аудио ё видео (ихтиёрӣ)
-        <input style={inputStyle} type="url" value={contentForm.media_url}
-          onChange={event => setContentForm({ ...contentForm, media_url: event.target.value })} />
-      </label>
-
-      <label style={fieldStyle}>Тартиб
-        <input style={inputStyle} type="number" value={contentForm.sort_order}
-          onChange={event => setContentForm({ ...contentForm, sort_order: event.target.value })} />
-      </label>
-
-      <label className="check-line">
-        <input type="checkbox" checked={contentForm.is_published}
-          onChange={event => setContentForm({ ...contentForm, is_published: event.target.checked })} />
-        {tr.published}
+          onChange={event => setContentForm({
+            ...contentForm,
+            content_text: event.target.value
+          })}
+          required
+        />
       </label>
 
       <div className="button-row">
-        <button className="primary-button"
-          disabled={loading || contentForm.section_slug === 'hadith'}>{tr.save}</button>
-        <button type="button" className="secondary-button" onClick={() => {
-          setContentForm(emptyContent)
-          setEditingContent(null)
-          say('')
-        }}>{tr.cancel}</button>
+        <button
+          className="primary-button"
+          disabled={loading || contentForm.section_slug === 'hadith'}
+        >
+          {loading ? '...' : tr.save}
+        </button>
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => {
+            setContentForm(emptyContent)
+            setEditingContent(null)
+            say('')
+          }}
+        >
+          {tr.cancel}
+        </button>
       </div>
     </form>
   )
@@ -719,83 +1081,172 @@ function App() {
   const renderAdmin = () => (
     <main className="content-page admin-page">
       <div className="section-heading">
-        <div><h2>{tr.admin}</h2><p>Miftahulhadis · 11 бахш</p></div>
-        <button className="secondary-button" onClick={closeAdmin}>{tr.close}</button>
-      </div>
-
-      <div className="button-row admin-tabs">
-        <button className={adminTab === 'content' ? 'primary-button' : 'secondary-button'}
-          onClick={() => { setAdminTab('content'); say('') }}>{tr.adminContent}</button>
-        <button className={adminTab === 'hadith' ? 'primary-button' : 'secondary-button'}
-          onClick={() => { setAdminTab('hadith'); say('') }}>{tr.adminHadith}</button>
-      </div>
-
-      {message && <p className={`notice ${messageType}`}>{message}</p>}
-      {loading && <p className="loading-line">Маълумот бор шуда истодааст...</p>}
-
-      {adminTab === 'content' && <>
-        <div className="button-row">
-          <button className="primary-button" onClick={() => {
-            setContentForm(emptyContent)
-            setEditingContent(null)
-            say('')
-          }}>+ {tr.addContent}</button>
+        <div>
+          <h2>{tr.admin}</h2>
+          <p>Miftahulhadis · 11 бахш</p>
         </div>
 
-        {renderContentForm()}
+        <button className="secondary-button" onClick={closeAdmin}>
+          {tr.close}
+        </button>
+      </div>
 
-        <h3>{tr.items} ({contentRows.length})</h3>
+      {renderSettings()}
 
-        {contentRows.map(item => (
-          <article key={item.id} className="section-intro admin-item">
-            <strong>{item.title || '(Бе сарлавҳа)'}</strong>
-            <p>{sectionName(SECTIONS.find(section => section.slug === item.section_slug)) || item.section_slug}</p>
-            <small>{item.is_published ? tr.published : tr.draft}</small>
-            <div className="button-row">
-              <button className="secondary-button" onClick={() => editContent(item)}>{tr.edit}</button>
-              <button className="secondary-button" onClick={() => togglePublished('content_items', item)}>
-                {item.is_published ? tr.hide : tr.show}
-              </button>
-              <button className="secondary-button danger" onClick={() => deleteItem('content_items', item.id)}>
-                {tr.delete}
-              </button>
-            </div>
-          </article>
-        ))}
-      </>}
+      <div className="button-row admin-tabs">
+        <button
+          className={adminTab === 'content' ? 'primary-button' : 'secondary-button'}
+          onClick={() => {
+            setAdminTab('content')
+            say('')
+          }}
+        >
+          {tr.adminContent}
+        </button>
 
-      {adminTab === 'hadith' && <>
-        {renderHadithForm()}
-        <h3>{tr.items} ({hadithRows.length})</h3>
+        <button
+          className={adminTab === 'hadith' ? 'primary-button' : 'secondary-button'}
+          onClick={() => {
+            setAdminTab('hadith')
+            say('')
+          }}
+        >
+          {tr.adminHadith}
+        </button>
+      </div>
 
-        {hadithRows.map(item => (
-          <article key={item.id} className="section-intro admin-item">
-            <strong>{bookName(item.book_id)} — № {item.hadith_number}</strong>
-            <p>{String(item.tajik_text || '').slice(0, 220)}</p>
-            <small>{item.is_published ? tr.published : tr.draft}</small>
-            <div className="button-row">
-              <button className="secondary-button" onClick={() => editHadith(item)}>{tr.edit}</button>
-              <button className="secondary-button" onClick={() => togglePublished('hadith', item)}>
-                {item.is_published ? tr.hide : tr.show}
-              </button>
-              <button className="secondary-button danger" onClick={() => deleteItem('hadith', item.id)}>
-                {tr.delete}
-              </button>
-            </div>
-          </article>
-        ))}
-      </>}
+      {message && (
+        <p className={`notice ${messageType}`}>{message}</p>
+      )}
 
-      <button className="secondary-button logout-button" onClick={logout}>{tr.logout}</button>
+      {loading && (
+        <p className="loading-line">{tr.loading}</p>
+      )}
+
+      {adminTab === 'content' && (
+        <>
+          <div className="button-row">
+            <button
+              className="primary-button"
+              onClick={() => {
+                setContentForm(emptyContent)
+                setEditingContent(null)
+                say('')
+              }}
+            >
+              + {tr.addContent}
+            </button>
+          </div>
+
+          {renderContentForm()}
+
+          <h3>{tr.items} ({contentRows.length})</h3>
+
+          {contentRows.map(item => (
+            <article key={item.id} className="section-intro admin-item">
+              <strong>{item.title || '(Бе сарлавҳа)'}</strong>
+              <p>
+                {sectionName(
+                  SECTIONS.find(section => section.slug === item.section_slug)
+                ) || item.section_slug}
+              </p>
+
+              <small>
+                {item.is_published ? tr.show : tr.hide}
+              </small>
+
+              <div className="button-row">
+                <button
+                  className="secondary-button"
+                  onClick={() => editContent(item)}
+                >
+                  {tr.edit}
+                </button>
+
+                <button
+                  className="secondary-button"
+                  onClick={() => togglePublished('content_items', item)}
+                >
+                  {item.is_published ? tr.hide : tr.show}
+                </button>
+
+                <button
+                  className="secondary-button danger"
+                  onClick={() => deleteItem('content_items', item.id)}
+                >
+                  {tr.delete}
+                </button>
+              </div>
+            </article>
+          ))}
+        </>
+      )}
+
+      {adminTab === 'hadith' && (
+        <>
+          {renderHadithForm()}
+
+          <h3>{tr.items} ({hadithRows.length})</h3>
+
+          {hadithRows.map(item => (
+            <article key={item.id} className="section-intro admin-item">
+              <strong>
+                {bookName(item.book_id)} — № {item.hadith_number}
+              </strong>
+
+              <p>{String(item.tajik_text || '').slice(0, 220)}</p>
+
+              <small>
+                {item.is_published ? tr.show : tr.hide}
+              </small>
+
+              <div className="button-row">
+                <button
+                  className="secondary-button"
+                  onClick={() => editHadith(item)}
+                >
+                  {tr.edit}
+                </button>
+
+                <button
+                  className="secondary-button"
+                  onClick={() => togglePublished('hadith', item)}
+                >
+                  {item.is_published ? tr.hide : tr.show}
+                </button>
+
+                <button
+                  className="secondary-button danger"
+                  onClick={() => deleteItem('hadith', item.id)}
+                >
+                  {tr.delete}
+                </button>
+              </div>
+            </article>
+          ))}
+        </>
+      )}
+
+      <button
+        className="secondary-button logout-button"
+        onClick={logout}
+      >
+        {tr.logout}
+      </button>
     </main>
   )
 
   const renderSection = () => (
     <main className="content-page">
-      <button className="back-button" onClick={() => {
-        setPage('home')
-        setSelectedSection(null)
-      }}>‹ {tr.back}</button>
+      <button
+        className="back-button"
+        onClick={() => {
+          setPage('home')
+          setSelectedSection(null)
+        }}
+      >
+        ‹ {tr.back}
+      </button>
 
       <div className="section-intro section-title-card">
         <div className="section-icon">{selectedSection?.icon}</div>
@@ -804,21 +1255,62 @@ function App() {
 
       <div className="section-body">
         {selectedSection?.slug === 'hadith' ? (
-          <HadithPublic db={db} lang={lang} books={books} initialRows={hadithRows} />
+          <HadithPublic
+            db={db}
+            lang={lang}
+            books={books}
+            initialRows={hadithRows}
+            tr={tr}
+          />
         ) : selectedContent.length === 0 ? (
-          <div className="empty-result"><span>📚</span><p>{tr.empty}</p></div>
+          <div className="empty-result">
+            <span>📚</span>
+            <p>{tr.empty}</p>
+          </div>
         ) : (
           <div className="menu">
             {selectedContent.map(item => (
-              <article className="section-intro public-item" key={item.id}>
+              <article
+                className="section-intro public-item"
+                key={item.id}
+              >
                 <h3>{item.title}</h3>
-                {item.arabic_text && <p className="arabic-text" dir="rtl">{item.arabic_text}</p>}
-                <p>{lang === 'ru' && item.russian_text
-                  ? item.russian_text
-                  : (item.tajik_text || item.content_text || item.answer_text)}</p>
-                {item.source_note && <small>📚 {item.source_note}</small>}
-                {item.commentary && <p>{item.commentary}</p>}
-                {item.media_url && <p><a href={item.media_url} target="_blank" rel="noreferrer">▶ Кушодани мавод</a></p>}
+
+                {item.arabic_text && (
+                  <p className="arabic-text" dir="rtl">
+                    {item.arabic_text}
+                  </p>
+                )}
+
+                <p>
+                  {lang === 'ru' && item.russian_text
+                    ? item.russian_text
+                    : (
+                      item.tajik_text ||
+                      item.content_text ||
+                      item.answer_text
+                    )}
+                </p>
+
+                {item.source_note && (
+                  <small>📚 {item.source_note}</small>
+                )}
+
+                {item.commentary && (
+                  <p>{item.commentary}</p>
+                )}
+
+                {item.media_url && (
+                  <p>
+                    <a
+                      href={item.media_url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      ▶ Кушодани мавод
+                    </a>
+                  </p>
+                )}
               </article>
             ))}
           </div>
@@ -828,120 +1320,213 @@ function App() {
   )
 
   return (
-    <div className={`app theme-${theme}`} dir={isRTL ? 'rtl' : 'ltr'}>
-      {!login && page !== 'admin' && <>
-        <header className="header">
-          <div className="header-top">
-            <div className="brand-icon">📚</div>
-            <div>
-              <h1>{tr.title}</h1>
-              <p className="arabic-title">مفتاح الحديث</p>
+    <div
+      className={`app theme-${theme}`}
+      dir={isRTL ? 'rtl' : 'ltr'}
+      onClickCapture={event => {
+        if (event.target.closest('button')) playClick()
+      }}
+    >
+      {!login && page !== 'admin' && (
+        <>
+          <header className="header">
+            <div className="header-top">
+              <div className="brand-icon">📚</div>
+
+              <div>
+                <h1>{tr.title}</h1>
+                <p className="arabic-title">مفتاح الحديث</p>
+              </div>
             </div>
-          </div>
 
-          <div className="header-welcome">
-            <span className="welcome-label">MIFTAHULHADIS</span>
-            <h2>{tr.welcome}</h2>
-            <p>{tr.description}</p>
-          </div>
-        </header>
+            <div className="header-welcome">
+              <span className="welcome-label">MIFTAHULHADIS</span>
+              <h2>{tr.welcome}</h2>
+              <p>{tr.description}</p>
+            </div>
+          </header>
 
-        <div className="language-selector">
-          <span>{tr.language}:</span>
-          <select className="language-select" value={lang} onChange={event => setLang(event.target.value)}>
-            <option value="tg">Тоҷикӣ</option>
-            <option value="ru">Русский</option>
-            <option value="ar">العربية</option>
-          </select>
-          <button className="theme-toggle" aria-label={tr.theme}
-            onClick={() => setTheme(theme === 'white' ? 'green' : 'white')}>◐</button>
-        </div>
-      </>}
+          <div className="language-selector">
+            <span>{tr.language}:</span>
+
+            <select
+              className="language-select"
+              value={lang}
+              onChange={event => setLang(event.target.value)}
+            >
+              <option value="tg">Тоҷикӣ</option>
+              <option value="ru">Русский</option>
+              <option value="ar">العربية</option>
+            </select>
+
+            <button
+              className="theme-toggle"
+              aria-label={tr.settings}
+              onClick={() => setPage('settings')}
+            >
+              ⚙
+            </button>
+          </div>
+        </>
+      )}
 
       {login && renderLogin()}
+
+      {page === 'settings' && (
+        <main className="content-page">
+          <button
+            className="back-button"
+            onClick={() => setPage('home')}
+          >
+            ‹ {tr.back}
+          </button>
+
+          {renderSettings()}
+        </main>
+      )}
+
       {page === 'admin' && admin && renderAdmin()}
+
       {page === 'section' && renderSection()}
 
-      {page === 'home' && !login && <>
-        <main className="main-content">
-          {!db && <p className="notice error">{tr.configError}</p>}
-
-          <div className="search-box">
-            <span>⌕</span>
-            <input value={search} onChange={event => runSearch(event.target.value)} placeholder={tr.search} />
-            {search && <button className="clear-search" onClick={() => {
-              setSearch('')
-              setSearchResults([])
-            }}>×</button>}
-          </div>
-
-          {search.trim() ? <>
-            <div className="section-heading">
-              <h2>{tr.searchResults}</h2>
-              <span className="section-count">{searchResults.length}</span>
-            </div>
-            {searching && <p>...</p>}
-            {!searching && searchResults.length === 0 && (
-              <div className="empty-result"><p>{tr.noResults}</p></div>
+      {page === 'home' && !login && (
+        <>
+          <main className="main-content">
+            {!db && (
+              <p className="notice error">{tr.configError}</p>
             )}
-            <div className="menu">
-              {searchResults.map(item => (
-                <article className="section-intro public-item" key={`${item.resultType}-${item.id}`}>
-                  <strong>{item.resultType === 'hadith'
-                    ? `${tr.hadith} № ${item.hadith_number}`
-                    : item.title}</strong>
-                  {item.resultType === 'hadith' && <small>{bookName(item.book_id)}</small>}
-                  {item.arabic_text && <p className="arabic-text" dir="rtl">{highlight(item.arabic_text)}</p>}
-                  <p>{highlight(item.tajik_text || item.content_text || item.question_text || '')}</p>
-                  {item.source_note && <small>{highlight(item.source_note)}</small>}
-                </article>
-              ))}
-            </div>
-          </> : <>
-            <div className="section-heading">
-              <h2>{tr.sections}</h2>
-              <span className="section-count">{SECTIONS.length}</span>
-            </div>
 
-            <div className="menu">
-              {SECTIONS.map((section, index) => (
-                <button className="menu-card" key={section.slug} onClick={() => openSection(section)}>
-                  <span className="card-number">{String(index + 1).padStart(2, '0')}</span>
-                  <span className="card-icon">{section.icon}</span>
-                  <span className="card-text">
-                    <strong>{sectionName(section)}</strong>
-                    <small>{section.ar}</small>
-                  </span>
-                  <span className="card-arrow">›</span>
+            <div className="search-box">
+              <span>⌕</span>
+
+              <input
+                value={search}
+                onChange={event => runSearch(event.target.value)}
+                placeholder={tr.search}
+              />
+
+              {search && (
+                <button
+                  className="clear-search"
+                  onClick={() => {
+                    setSearch('')
+                    setSearchResults([])
+                  }}
+                >
+                  ×
                 </button>
-              ))}
+              )}
             </div>
-          </>}
-        </main>
 
-        <footer className="footer">
-          <div className="footer-brand">Miftahulhadis</div>
-          <p>{tr.description}</p>
-          <small>© Miftahulhadis</small>
-        </footer>
-      </>}
+            {search.trim() ? (
+              <>
+                <div className="section-heading">
+                  <h2>{tr.searchResults}</h2>
+                  <span className="section-count">
+                    {searchResults.length}
+                  </span>
+                </div>
 
-      {page !== 'admin' && !login && (
-        <button className="admin-entry" onClick={() => {
-          setLogin(true)
-          setPage('home')
-          window.history.replaceState(null, '', '#admin')
-        }}>⚙</button>
+                {searching && <p>...</p>}
+
+                {!searching && searchResults.length === 0 && (
+                  <div className="empty-result">
+                    <p>{tr.noResults}</p>
+                  </div>
+                )}
+
+                <div className="menu">
+                  {searchResults.map(item => (
+                    <article
+                      className="section-intro public-item"
+                      key={`${item.resultType}-${item.id}`}
+                    >
+                      <strong>
+                        {item.resultType === 'hadith'
+                          ? `${tr.hadith} № ${item.hadith_number}`
+                          : item.title}
+                      </strong>
+
+                      {item.resultType === 'hadith' && (
+                        <small>{bookName(item.book_id)}</small>
+                      )}
+
+                      {item.arabic_text && (
+                        <p className="arabic-text" dir="rtl">
+                          {highlight(item.arabic_text)}
+                        </p>
+                      )}
+
+                      <p>
+                        {highlight(
+                          item.tajik_text ||
+                          item.content_text ||
+                          item.question_text ||
+                          ''
+                        )}
+                      </p>
+
+                      {item.source_note && (
+                        <small>{highlight(item.source_note)}</small>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="section-heading">
+                  <h2>{tr.sections}</h2>
+                  <span className="section-count">
+                    {SECTIONS.length}
+                  </span>
+                </div>
+
+                <div className="menu">
+                  {SECTIONS.map((section, index) => (
+                    <button
+                      className="menu-card"
+                      key={section.slug}
+                      onClick={() => openSection(section)}
+                    >
+                      <span className="card-number">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+
+                      <span className="card-icon">
+                        {section.icon}
+                      </span>
+
+                      <span className="card-text">
+                        <strong>{sectionName(section)}</strong>
+                        <small>{section.ar}</small>
+                      </span>
+
+                      <span className="card-arrow">›</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </main>
+
+          <footer className="footer">
+            <div className="footer-brand">Miftahulhadis</div>
+            <p>{tr.description}</p>
+            <small>© Miftahulhadis</small>
+          </footer>
+        </>
       )}
     </div>
   )
 }
 
-function HadithPublic({ db, lang, books, initialRows = [] }) {
+function HadithPublic({ db, lang, books, initialRows = [], tr }) {
   const [rows, setRows] = useState(initialRows)
   const [loading, setLoading] = useState(!initialRows.length)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
+
   const PAGE_SIZE = 30
 
   useEffect(() => {
@@ -952,9 +1537,12 @@ function HadithPublic({ db, lang, books, initialRows = [] }) {
     if (!db) return
 
     setLoading(true)
+
     const from = nextPage * PAGE_SIZE
 
-    const { data, error } = await db.from('hadith').select('*')
+    const { data, error } = await db
+      .from('hadith')
+      .select('*')
       .eq('is_published', true)
       .order('created_at', { ascending: false })
       .range(from, from + PAGE_SIZE - 1)
@@ -968,34 +1556,80 @@ function HadithPublic({ db, lang, books, initialRows = [] }) {
     setLoading(false)
   }
 
-  if (loading && !rows.length) return <p className="loading-line">...</p>
-  if (!rows.length) return <div className="empty-result"><p>Дар ин бахш ҳоло ҳадис нест.</p></div>
+  if (loading && !rows.length) {
+    return <p className="loading-line">...</p>
+  }
 
-  return <>
-    <div className="menu">
-      {rows.map(item => {
-        const book = books.find(b => String(b.id) === String(item.book_id))
+  if (!rows.length) {
+    return (
+      <div className="empty-result">
+        <p>{tr?.noHadith || 'Дар ин бахш ҳоло ҳадис нест.'}</p>
+      </div>
+    )
+  }
 
-        return (
-          <article className="section-intro public-item" key={item.id}>
-            <h3>{book?.name || ''} — № {item.hadith_number}</h3>
-            {item.arabic_text && <p className="arabic-text" dir="rtl">{item.arabic_text}</p>}
-            <p>{lang === 'ru' ? (item.russian_text || item.tajik_text) : item.tajik_text}</p>
-            {item.source_note && <small>📚 {item.source_note}</small>}
-            {item.commentary && <p>{item.commentary}</p>}
-          </article>
-        )
-      })}
-    </div>
+  return (
+    <>
+      <div className="menu">
+        {rows.map(item => {
+          const book = books.find(
+            current => String(current.id) === String(item.book_id)
+          )
 
-    <div className="pagination">
-      <button className="secondary-button" disabled={page === 0 || loading}
-        onClick={() => loadPage(page - 1)}>←</button>
-      <span>{page + 1}</span>
-      <button className="secondary-button" disabled={!hasMore || loading}
-        onClick={() => loadPage(page + 1)}>→</button>
-    </div>
-  </>
+          return (
+            <article
+              className="section-intro public-item"
+              key={item.id}
+            >
+              <h3>
+                {book?.name || ''} — № {item.hadith_number}
+              </h3>
+
+              {item.arabic_text && (
+                <p className="arabic-text" dir="rtl">
+                  {item.arabic_text}
+                </p>
+              )}
+
+              <p>
+                {lang === 'ru'
+                  ? (item.russian_text || item.tajik_text)
+                  : item.tajik_text}
+              </p>
+
+              {item.source_note && (
+                <small>📚 {item.source_note}</small>
+              )}
+
+              {item.commentary && (
+                <p>{item.commentary}</p>
+              )}
+            </article>
+          )
+        })}
+      </div>
+
+      <div className="pagination">
+        <button
+          className="secondary-button"
+          disabled={page === 0 || loading}
+          onClick={() => loadPage(page - 1)}
+        >
+          ←
+        </button>
+
+        <span>{page + 1}</span>
+
+        <button
+          className="secondary-button"
+          disabled={!hasMore || loading}
+          onClick={() => loadPage(page + 1)}
+        >
+          →
+        </button>
+      </div>
+    </>
+  )
 }
 
 export default App
