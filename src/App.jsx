@@ -31,11 +31,12 @@ const SECTIONS = [
 
 const T = {
   tg: {
-    title: 'Miftahulhadis',
-    welcome: 'Китобхонаи исломӣ',
+    title: '𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔',
+    welcome: 'Китобхонаи донишҳои исломӣ',
     description: 'Сарчашмаҳои исломӣ барои омӯзиши дониш ва татбиқи он дар зиндагӣ.',
     sections: 'Бахшҳои исломӣ',
     search: 'Ҷустуҷӯ дар тамоми бахшҳо...',
+    searchButton: 'Ҷустуҷӯ',
     back: 'Бозгашт',
     empty: 'Дар ин бахш ҳоло мавод нест.',
     noResults: 'Натиҷае ёфт нашуд.',
@@ -78,9 +79,8 @@ const T = {
     quranInfo: 'Маводи Қуръонро дар ҳамин бахш илова кунед.',
     configError: 'Пайвасти Supabase танзим нашудааст.',
     light: 'Сафед',
-    green: 'Сабз',
-    dark: 'Торик',
-    sound: 'Овози тугмаҳо',
+    green: 'Сабзи торик',
+    sound: 'Садо',
     settings: 'Танзимот',
     on: 'Фаъол',
     off: 'Хомӯш',
@@ -89,14 +89,17 @@ const T = {
     hadithRequired: 'Китоб, рақам ва матни тоҷикӣ ҳатмист.',
     numberError: 'Рақами ҳадис бояд адади мусбат бошад.',
     titleRequired: 'Сарлавҳа ҳатмист.',
-    contentRequired: 'Матнро ворид кунед.'
+    contentRequired: 'Матнро ворид кунед.',
+    hadithTranslation: 'Аз ман бирасонед, ҳарчанд як оят бошад.',
+    library: 'китобхонаи донишҳои исломӣ'
   },
   ru: {
-    title: 'Miftahulhadis',
-    welcome: 'Исламская библиотека',
+    title: '𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔',
+    welcome: 'Библиотека исламских знаний',
     description: 'Исламские источники для изучения знаний и применения их в жизни.',
     sections: 'Исламские разделы',
     search: 'Поиск по всем разделам...',
+    searchButton: 'Искать',
     back: 'Назад',
     empty: 'В этом разделе пока нет материалов.',
     noResults: 'Ничего не найдено.',
@@ -139,9 +142,8 @@ const T = {
     quranInfo: 'Материалы Корана добавляйте в этом разделе.',
     configError: 'Подключение Supabase не настроено.',
     light: 'Светлая',
-    green: 'Зелёная',
-    dark: 'Тёмная',
-    sound: 'Звук кнопок',
+    green: 'Тёмно-зелёная',
+    sound: 'Звук',
     settings: 'Настройки',
     on: 'Включён',
     off: 'Выключен',
@@ -150,14 +152,17 @@ const T = {
     hadithRequired: 'Книга, номер и основной текст обязательны.',
     numberError: 'Номер хадиса должен быть положительным числом.',
     titleRequired: 'Заголовок обязателен.',
-    contentRequired: 'Введите текст.'
+    contentRequired: 'Введите текст.',
+    hadithTranslation: 'Передавайте от меня хотя бы один аят.',
+    library: 'библиотека исламских знаний'
   },
   ar: {
-    title: 'Miftahulhadis',
-    welcome: 'المكتبة الإسلامية',
+    title: '𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔',
+    welcome: 'مكتبة العلوم الإسلامية',
     description: 'مصادر إسلامية لطلب العلم والعمل به.',
     sections: 'الأقسام الإسلامية',
     search: 'البحث في جميع الأقسام...',
+    searchButton: 'بحث',
     back: 'رجوع',
     empty: 'لا توجد مواد في هذا القسم حالياً.',
     noResults: 'لم يتم العثور على نتائج.',
@@ -200,9 +205,8 @@ const T = {
     quranInfo: 'أضف مواد القرآن في هذا القسم.',
     configError: 'لم يتم إعداد اتصال Supabase.',
     light: 'فاتح',
-    green: 'أخضر',
-    dark: 'داكن',
-    sound: 'صوت الأزرار',
+    green: 'أخضر داكن',
+    sound: 'الصوت',
     settings: 'الإعدادات',
     on: 'مفعل',
     off: 'متوقف',
@@ -211,7 +215,9 @@ const T = {
     hadithRequired: 'الكتاب والرقم والنص الأساسي مطلوبة.',
     numberError: 'يجب أن يكون رقم الحديث عدداً موجباً.',
     titleRequired: 'العنوان مطلوب.',
-    contentRequired: 'أدخل النص.'
+    contentRequired: 'أدخل النص.',
+    hadithTranslation: 'بلغوا عني ولو آية.',
+    library: 'مكتبة العلوم الإسلامية'
   }
 }
 
@@ -257,9 +263,20 @@ const inputStyle = {
 }
 
 function App() {
-  const [lang, setLang] = useState(() => localStorage.getItem('miftah_lang') || 'tg')
-  const [theme, setTheme] = useState(() => localStorage.getItem('miftah_theme') || 'white')
-  const [sound, setSound] = useState(() => localStorage.getItem('miftah_sound') !== 'false')
+  const [lang, setLang] = useState(() => {
+    const saved = localStorage.getItem('miftah_lang')
+    return ['tg', 'ru', 'ar'].includes(saved) ? saved : 'tg'
+  })
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('miftah_theme') === 'white'
+      ? 'white'
+      : 'green'
+  })
+
+  const [sound, setSound] = useState(
+    () => localStorage.getItem('miftah_sound') !== 'false'
+  )
 
   const [page, setPage] = useState('home')
   const [selectedSection, setSelectedSection] = useState(null)
@@ -308,7 +325,7 @@ function App() {
     setMessageType(type)
   }
 
-  const sectionName = (section) => section?.[lang] || section?.tg || ''
+  const sectionName = section => section?.[lang] || section?.tg || ''
 
   const playClick = () => {
     if (!sound) return
@@ -333,8 +350,12 @@ function App() {
       oscillator.stop(audio.currentTime + 0.05)
       oscillator.onended = () => audio.close()
     } catch {
-      // Овоз дар баъзе браузерҳо дастгирӣ намешавад.
+      // Садо дар браузер дастгирӣ намешавад.
     }
+  }
+
+  const toggleTheme = () => {
+    setTheme(current => current === 'green' ? 'white' : 'green')
   }
 
   const loadPublicData = useCallback(async () => {
@@ -434,6 +455,11 @@ function App() {
     return true
   }, [])
 
+  const openAdmin = () => {
+    window.location.hash = 'admin'
+    verifyAdmin()
+  }
+
   useEffect(() => {
     loadPublicData()
   }, [loadPublicData])
@@ -448,11 +474,7 @@ function App() {
 
       if (!session?.user) {
         setAdmin(false)
-        return
       }
-
-      // Сессияи админ худ аз худ панели админро намекушояд.
-      // Панел танҳо ҳангоми кушодани #admin намоён мешавад.
     })
 
     const handleHashChange = () => {
@@ -483,7 +505,7 @@ function App() {
     }
   }, [admin, page, loadAdminData])
 
-  const doLogin = async (event) => {
+  const doLogin = async event => {
     event.preventDefault()
 
     if (!db) {
@@ -555,14 +577,14 @@ function App() {
     )
   }
 
-  const openSection = (section) => {
+  const openSection = section => {
     setSelectedSection(section)
     setPage('section')
     setSearch('')
     setSearchResults([])
   }
 
-  const runSearch = async (value) => {
+  const runSearch = async value => {
     setSearch(value)
 
     if (!value.trim() || !db) {
@@ -612,7 +634,12 @@ function App() {
     setSearching(false)
   }
 
-  const highlight = (text) => {
+  const submitSearch = event => {
+    event.preventDefault()
+    runSearch(search)
+  }
+
+  const highlight = text => {
     const value = String(text || '')
 
     if (!search.trim()) return value
@@ -626,7 +653,7 @@ function App() {
     )
   }
 
-  const saveHadith = async (event) => {
+  const saveHadith = async event => {
     event.preventDefault()
 
     if (!db) {
@@ -681,7 +708,7 @@ function App() {
     setLoading(false)
   }
 
-  const saveContent = async (event) => {
+  const saveContent = async event => {
     event.preventDefault()
 
     if (!db) {
@@ -751,7 +778,7 @@ function App() {
     setLoading(false)
   }
 
-  const editHadith = (item) => {
+  const editHadith = item => {
     setHadithForm({
       book_id: item.book_id || '',
       hadith_number: item.hadith_number ?? '',
@@ -762,7 +789,7 @@ function App() {
     say('')
   }
 
-  const editContent = (item) => {
+  const editContent = item => {
     setContentForm({
       ...emptyContent,
       ...item,
@@ -804,7 +831,7 @@ function App() {
     }
   }
 
-  const bookName = (id) =>
+  const bookName = id =>
     books.find(book => String(book.id) === String(id))?.name || ''
 
   const selectedContent = useMemo(
@@ -836,9 +863,8 @@ function App() {
           value={theme}
           onChange={event => setTheme(event.target.value)}
         >
-          <option value="white">{tr.light}</option>
           <option value="green">{tr.green}</option>
-          <option value="dark">{tr.dark}</option>
+          <option value="white">{tr.light}</option>
         </select>
       </label>
 
@@ -1330,39 +1356,133 @@ function App() {
       {!login && page !== 'admin' && (
         <>
           <header className="header">
-            <div className="header-top">
-              <div className="brand-icon">📚</div>
+            <div
+              className="miftah-banner"
+              style={{
+                background: theme === 'green' ? '#102F25' : '#FFFFFF',
+                color: theme === 'green' ? '#F2E8CF' : '#174C37',
+                border: theme === 'green'
+                  ? '1px solid #476B59'
+                  : '1px solid #D9E4DC',
+                borderRadius: 20,
+                padding: '25px 18px 20px',
+                margin: '12px 0 18px',
+                textAlign: 'center',
+                boxShadow: '0 5px 20px rgba(0,0,0,0.08)'
+              }}
+            >
+              <h1
+                style={{
+                  fontFamily: 'Georgia, serif',
+                  fontSize: 'clamp(25px, 7vw, 34px)',
+                  fontWeight: 700,
+                  fontStyle: 'italic',
+                  margin: '0 0 18px',
+                  letterSpacing: '-1px'
+                }}
+              >
+                𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔
+              </h1>
 
-              <div>
-                <h1>{tr.title}</h1>
-                <p className="arabic-title">مفتاح الحديث</p>
-              </div>
-            </div>
+              <div
+                style={{
+                  height: 1,
+                  background: theme === 'green' ? '#476B59' : '#D9E4DC',
+                  marginBottom: 20
+                }}
+              />
 
-            <div className="header-welcome">
-              <span className="welcome-label">MIFTAHULHADIS</span>
-              <h2>{tr.welcome}</h2>
-              <p>{tr.description}</p>
+              <p
+                dir="rtl"
+                style={{
+                  fontFamily: 'serif',
+                  fontSize: 'clamp(24px, 6vw, 31px)',
+                  lineHeight: 1.9,
+                  margin: '0 0 10px',
+                  color: theme === 'green' ? '#FFFFFF' : '#174C37'
+                }}
+              >
+                بَلِّغُوا عَنِّي وَلَوْ آيَةً
+              </p>
+
+              <p
+                style={{
+                  fontSize: 14,
+                  lineHeight: 1.8,
+                  margin: '0 0 8px',
+                  color: theme === 'green' ? '#E4E9E5' : '#34483D'
+                }}
+              >
+                Аз ман бирасонед, ҳарчанд як оят бошад.
+              </p>
+
+              <p
+                style={{
+                  fontSize: 11,
+                  letterSpacing: '1px',
+                  margin: '0 0 18px',
+                  color: theme === 'green' ? '#B7C9BE' : '#718077'
+                }}
+              >
+                {tr.library}
+              </p>
+
+              <div
+                style={{
+                  height: 1,
+                  background: theme === 'green' ? '#476B59' : '#D9E4DC',
+                  marginBottom: 13
+                }}
+              />
+
+              <small
+                style={{
+                  fontSize: 11,
+                  color: theme === 'green' ? '#D8CBAA' : '#66776C'
+                }}
+              >
+                📚 Саҳеҳ ал-Бухорӣ · ҳадиси № 3461
+              </small>
             </div>
           </header>
 
-          <div className="language-selector">
-            <span>{tr.language}:</span>
-
-            <select
-              className="language-select"
-              value={lang}
-              onChange={event => setLang(event.target.value)}
-            >
-              <option value="tg">Тоҷикӣ</option>
-              <option value="ru">Русский</option>
-              <option value="ar">العربية</option>
-            </select>
+          <div className="language-selector app-toolbar">
+            <label>
+              {tr.language}:
+              <select
+                className="language-select"
+                value={lang}
+                onChange={event => setLang(event.target.value)}
+              >
+                <option value="tg">Тоҷикӣ</option>
+                <option value="ru">Русский</option>
+                <option value="ar">العربية</option>
+              </select>
+            </label>
 
             <button
-              className="theme-toggle"
-              aria-label={tr.settings}
+              type="button"
+              className="secondary-button"
+              onClick={() => setSound(current => !current)}
+              title={tr.sound}
+            >
+              {sound ? '🔊' : '🔇'} {tr.sound}
+            </button>
+
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={toggleTheme}
+              title={tr.theme}
+            >
+              {theme === 'green' ? '☀️' : '🌿'} {theme === 'green' ? tr.light : tr.green}
+            </button>
+
+            <button
+              type="button"
+              className="secondary-button"
               onClick={() => setPage('settings')}
+              title={tr.settings}
             >
               ⚙
             </button>
@@ -1396,7 +1516,7 @@ function App() {
               <p className="notice error">{tr.configError}</p>
             )}
 
-            <div className="search-box">
+            <form className="search-box" onSubmit={submitSearch}>
               <span>⌕</span>
 
               <input
@@ -1407,6 +1527,7 @@ function App() {
 
               {search && (
                 <button
+                  type="button"
                   className="clear-search"
                   onClick={() => {
                     setSearch('')
@@ -1416,6 +1537,20 @@ function App() {
                   ×
                 </button>
               )}
+
+              <button type="submit" className="primary-button search-submit">
+                {tr.searchButton}
+              </button>
+            </form>
+
+            <div className="button-row home-admin-row">
+              <button
+                type="button"
+                className="secondary-button admin-open-button"
+                onClick={openAdmin}
+              >
+                🔐 {tr.admin}
+              </button>
             </div>
 
             {search.trim() ? (
@@ -1533,7 +1668,7 @@ function HadithPublic({ db, lang, books, initialRows = [], tr }) {
     setRows(initialRows)
   }, [initialRows])
 
-  const loadPage = async (nextPage) => {
+  const loadPage = async nextPage => {
     if (!db) return
 
     setLoading(true)
