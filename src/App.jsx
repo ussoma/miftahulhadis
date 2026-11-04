@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './index.css'
@@ -505,7 +504,6 @@ function App() {
   })
 
   // Ҳар рӯзи UTC як ҳадиси нашршуда интихоб мешавад.
-  // Ҳамаи дастгоҳҳо бо як рӯйхати ҳадисҳо як натиҷа мегиранд.
   const refreshDaily = useCallback(rows => {
     const published = rows
       .filter(item => item.is_published === true)
@@ -522,34 +520,61 @@ function App() {
     setDailyHadith(published[index])
   }, [])
 
-  // Китобҳои пешфарз танҳо дар ҳолати набудан илова мешаванд.
-  // Китобҳои мавҷуда ва ҳадисҳои онҳо тағйир намеёбанд.
+  // 8 китоби пешфарзро бе такрор месозад.
+  // Китобҳои мавҷударо фаъол мекунад ва китобҳои навро танҳо дар ҳолати набудан илова мекунад.
   const ensureDefaultBooks = async existingBooks => {
-    const existingNames = new Set(
-      existingBooks.map(book => clean(book.name).toLocaleLowerCase())
+    let result = [...existingBooks]
+
+    for (const defaultBook of DEFAULT_BOOKS) {
+      const existing = result.find(book =>
+        clean(book.slug).toLowerCase() === defaultBook.slug.toLowerCase() ||
+        clean(book.name).toLowerCase() === defaultBook.name.toLowerCase()
+      )
+
+      if (existing) {
+        if (
+          existing.is_active === false ||
+          Number(existing.sort_order) !== defaultBook.sort_order
+        ) {
+          const { data, error } = await db
+            .from('hadith_books')
+            .update({
+              is_active: true,
+              sort_order: defaultBook.sort_order
+            })
+            .eq('id', existing.id)
+            .select('*')
+            .maybeSingle()
+
+          if (error) throw error
+
+          if (data) {
+            result = result.map(book =>
+              String(book.id) === String(existing.id) ? data : book
+            )
+          }
+        }
+      } else {
+        const { data, error } = await db
+          .from('hadith_books')
+          .insert({
+            name: defaultBook.name,
+            slug: defaultBook.slug,
+            sort_order: defaultBook.sort_order,
+            is_active: true
+          })
+          .select('*')
+          .single()
+
+        if (error) throw error
+
+        if (data) result.push(data)
+      }
+    }
+
+    return result.sort(
+      (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
     )
-
-    const missingBooks = DEFAULT_BOOKS.filter(
-      book => !existingNames.has(book.name.toLocaleLowerCase())
-    )
-
-    if (!missingBooks.length) return existingBooks
-
-    const payload = missingBooks.map(book => ({
-      name: book.name,
-      slug: book.slug,
-      sort_order: book.sort_order,
-      is_active: true
-    }))
-
-    const { data, error } = await db
-      .from('hadith_books')
-      .insert(payload)
-      .select('*')
-
-    if (error) throw error
-
-    return [...existingBooks, ...(data || [])]
   }
 
   const loadPublicData = useCallback(async () => {
@@ -618,19 +643,13 @@ function App() {
       if (hadithRes.error) throw hadithRes.error
       if (contentRes.error) throw contentRes.error
 
-      let allBooks = booksRes.data || []
-
-      // Илова кардани китобҳои пешфарз, ки ҳоло дар база нестанд.
-      allBooks = await ensureDefaultBooks(allBooks)
-
-      const loadedBooks = allBooks.sort(
-        (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
-      )
+      // Аввал 8 китоби пешфарзро таъмин мекунем.
+      const allBooks = await ensureDefaultBooks(booksRes.data || [])
 
       const loadedHadith = sortByDate(hadithRes.data || [])
       const loadedContent = sortByDate(contentRes.data || [])
 
-      setBooks(loadedBooks)
+      setBooks(allBooks)
       setHadithRows(loadedHadith)
       setContentRows(loadedContent)
       refreshDaily(loadedHadith)
@@ -639,8 +658,11 @@ function App() {
         setSectionRows(sectionsRes.data || [])
 
         if (sectionsRes.data?.length) {
-          setSections(sectionsRes.data.map(normalizeSection)
-            .sort((a, b) => a.sort_order - b.sort_order))
+          setSections(
+            sectionsRes.data
+              .map(normalizeSection)
+              .sort((a, b) => a.sort_order - b.sort_order)
+          )
         }
       }
     } catch (error) {
@@ -1290,6 +1312,7 @@ function App() {
 
     setAdmin(false)
     setPage('home')
+    setSelectedBook(null)
     notify(t.logout)
   }
 
@@ -1700,8 +1723,12 @@ function App() {
         {field(t.icon, sectionForm.icon,
           value => setSectionForm({ ...sectionForm, icon: value }), '📚')}
 
-        {textarea(t.description, sectionForm.description,
-          value => setSectionForm({ ...sectionForm, description: value })}
+        {/* Хатои синтаксис дар ҳамин қисми textarea ислоҳ шуд */}
+        {textarea(
+          t.description,
+          sectionForm.description,
+          value => setSectionForm({ ...sectionForm, description: value })
+        )}
 
         <div className="form-actions">
           <button className="primary-button" type="submit" disabled={saving}>
@@ -1824,10 +1851,13 @@ function App() {
 
               <p>{dailyHadith.tajik_text}</p>
 
-              {dailyHadith.commentary && (
+              {(dailyHadith.commentary || parseStoredNote(dailyHadith.source_note).meta.explanation_tg) && (
                 <div className="explanation">
                   <strong>{t.dailyExplanation}</strong>
-                  <p>{dailyHadith.commentary}</p>
+                  <p>
+                    {dailyHadith.commentary ||
+                      parseStoredNote(dailyHadith.source_note).meta.explanation_tg}
+                  </p>
                 </div>
               )}
 
@@ -1896,24 +1926,33 @@ function App() {
 
               {selectedSection.slug === 'hadith' && !selectedBook ? (
                 <div className="menu">
-                  {books.map(book => (
-                    <button
-                      className="menu-card"
-                      key={book.id}
-                      onClick={() => openBook(book)}
-                    >
-                      <span className="menu-card-icon">📚</span>
+                  {books
+                    .filter(book => book.is_active !== false)
+                    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+                    .map(book => (
+                      <button
+                        className="menu-card"
+                        key={book.id}
+                        onClick={() => openBook(book)}
+                      >
+                        <span className="menu-card-icon">📚</span>
 
-                      <span>
-                        <h3>{book.name}</h3>
-                        <p>{lang === 'ru' ? 'Открыть хадисы этого сборника' : lang === 'ar' ? 'عرض أحاديث هذا الكتاب' : 'Дидани ҳадисҳои ин китоб'}</p>
-                      </span>
+                        <span>
+                          <h3>{book.name}</h3>
+                          <p>
+                            {lang === 'ru'
+                              ? 'Открыть хадисы этого сборника'
+                              : lang === 'ar'
+                                ? 'عرض أحاديث هذا الكتاب'
+                                : 'Дидани ҳадисҳои ин китоб'}
+                          </p>
+                        </span>
 
-                      <span className="menu-arrow">‹</span>
-                    </button>
-                  ))}
+                        <span className="menu-arrow">‹</span>
+                      </button>
+                    ))}
 
-                  {!books.length && (
+                  {!books.some(book => book.is_active !== false) && (
                     <div className="empty-state">{t.noBooks}</div>
                   )}
                 </div>
