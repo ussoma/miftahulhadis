@@ -1,13 +1,12 @@
-
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './index.css'
 
-const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL || '').trim()
-const SUPABASE_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
+const URL = String(import.meta.env.VITE_SUPABASE_URL || '').trim()
+const KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
 
-const db = SUPABASE_URL && SUPABASE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_KEY, {
+const db = URL && KEY
+  ? createClient(URL, KEY, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -16,907 +15,1718 @@ const db = SUPABASE_URL && SUPABASE_KEY
     })
   : null
 
-const SECTIONS = [
-  { slug: 'quran', icon: '📖', tg: 'Қуръони Карим', ru: 'Священный Коран', ar: 'القرآن الكريم' },
-  { slug: 'hadith', icon: '📚', tg: 'Ҳадисҳо', ru: 'Хадисы', ar: 'الأحاديث' },
-  { slug: 'salihin', icon: '📜', tg: 'Суханони Солеҳин', ru: 'Слова праведных', ar: 'أقوال السلف الصالح' },
-  { slug: 'duas', icon: '🤲', tg: 'Дуоҳо', ru: 'Дуа', ar: 'الأدعية' },
-  { slug: 'adhkar', icon: '📿', tg: 'Азкор', ru: 'Азкары', ar: 'الأذكار' },
-  { slug: 'prophets', icon: '🌙', tg: 'Қиссаи Паёмбарон عليهم السلام', ru: 'Истории пророков', ar: 'قصص الأنبياء' },
-  { slug: 'seerah', icon: '🕌', tg: 'Сирати Расулуллоҳ ﷺ', ru: 'Жизнеописание Посланника Аллаха ﷺ', ar: 'سيرة رسول الله ﷺ' },
-  { slug: 'companions', icon: '🤝', tg: 'Сирати саҳоба رضي الله عنهم', ru: 'Жизнеописание сподвижников', ar: 'سيرة الصحابة' },
-  { slug: 'lessons', icon: '🎓', tg: 'Дарсҳои Исломӣ', ru: 'Исламские уроки', ar: 'الدروس الإسلامية' },
-  { slug: 'questions', icon: '❔', tg: 'Саволҳои Исломӣ', ru: 'Исламские вопросы', ar: 'الأسئلة الإسلامية' }
+const DEFAULT_SECTIONS = [
+  { slug: 'quran', title: 'Қуръони Карим', icon: '📗', description: 'Сураҳо ва оятҳои Қуръон', sort_order: 1, is_active: true },
+  { slug: 'hadith', title: 'Ҳадисҳо', icon: '📚', description: 'Ҳадисҳои Расулуллоҳ ﷺ', sort_order: 2, is_active: true },
+  { slug: 'salihin', title: 'Суханони Солеҳин', icon: '🌿', description: 'Суханони уламову солеҳон', sort_order: 3, is_active: true },
+  { slug: 'prophets', title: 'Қиссаи Паёмбарон عَلَيْهِمُ السَّلَامُ', icon: '🕌', description: 'Қиссаҳои паёмбарон', sort_order: 4, is_active: true },
+  { slug: 'seerah', title: 'Сирати Расулуллоҳ ﷺ', icon: '🌙', description: 'Зиндагии Расулуллоҳ ﷺ', sort_order: 5, is_active: true },
+  { slug: 'companions', title: 'Сирати саҳоба رضي الله عنهم', icon: '⭐', description: 'Зиндагии саҳоба', sort_order: 6, is_active: true },
+  { slug: 'duas', title: 'Дуоҳо', icon: '🤲', description: 'Дуоҳои Қуръонӣ ва набавӣ', sort_order: 7, is_active: true },
+  { slug: 'adhkar', title: 'Азкор', icon: '📿', description: 'Азкори саҳару шом', sort_order: 8, is_active: true },
+  { slug: 'lessons', title: 'Дарсҳои Исломӣ', icon: '🎓', description: 'Дарсҳои фоидабахши исломӣ', sort_order: 9, is_active: true },
+  { slug: 'questions', title: 'Саволҳои Исломӣ', icon: '❔', description: 'Саволу ҷавобҳои исломӣ', sort_order: 10, is_active: true }
 ]
 
-const TEXT = {
+const DEFAULT_BOOKS = [
+  'Саҳеҳи Бухорӣ',
+  'Саҳеҳи Муслим',
+  'Сунани Абу Довуд',
+  'Ҷомеъи Тирмизӣ',
+  'Сунани Насоӣ',
+  'Сунани Ибни Моҷа',
+  'Муваттаи Имом Молик',
+  'Риёзус-Солиҳин'
+]
+
+const LANG = {
   tg: {
-    welcome: 'Китобхонаи донишҳои исломӣ',
-    description: 'Сарчашмаҳои исломӣ барои омӯзиши дониш ва татбиқи он дар зиндагӣ.',
-    sections: 'Бахшҳои исломӣ',
-    search: 'Ҷустуҷӯ дар тамоми бахшҳо...',
-    searchButton: 'Ҷустуҷӯ',
-    back: 'Бозгашт',
-    empty: 'Дар ин бахш ҳоло мавод нест.',
-    noResults: 'Натиҷае ёфт нашуд.',
-    admin: 'Панели админ',
-    login: 'Воридшавии админ',
+    admin: 'Панели идоракунӣ',
+    login: 'Ворид шудан',
+    logout: 'Баромадан',
     email: 'Почтаи электронӣ',
     password: 'Парол',
-    enter: 'Ворид шудан',
-    logout: 'Баромадан',
-    close: 'Бозгашт ба барнома',
-    book: 'Китоб',
-    number: 'Рақами ҳадис',
-    text: 'Матни тоҷикӣ',
-    title: 'Сарлавҳа',
-    content: 'Матн',
-    section: 'Бахш',
+    home: 'Саҳифаи асосӣ',
+    search: 'Ҷустуҷӯ',
+    searchPlaceholder: 'Калима ё ибораро нависед...',
+    daily: 'Ҳадиси рӯз',
+    loading: 'Бор шуда истодааст...',
+    noResults: 'Маълумот ёфт нашуд.',
+    noHadiths: 'Ҳоло ҳадис илова нашудааст.',
+    noContent: 'Дар ин бахш ҳоло мавод нест.',
+    back: 'Бозгашт',
+    save: 'Сабт кардан',
+    cancel: 'Бекор кардан',
     add: 'Илова кардан',
     edit: 'Таҳрир',
     delete: 'Нест кардан',
-    save: 'Сабт кардан',
-    cancel: 'Бекор кардан',
-    chooseBook: 'Китобро интихоб кунед',
-    chooseSection: 'Бахшро интихоб кунед',
-    items: 'Мавод',
-    confirmDelete: 'Ин маводро нест мекунед?',
-    loginError: 'Маълумоти воридшавӣ нодуруст аст ё ҳуқуқи админ надоред.',
-    loadError: 'Ҳангоми гирифтани маълумот хато рӯй дод.',
-    saveError: 'Сабт нашуд.',
-    saved: 'Маълумот сабт шуд.',
-    searchResults: 'Натиҷаҳои ҷустуҷӯ',
-    language: 'Забон',
-    contentTab: 'Маводи бахшҳо',
-    hadithTab: 'Идораи ҳадисҳо',
-    addHadith: 'Иловаи ҳадис',
-    addContent: 'Иловаи мавод',
-    publish: 'Нашр кардан',
     hide: 'Пинҳон кардан',
-    published: 'Нашршуда',
-    unpublished: 'Нашрнашуда',
-    configError: 'Пайвасти Supabase танзим нашудааст.',
-    light: 'Ранги сафед',
-    dark: 'Сабзи торик',
-    sound: 'Садо',
-    loading: 'Бор шуда истодааст...',
-    noHadith: 'Ҳоло ҳадиси нашршуда нест.',
-    hadithRequired: 'Китоб, рақам ва матни ҳадисро пур кунед.',
-    invalidNumber: 'Рақами ҳадис бояд адади мусбат бошад.',
-    daily: 'Ҳадиси рӯз',
+    show: 'Намоён кардан',
+    number: 'Рақами ҳадис',
+    tajik: 'Матни тоҷикӣ',
+    arabic: 'Матни арабӣ',
     source: 'Манбаъ',
-    next: 'Баъдӣ',
-    previous: 'Қаблӣ'
+    explanationTg: 'Шарҳи тоҷикӣ',
+    explanationAr: 'Шарҳи арабӣ',
+    audio: 'Пайванди аудио',
+    video: 'Пайванди видео',
+    title: 'Ном / сарлавҳа',
+    section: 'Бахш',
+    book: 'Китоби ҳадис',
+    newHadith: 'Иловаи ҳадис',
+    editHadith: 'Таҳрири ҳадис',
+    newContent: 'Иловаи маводи нав',
+    editContent: 'Таҳрири мавод',
+    newBook: 'Иловаи китоб',
+    newSection: 'Иловаи бахш',
+    editSection: 'Таҳрири бахш',
+    description: 'Тавсифи бахш',
+    icon: 'Нишонаи бахш',
+    confirm: 'Оё мутмаин ҳастед?',
+    saved: 'Маълумот сабт шуд.',
+    error: 'Хато: ',
+    published: 'Нашршуда',
+    hidden: 'Пинҳон',
+    books: 'Китобҳо',
+    hadiths: 'Ҳадисҳо',
+    contents: 'Маводҳо',
+    sections: 'Бахшҳо',
+    required: 'Ин майдон ҳатмист.',
+    adminOnly: 'Ин бахш танҳо барои мудир дастрас аст.',
+    moveUp: 'Ба боло',
+    moveDown: 'Ба поён'
   },
   ru: {
-    welcome: 'Библиотека исламских знаний',
-    description: 'Исламские источники для изучения знаний и применения их в жизни.',
-    sections: 'Исламские разделы',
-    search: 'Поиск по всем разделам...',
-    searchButton: 'Искать',
-    back: 'Назад',
-    empty: 'В этом разделе пока нет материалов.',
-    noResults: 'Ничего не найдено.',
-    admin: 'Панель администратора',
-    login: 'Вход администратора',
+    admin: 'Панель управления',
+    login: 'Войти',
+    logout: 'Выйти',
     email: 'Электронная почта',
     password: 'Пароль',
-    enter: 'Войти',
-    logout: 'Выйти',
-    close: 'Вернуться в приложение',
-    book: 'Книга',
-    number: 'Номер хадиса',
-    text: 'Текст',
-    title: 'Заголовок',
-    content: 'Содержание',
-    section: 'Раздел',
+    home: 'Главная',
+    search: 'Поиск',
+    searchPlaceholder: 'Введите слово или фразу...',
+    daily: 'Хадис дня',
+    loading: 'Загрузка...',
+    noResults: 'Ничего не найдено.',
+    noHadiths: 'Хадисы пока не добавлены.',
+    noContent: 'В этом разделе пока нет материалов.',
+    back: 'Назад',
+    save: 'Сохранить',
+    cancel: 'Отмена',
     add: 'Добавить',
     edit: 'Изменить',
     delete: 'Удалить',
-    save: 'Сохранить',
-    cancel: 'Отмена',
-    chooseBook: 'Выберите книгу',
-    chooseSection: 'Выберите раздел',
-    items: 'Материалы',
-    confirmDelete: 'Удалить этот материал?',
-    loginError: 'Неверные данные или нет прав администратора.',
-    loadError: 'Ошибка загрузки данных.',
-    saveError: 'Не удалось сохранить.',
-    saved: 'Данные сохранены.',
-    searchResults: 'Результаты поиска',
-    language: 'Язык',
-    contentTab: 'Материалы разделов',
-    hadithTab: 'Управление хадисами',
-    addHadith: 'Добавить хадис',
-    addContent: 'Добавить материал',
-    publish: 'Опубликовать',
     hide: 'Скрыть',
-    published: 'Опубликован',
-    unpublished: 'Не опубликован',
-    configError: 'Подключение Supabase не настроено.',
-    light: 'Светлая тема',
-    dark: 'Тёмно-зелёная тема',
-    sound: 'Звук',
-    loading: 'Загрузка...',
-    noHadith: 'Опубликованных хадисов пока нет.',
-    hadithRequired: 'Заполните книгу, номер и текст хадиса.',
-    invalidNumber: 'Номер хадиса должен быть положительным числом.',
-    daily: 'Хадис дня',
+    show: 'Показать',
+    number: 'Номер хадиса',
+    tajik: 'Таджикский текст',
+    arabic: 'Арабский текст',
     source: 'Источник',
-    next: 'Следующая',
-    previous: 'Предыдущая'
+    explanationTg: 'Объяснение на таджикском',
+    explanationAr: 'Объяснение на арабском',
+    audio: 'Ссылка на аудио',
+    video: 'Ссылка на видео',
+    title: 'Название',
+    section: 'Раздел',
+    book: 'Сборник хадисов',
+    newHadith: 'Добавить хадис',
+    editHadith: 'Изменить хадис',
+    newContent: 'Добавить материал',
+    editContent: 'Изменить материал',
+    newBook: 'Добавить книгу',
+    newSection: 'Добавить раздел',
+    editSection: 'Изменить раздел',
+    description: 'Описание раздела',
+    icon: 'Значок раздела',
+    confirm: 'Вы уверены?',
+    saved: 'Данные сохранены.',
+    error: 'Ошибка: ',
+    published: 'Опубликовано',
+    hidden: 'Скрыто',
+    books: 'Книги',
+    hadiths: 'Хадисы',
+    contents: 'Материалы',
+    sections: 'Разделы',
+    required: 'Это поле обязательно.',
+    adminOnly: 'Доступно только администратору.',
+    moveUp: 'Вверх',
+    moveDown: 'Вниз'
   },
   ar: {
-    welcome: 'مكتبة العلوم الإسلامية',
-    description: 'مصادر إسلامية لطلب العلم والعمل به.',
-    sections: 'الأقسام الإسلامية',
-    search: 'البحث في جميع الأقسام...',
-    searchButton: 'بحث',
-    back: 'رجوع',
-    empty: 'لا توجد مواد في هذا القسم حالياً.',
-    noResults: 'لم يتم العثور على نتائج.',
     admin: 'لوحة الإدارة',
-    login: 'دخول المسؤول',
+    login: 'دخول',
+    logout: 'خروج',
     email: 'البريد الإلكتروني',
     password: 'كلمة المرور',
-    enter: 'دخول',
-    logout: 'تسجيل الخروج',
-    close: 'العودة إلى التطبيق',
-    book: 'الكتاب',
-    number: 'رقم الحديث',
-    text: 'النص',
-    title: 'العنوان',
-    content: 'المحتوى',
-    section: 'القسم',
+    home: 'الرئيسية',
+    search: 'بحث',
+    searchPlaceholder: 'اكتب كلمة أو عبارة...',
+    daily: 'حديث اليوم',
+    loading: 'جار التحميل...',
+    noResults: 'لم يتم العثور على نتائج.',
+    noHadiths: 'لم تتم إضافة أحاديث بعد.',
+    noContent: 'لا توجد مواد في هذا القسم.',
+    back: 'رجوع',
+    save: 'حفظ',
+    cancel: 'إلغاء',
     add: 'إضافة',
     edit: 'تعديل',
     delete: 'حذف',
-    save: 'حفظ',
-    cancel: 'إلغاء',
-    chooseBook: 'اختر الكتاب',
-    chooseSection: 'اختر القسم',
-    items: 'المواد',
-    confirmDelete: 'هل تريد حذف هذه المادة؟',
-    loginError: 'بيانات الدخول غير صحيحة أو لا توجد صلاحية إدارة.',
-    loadError: 'حدث خطأ أثناء تحميل البيانات.',
-    saveError: 'تعذر الحفظ.',
-    saved: 'تم حفظ البيانات.',
-    searchResults: 'نتائج البحث',
-    language: 'اللغة',
-    contentTab: 'مواد الأقسام',
-    hadithTab: 'إدارة الأحاديث',
-    addHadith: 'إضافة حديث',
-    addContent: 'إضافة مادة',
-    publish: 'نشر',
     hide: 'إخفاء',
-    published: 'منشور',
-    unpublished: 'غير منشور',
-    configError: 'لم يتم إعداد اتصال Supabase.',
-    light: 'فاتح',
-    dark: 'أخضر داكن',
-    sound: 'الصوت',
-    loading: 'جارٍ التحميل...',
-    noHadith: 'لا توجد أحاديث منشورة حالياً.',
-    hadithRequired: 'أدخل الكتاب ورقم الحديث والنص.',
-    invalidNumber: 'يجب أن يكون رقم الحديث موجباً.',
-    daily: 'حديث اليوم',
+    show: 'إظهار',
+    number: 'رقم الحديث',
+    tajik: 'النص الطاجيكي',
+    arabic: 'النص العربي',
     source: 'المصدر',
-    next: 'التالي',
-    previous: 'السابق'
+    explanationTg: 'الشرح بالطاجيكية',
+    explanationAr: 'الشرح بالعربية',
+    audio: 'رابط الصوت',
+    video: 'رابط الفيديو',
+    title: 'العنوان',
+    section: 'القسم',
+    book: 'كتاب الحديث',
+    newHadith: 'إضافة حديث',
+    editHadith: 'تعديل الحديث',
+    newContent: 'إضافة مادة',
+    editContent: 'تعديل المادة',
+    newBook: 'إضافة كتاب',
+    newSection: 'إضافة قسم',
+    editSection: 'تعديل القسم',
+    description: 'وصف القسم',
+    icon: 'أيقونة القسم',
+    confirm: 'هل أنت متأكد؟',
+    saved: 'تم الحفظ.',
+    error: 'خطأ: ',
+    published: 'منشور',
+    hidden: 'مخفي',
+    books: 'الكتب',
+    hadiths: 'الأحاديث',
+    contents: 'المواد',
+    sections: 'الأقسام',
+    required: 'هذا الحقل مطلوب.',
+    adminOnly: 'متاح للمسؤول فقط.',
+    moveUp: 'للأعلى',
+    moveDown: 'للأسفل'
   }
 }
 
-const emptyHadith = { book_id: '', hadith_number: '', tajik_text: '' }
-const emptyContent = { section_slug: 'salihin', title: '', content_text: '' }
+const EMPTY_HADITH = {
+  book_id: '',
+  hadith_number: '',
+  tajik_text: '',
+  arabic_text: '',
+  source_note: '',
+  explanation_tg: '',
+  explanation_ar: '',
+  audio_url: '',
+  video_url: ''
+}
+
+const EMPTY_CONTENT = {
+  section_slug: 'salihin',
+  title: '',
+  tajik_text: '',
+  arabic_text: '',
+  explanation_tg: '',
+  explanation_ar: '',
+  source_note: '',
+  audio_url: '',
+  video_url: ''
+}
+
+const META_PREFIX = '__MIFTAH_META_V1__:'
+
+function clean(value) {
+  return String(value ?? '').trim()
+}
+
+function parseStoredNote(value) {
+  const text = String(value || '')
+  if (!text.startsWith(META_PREFIX)) {
+    return { source: text, meta: {} }
+  }
+
+  try {
+    const parsed = JSON.parse(text.slice(META_PREFIX.length))
+    return {
+      source: parsed.source || '',
+      meta: parsed.meta || {}
+    }
+  } catch {
+    return { source: text, meta: {} }
+  }
+}
+
+function makeStoredNote(source, meta) {
+  const hasMeta = Object.values(meta || {}).some(value => clean(value))
+  if (!hasMeta) return clean(source) || null
+
+  return META_PREFIX + JSON.stringify({
+    source: clean(source),
+    meta
+  })
+}
+
+function slugify(value) {
+  return clean(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zа-яё0-9]+/gi, '-')
+    .replace(/^-|-$/g, '') || `section-${Date.now()}`
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function HighlightText({ text, query }) {
+  const value = String(text ?? '')
+  const words = clean(query).split(/\s+/).filter(Boolean)
+
+  if (!words.length || !value) return <>{value}</>
+
+  const expression = new RegExp(
+    `(${words.map(escapeRegExp).join('|')})`,
+    'gi'
+  )
+
+  return (
+    <>
+      {value.split(expression).map((part, index) => {
+        const matched = words.some(
+          word => part.toLowerCase() === word.toLowerCase()
+        )
+        return matched
+          ? <mark className="highlight" key={index}>{part}</mark>
+          : <React.Fragment key={index}>{part}</React.Fragment>
+      })}
+    </>
+  )
+}
+
+function getSectionFields(row) {
+  const keys = Object.keys(row || {})
+  const find = candidates => candidates.find(key => keys.includes(key))
+
+  return {
+    id: find(['id']),
+    slug: find(['slug', 'section_slug', 'code']),
+    title: find(['title', 'name', 'section_name']),
+    description: find(['description', 'details']),
+    icon: find(['icon', 'emoji']),
+    order: find(['sort_order', 'order_index', 'position']),
+    active: find(['is_active', 'is_visible', 'is_published'])
+  }
+}
+
+function normalizeSection(row, index) {
+  const fields = getSectionFields(row)
+  return {
+    ...row,
+    slug: row?.[fields.slug] || `section-${index + 1}`,
+    title: row?.[fields.title] || row?.name || 'Бахш',
+    description: row?.[fields.description] || '',
+    icon: row?.[fields.icon] || '📚',
+    sort_order: Number(row?.[fields.order] ?? index + 1),
+    is_active: fields.active ? row?.[fields.active] !== false : true
+  }
+}
 
 function App() {
-  const [lang, setLang] = useState(() => localStorage.getItem('miftah_lang') || 'tg')
-  const [theme, setTheme] = useState('green')
-  const [sound, setSound] = useState(true)
-
+  const [lang, setLang] = useState('tg')
   const [page, setPage] = useState('home')
   const [selectedSection, setSelectedSection] = useState(null)
 
+  const [sections, setSections] = useState(DEFAULT_SECTIONS)
+  const [sectionRows, setSectionRows] = useState([])
   const [books, setBooks] = useState([])
   const [hadithRows, setHadithRows] = useState([])
   const [contentRows, setContentRows] = useState([])
   const [dailyHadith, setDailyHadith] = useState(null)
 
   const [search, setSearch] = useState('')
-  const [searchResults, setSearchResults] = useState([])
-  const [searching, setSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState(null)
 
   const [admin, setAdmin] = useState(false)
-  const [adminAccess, setAdminAccess] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   const [adminTab, setAdminTab] = useState('hadith')
+  const [hadithForm, setHadithForm] = useState(EMPTY_HADITH)
+  const [contentForm, setContentForm] = useState(EMPTY_CONTENT)
+  const [bookForm, setBookForm] = useState({ name: '' })
+  const [sectionForm, setSectionForm] = useState({
+    slug: '',
+    title: '',
+    description: '',
+    icon: '📚'
+  })
+
   const [editingHadith, setEditingHadith] = useState(null)
   const [editingContent, setEditingContent] = useState(null)
-  const [hadithForm, setHadithForm] = useState(emptyHadith)
-  const [contentForm, setContentForm] = useState(emptyContent)
+  const [editingBook, setEditingBook] = useState(null)
+  const [editingSection, setEditingSection] = useState(null)
 
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
-  const [noticeType, setNoticeType] = useState('info')
+  const [noticeType, setNoticeType] = useState('success')
 
-  const t = TEXT[lang] || TEXT.tg
-  const rtl = lang === 'ar'
+  const t = LANG[lang] || LANG.tg
+  const direction = lang === 'ar' ? 'rtl' : 'ltr'
 
-  const notify = (text, type = 'info') => {
-    setNotice(text)
+  const notify = useCallback((message, type = 'success') => {
+    setNotice(message)
     setNoticeType(type)
-  }
+  }, [])
 
-  useEffect(() => {
-    localStorage.setItem('miftah_lang', lang)
-  }, [lang])
+  const getBookName = useCallback(id => {
+    return books.find(book => String(book.id) === String(id))?.name || ''
+  }, [books])
+
+  const sortByDate = rows => [...rows].sort((a, b) => {
+    return new Date(b.created_at || 0).getTime() -
+      new Date(a.created_at || 0).getTime()
+  })
+
+  const refreshDaily = useCallback(rows => {
+    const published = rows.filter(item => item.is_published !== false)
+      .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+
+    if (!published.length) {
+      setDailyHadith(null)
+      return
+    }
+
+    // Ҳадиси рӯз аз рӯйи рӯзи UTC интихоб мешавад:
+    // дар тамоми дастгоҳҳо барои як рӯз як ҳадис нишон дода мешавад.
+    const dayNumber = Math.floor(Date.now() / 86400000)
+    const index = ((dayNumber % published.length) + published.length) % published.length
+    setDailyHadith(published[index])
+  }, [])
 
   const loadPublicData = useCallback(async () => {
-    if (!db) return
-
-    const [b, h, c] = await Promise.all([
-      db.from('books').select('*').order('sort_order', { ascending: true }),
-      db.from('hadith').select('*').eq('is_published', true)
-        .order('created_at', { ascending: false }).range(0, 99),
-      db.from('content_items').select('*').eq('is_published', true)
-        .order('sort_order', { ascending: true }).range(0, 199)
-    ])
-
-    if (b.data) setBooks(b.data)
-    if (h.data) setHadithRows(h.data)
-    if (c.data) setContentRows(c.data)
-
-    const errors = [b.error, h.error, c.error].filter(Boolean)
-    if (errors.length) notify(`${t.loadError} ${errors[0].message}`, 'error')
-
-    // Ҳадиси рӯз танҳо аз ҷадвали hadith гирифта мешавад.
-    const { count } = await db.from('hadith')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_published', true)
-
-    if (count > 0) {
-      const date = new Date()
-      const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
-      const index = [...key].reduce((sum, char) => sum + char.charCodeAt(0), 0) % count
-
-      const { data: daily } = await db.from('hadith')
-        .select('*')
-        .eq('is_published', true)
-        .order('created_at', { ascending: true })
-        .range(index, index)
-
-      setDailyHadith(daily?.[0] || null)
-    } else {
-      setDailyHadith(null)
+    if (!db) {
+      setLoading(false)
+      notify('Маълумоти Supabase дар Vercel танзим нашудааст.', 'error')
+      return
     }
-  }, [t.loadError])
 
-  const loadAdminData = useCallback(async () => {
-    if (!db) return
     setLoading(true)
 
-    const [b, h, c] = await Promise.all([
-      db.from('books').select('*').order('sort_order', { ascending: true }),
-      db.from('hadith').select('*').order('created_at', { ascending: false }).range(0, 499),
-      db.from('content_items').select('*').order('sort_order', { ascending: true }).range(0, 499)
-    ])
+    try {
+      const [booksRes, hadithRes, contentRes, sectionsRes] = await Promise.all([
+        db.from('hadith_books').select('*'),
+        db.from('hadith').select('*').eq('is_published', true),
+        db.from('content_items').select('*').eq('is_published', true),
+        db.from('sections').select('*')
+      ])
 
-    if (b.data) setBooks(b.data)
-    if (h.data) setHadithRows(h.data)
-    if (c.data) setContentRows(c.data)
+      if (booksRes.error) throw booksRes.error
+      if (hadithRes.error) throw hadithRes.error
+      if (contentRes.error) throw contentRes.error
 
-    const errors = [b.error, h.error, c.error].filter(Boolean)
-    if (errors.length) notify(`${t.loadError} ${errors[0].message}`, 'error')
+      const loadedBooks = (booksRes.data || [])
+        .filter(item => item.is_active !== false)
+        .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
 
-    setLoading(false)
-  }, [t.loadError])
+      const loadedHadith = sortByDate(hadithRes.data || [])
+      const loadedContent = sortByDate(contentRes.data || [])
 
-  const checkAdmin = useCallback(async () => {
-    if (!db) return false
+      setBooks(loadedBooks)
+      setHadithRows(loadedHadith)
+      setContentRows(loadedContent)
+      refreshDaily(loadedHadith)
 
-    const { data: session } = await db.auth.getSession()
-    if (!session?.session?.user) {
-      setAdmin(false)
-      setAdminAccess(false)
-      return false
+      if (!sectionsRes.error && sectionsRes.data?.length) {
+        const normalized = sectionsRes.data
+          .map(normalizeSection)
+          .filter(item => item.is_active)
+          .sort((a, b) => a.sort_order - b.sort_order)
+
+        setSections(normalized.length ? normalized : DEFAULT_SECTIONS)
+      } else {
+        setSections(DEFAULT_SECTIONS)
+      }
+    } catch (error) {
+      console.error('Public data error:', error)
+      notify(t.error + (error.message || 'Хатои боркунӣ'), 'error')
+    } finally {
+      setLoading(false)
     }
+  }, [notify, refreshDaily, t.error])
 
-    const { data: profile } = await db.from('profiles')
-      .select('role')
-      .eq('id', session.session.user.id)
-      .maybeSingle()
+  const loadAdminData = useCallback(async () => {
+    if (!db || !admin) return
 
-    const allowed = profile?.role === 'admin'
-    setAdminAccess(allowed)
-    setAdmin(allowed)
-    return allowed
-  }, [])
+    try {
+      const [booksRes, hadithRes, contentRes, sectionsRes] = await Promise.all([
+        db.from('hadith_books').select('*'),
+        db.from('hadith').select('*'),
+        db.from('content_items').select('*'),
+        db.from('sections').select('*')
+      ])
+
+      if (booksRes.error) throw booksRes.error
+      if (hadithRes.error) throw hadithRes.error
+      if (contentRes.error) throw contentRes.error
+
+      const loadedBooks = (booksRes.data || []).sort(
+        (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
+      )
+
+      const loadedHadith = sortByDate(hadithRes.data || [])
+      const loadedContent = sortByDate(contentRes.data || [])
+
+      setBooks(loadedBooks)
+      setHadithRows(loadedHadith)
+      setContentRows(loadedContent)
+
+      if (!sectionsRes.error) {
+        setSectionRows(sectionsRes.data || [])
+        if (sectionsRes.data?.length) {
+          setSections(sectionsRes.data.map(normalizeSection)
+            .sort((a, b) => a.sort_order - b.sort_order))
+        }
+      }
+    } catch (error) {
+      console.error('Admin data error:', error)
+      notify(t.error + (error.message || 'Хатои боркунӣ'), 'error')
+    }
+  }, [admin, notify, t.error])
 
   useEffect(() => {
     loadPublicData()
   }, [loadPublicData])
 
   useEffect(() => {
-    if (!db) return
-
-    checkAdmin()
-
-    const { data: listener } = db.auth.onAuthStateChange(() => {
-      Promise.resolve().then(checkAdmin)
-    })
-
-    return () => listener.subscription.unsubscribe()
-  }, [checkAdmin])
+    if (admin) loadAdminData()
+  }, [admin, loadAdminData])
 
   useEffect(() => {
-    if (admin && page === 'admin') loadAdminData()
-  }, [admin, page, loadAdminData])
+    if (!db) return
 
-  const openAdmin = async () => {
-    const allowed = await checkAdmin()
-    if (allowed) {
-      setPage('admin')
-      setLoginOpen(false)
-    } else {
-      setLoginOpen(true)
-    }
-  }
+    let active = true
 
-  const loginAdmin = async event => {
-    event.preventDefault()
-    if (!db) return notify(t.configError, 'error')
+    db.auth.getSession().then(async ({ data, error }) => {
+      if (error || !active) return
+      const user = data?.session?.user
+      if (!user) return
 
-    setLoading(true)
-    const { data, error } = await db.auth.signInWithPassword({
-      email: email.trim(),
-      password
+      const { data: profile, error: profileError } = await db
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (active && !profileError && profile?.role === 'admin') {
+        setAdmin(true)
+      }
     })
 
-    if (error || !data?.user) {
-      notify(t.loginError, 'error')
-      setLoading(false)
-      return
+    const { data: listener } = db.auth.onAuthStateChange(() => {
+      if (active) loadPublicData()
+    })
+
+    return () => {
+      active = false
+      listener?.subscription?.unsubscribe()
     }
+  }, [loadPublicData])
 
-    const { data: profile, error: profileError } = await db.from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .maybeSingle()
-
-    if (profileError || profile?.role !== 'admin') {
-      await db.auth.signOut()
-      notify(t.loginError, 'error')
-      setLoading(false)
-      return
-    }
-
-    setAdmin(true)
-    setAdminAccess(true)
-    setLoginOpen(false)
-    setPage('admin')
-    setPassword('')
-    notify('')
-    setLoading(false)
-  }
-
-  const logout = async () => {
-    if (db) await db.auth.signOut()
-    setAdmin(false)
-    setAdminAccess(false)
-    setPage('home')
-    setLoginOpen(false)
-  }
+  useEffect(() => {
+    const timer = setInterval(() => refreshDaily(hadithRows), 60000)
+    return () => clearInterval(timer)
+  }, [hadithRows, refreshDaily])
 
   const openSection = section => {
     setSelectedSection(section)
     setPage('section')
     setSearch('')
-    setSearchResults([])
+    setSearchResults(null)
   }
 
-  const searchAll = async event => {
-    event?.preventDefault()
-    if (!db || !search.trim()) {
-      setSearchResults([])
+  const goHome = () => {
+    setPage('home')
+    setSelectedSection(null)
+    setSearch('')
+    setSearchResults(null)
+  }
+
+  const performSearch = () => {
+    const query = clean(search)
+    if (!query) {
+      setSearchResults(null)
       return
     }
 
-    setSearching(true)
-    const term = search.trim().replace(/[%_,]/g, ' ')
+    const words = query.toLocaleLowerCase().split(/\s+/).filter(Boolean)
 
-    const [h, c] = await Promise.all([
-      db.from('hadith').select('*').eq('is_published', true)
-        .or(`tajik_text.ilike.%${term}%,arabic_text.ilike.%${term}%,source_note.ilike.%${term}%`)
-        .range(0, 99),
-      db.from('content_items').select('*').eq('is_published', true)
-        .or(`title.ilike.%${term}%,content_text.ilike.%${term}%,tajik_text.ilike.%${term}%,arabic_text.ilike.%${term}%`)
-        .range(0, 99)
-    ])
+    const matches = (fields, item) => {
+      const text = fields.map(value => String(value ?? '')).join(' ')
+        .toLocaleLowerCase()
+      return words.some(word => text.includes(word))
+    }
 
-    setSearchResults([
-      ...(h.data || []).map(item => ({ ...item, resultType: 'hadith' })),
-      ...(c.data || []).map(item => ({ ...item, resultType: 'content' }))
-    ])
+    const hadithMatches = hadithRows.filter(item => {
+      const stored = parseStoredNote(item.source_note)
+      return matches([
+        item.arabic_text,
+        item.tajik_text,
+        item.russian_text,
+        item.hadith_number,
+        getBookName(item.book_id),
+        stored.source,
+        stored.meta.explanation_tg,
+        stored.meta.explanation_ar
+      ], item)
+    }).map(item => ({ ...item, resultType: 'hadith' }))
 
-    if (h.error || c.error) notify(t.loadError, 'error')
-    setSearching(false)
+    const contentMatches = contentRows.filter(item => {
+      const stored = parseStoredNote(item.source_note)
+      return matches([
+        item.title,
+        item.arabic_text,
+        item.tajik_text,
+        item.russian_text,
+        item.content_text,
+        stored.source,
+        stored.meta.explanation_tg,
+        stored.meta.explanation_ar
+      ], item)
+    }).map(item => ({ ...item, resultType: 'content' }))
+
+    setSearchResults([...hadithMatches, ...contentMatches])
+    setPage('search')
+  }
+
+  const resetHadithForm = () => {
+    setHadithForm(EMPTY_HADITH)
+    setEditingHadith(null)
+  }
+
+  const resetContentForm = () => {
+    setContentForm(EMPTY_CONTENT)
+    setEditingContent(null)
+  }
+
+  const resetBookForm = () => {
+    setBookForm({ name: '' })
+    setEditingBook(null)
+  }
+
+  const resetSectionForm = () => {
+    setSectionForm({ slug: '', title: '', description: '', icon: '📚' })
+    setEditingSection(null)
   }
 
   const saveHadith = async event => {
     event.preventDefault()
+    if (!db || !admin || saving) return
 
-    const number = Number(hadithForm.hadith_number)
-    if (!hadithForm.book_id || !hadithForm.tajik_text.trim() ||
-        !Number.isInteger(number) || number < 1) {
-      notify(t.hadithRequired, 'error')
+    if (!clean(hadithForm.hadith_number) || !clean(hadithForm.tajik_text)) {
+      notify('Рақами ҳадис ва матни тоҷикӣ ҳатмӣ мебошанд.', 'error')
       return
     }
 
-    setLoading(true)
-
-    const values = {
-      book_id: hadithForm.book_id,
-      hadith_number: number,
-      tajik_text: hadithForm.tajik_text.trim(),
-      updated_at: new Date().toISOString()
+    if (!hadithForm.book_id) {
+      notify('Лутфан китоби ҳадисро интихоб кунед.', 'error')
+      return
     }
 
-    const result = editingHadith
-      ? await db.from('hadith').update(values).eq('id', editingHadith)
-      : await db.from('hadith').insert({ ...values, is_published: true })
+    setSaving(true)
 
-    if (result.error) {
-      notify(`${t.saveError} ${result.error.message}`, 'error')
-    } else {
-      notify(t.saved, 'success')
-      setHadithForm(emptyHadith)
-      setEditingHadith(null)
+    try {
+      const meta = {
+        explanation_tg: clean(hadithForm.explanation_tg),
+        explanation_ar: clean(hadithForm.explanation_ar),
+        audio_url: clean(hadithForm.audio_url),
+        video_url: clean(hadithForm.video_url)
+      }
+
+      const payload = {
+        book_id: hadithForm.book_id,
+        hadith_number: clean(hadithForm.hadith_number),
+        tajik_text: clean(hadithForm.tajik_text),
+        arabic_text: clean(hadithForm.arabic_text) || null,
+        source_note: makeStoredNote(hadithForm.source_note, meta),
+        is_published: true,
+        updated_at: new Date().toISOString()
+      }
+
+      const result = editingHadith
+        ? await db.from('hadith').update(payload).eq('id', editingHadith)
+        : await db.from('hadith').insert(payload)
+
+      if (result.error) throw result.error
+
+      resetHadithForm()
       await loadAdminData()
       await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      console.error(error)
+      notify(t.error + error.message, 'error')
+    } finally {
+      setSaving(false)
     }
+  }
 
-    setLoading(false)
+  const startEditHadith = item => {
+    const stored = parseStoredNote(item.source_note)
+    setEditingHadith(item.id)
+    setHadithForm({
+      book_id: item.book_id || '',
+      hadith_number: item.hadith_number ?? '',
+      tajik_text: item.tajik_text || '',
+      arabic_text: item.arabic_text || '',
+      source_note: stored.source,
+      explanation_tg: stored.meta.explanation_tg || '',
+      explanation_ar: stored.meta.explanation_ar || '',
+      audio_url: stored.meta.audio_url || '',
+      video_url: stored.meta.video_url || ''
+    })
+    setAdminTab('hadith')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const toggleHadith = async item => {
+    if (!db || !admin) return
+    try {
+      const { error } = await db.from('hadith')
+        .update({
+          is_published: item.is_published === false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', item.id)
+
+      if (error) throw error
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const deleteHadith = async item => {
+    if (!db || !admin || !window.confirm(t.confirm)) return
+    try {
+      const { error } = await db.from('hadith').delete().eq('id', item.id)
+      if (error) throw error
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const saveBook = async event => {
+    event.preventDefault()
+    if (!db || !admin || saving) return
+
+    const name = clean(bookForm.name)
+    if (!name) return notify('Номи китобро навис.', 'error')
+
+    setSaving(true)
+    try {
+      const result = editingBook
+        ? await db.from('hadith_books').update({ name }).eq('id', editingBook)
+        : await db.from('hadith_books').insert({
+            name,
+            is_active: true,
+            sort_order: books.length + 1
+          })
+
+      if (result.error) throw result.error
+      resetBookForm()
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const toggleBook = async book => {
+    if (!db || !admin) return
+    try {
+      const { error } = await db.from('hadith_books')
+        .update({ is_active: book.is_active === false })
+        .eq('id', book.id)
+
+      if (error) throw error
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
   }
 
   const saveContent = async event => {
     event.preventDefault()
+    if (!db || !admin || saving) return
 
-    if (!contentForm.title.trim() || !contentForm.content_text.trim()) {
-      notify(t.content, 'error')
+    if (
+      !clean(contentForm.title) &&
+      !clean(contentForm.tajik_text) &&
+      !clean(contentForm.arabic_text) &&
+      !clean(contentForm.audio_url) &&
+      !clean(contentForm.video_url)
+    ) {
+      notify('Барои мавод ҳадди ақал як матн ё пайванди аудио/видео ворид кунед.', 'error')
       return
     }
 
-    setLoading(true)
+    setSaving(true)
 
-    const values = {
-      section_slug: contentForm.section_slug,
-      title: contentForm.title.trim(),
-      content_text: contentForm.content_text.trim(),
-      tajik_text: contentForm.content_text.trim(),
-      updated_at: new Date().toISOString()
-    }
+    try {
+      const meta = {
+        explanation_tg: clean(contentForm.explanation_tg),
+        explanation_ar: clean(contentForm.explanation_ar),
+        audio_url: clean(contentForm.audio_url),
+        video_url: clean(contentForm.video_url)
+      }
 
-    const result = editingContent
-      ? await db.from('content_items').update(values).eq('id', editingContent)
-      : await db.from('content_items').insert({ ...values, is_published: true })
+      const tajik = clean(contentForm.tajik_text)
+      const arabic = clean(contentForm.arabic_text)
 
-    if (result.error) {
-      notify(`${t.saveError} ${result.error.message}`, 'error')
-    } else {
-      notify(t.saved, 'success')
-      setContentForm(emptyContent)
-      setEditingContent(null)
+      const payload = {
+        section_slug: contentForm.section_slug,
+        title: clean(contentForm.title) || null,
+        tajik_text: tajik || null,
+        arabic_text: arabic || null,
+        content_text: tajik || arabic || null,
+        source_note: makeStoredNote(contentForm.source_note, meta),
+        is_published: true,
+        updated_at: new Date().toISOString()
+      }
+
+      const result = editingContent
+        ? await db.from('content_items').update(payload).eq('id', editingContent)
+        : await db.from('content_items').insert(payload)
+
+      if (result.error) throw result.error
+
+      resetContentForm()
       await loadAdminData()
       await loadPublicData()
-    }
-
-    setLoading(false)
-  }
-
-  const togglePublished = async (table, item) => {
-    const { error } = await db.from(table).update({
-      is_published: !item.is_published
-    }).eq('id', item.id)
-
-    if (error) notify(`${t.saveError} ${error.message}`, 'error')
-    else {
-      notify(t.saved, 'success')
-      await loadAdminData()
-      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      console.error(error)
+      notify(t.error + error.message, 'error')
+    } finally {
+      setSaving(false)
     }
   }
 
-  const removeItem = async (table, id) => {
-    if (!window.confirm(t.confirmDelete)) return
-    const { error } = await db.from(table).delete().eq('id', id)
-
-    if (error) notify(`${t.saveError} ${error.message}`, 'error')
-    else {
-      notify(t.saved, 'success')
-      await loadAdminData()
-      await loadPublicData()
-    }
-  }
-
-  const bookName = id => books.find(book => String(book.id) === String(id))?.name || ''
-
-  const currentContent = contentRows.filter(
-    item => item.section_slug === selectedSection?.slug
-  )
-
-  const openHadithEditor = item => {
-    setHadithForm({
-      book_id: item.book_id || '',
-      hadith_number: item.hadith_number || '',
-      tajik_text: item.tajik_text || ''
-    })
-    setEditingHadith(item.id)
-    setAdminTab('hadith')
-  }
-
-  const openContentEditor = item => {
+  const startEditContent = item => {
+    const stored = parseStoredNote(item.source_note)
+    setEditingContent(item.id)
     setContentForm({
       section_slug: item.section_slug || 'salihin',
       title: item.title || '',
-      content_text: item.content_text || item.tajik_text || ''
+      tajik_text: item.tajik_text || item.content_text || '',
+      arabic_text: item.arabic_text || '',
+      source_note: stored.source,
+      explanation_tg: stored.meta.explanation_tg || '',
+      explanation_ar: stored.meta.explanation_ar || '',
+      audio_url: stored.meta.audio_url || '',
+      video_url: stored.meta.video_url || ''
     })
-    setEditingContent(item.id)
     setAdminTab('content')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const toggleContent = async item => {
+    if (!db || !admin) return
+    try {
+      const { error } = await db.from('content_items')
+        .update({
+          is_published: item.is_published === false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', item.id)
+
+      if (error) throw error
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const deleteContent = async item => {
+    if (!db || !admin || !window.confirm(t.confirm)) return
+    try {
+      const { error } = await db.from('content_items')
+        .delete().eq('id', item.id)
+
+      if (error) throw error
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const saveSection = async event => {
+    event.preventDefault()
+    if (!db || !admin || saving) return
+
+    const title = clean(sectionForm.title)
+    if (!title) return notify('Номи бахшро ворид кунед.', 'error')
+
+    setSaving(true)
+
+    try {
+      const oldRow = editingSection
+        ? sectionRows.find(row => String(row.id) === String(editingSection))
+        : null
+
+      const fields = getSectionFields(oldRow || sectionRows[0] || {})
+      const slug = editingSection
+        ? (oldRow?.[fields.slug] || sectionForm.slug || slugify(title))
+        : slugify(sectionForm.slug || title)
+
+      const payload = {}
+
+      const setField = (field, fallback, value) => {
+        if (field) payload[field] = value
+        else payload[fallback] = value
+      }
+
+      setField(fields.slug, 'slug', slug)
+      setField(fields.title, 'title', title)
+      setField(fields.description, 'description', clean(sectionForm.description))
+      setField(fields.icon, 'icon', clean(sectionForm.icon) || '📚')
+      setField(fields.order, 'sort_order', editingSection
+        ? Number(oldRow?.[fields.order] || 1)
+        : sections.length + 1)
+      setField(fields.active, 'is_active', true)
+
+      const result = editingSection
+        ? await db.from('sections').update(payload).eq('id', editingSection)
+        : await db.from('sections').insert(payload)
+
+      if (result.error) throw result.error
+
+      resetSectionForm()
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(
+        'Сабти бахш нашуд. Сохтори ҷадвали sections метавонад фарқ кунад: ' + error.message,
+        'error'
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const startEditSection = section => {
+    setEditingSection(section.id)
+    setSectionForm({
+      slug: section.slug || '',
+      title: section.title || '',
+      description: section.description || '',
+      icon: section.icon || '📚'
+    })
+    setAdminTab('sections')
+  }
+
+  const toggleSection = async section => {
+    if (!db || !admin) return
+
+    const row = sectionRows.find(item => String(item.id) === String(section.id))
+    if (!row) {
+      notify('Ин бахш ҳоло дар ҷадвали sections сабт нашудааст.', 'error')
+      return
+    }
+
+    const fields = getSectionFields(row)
+    if (!fields.active) {
+      notify('Дар ҷадвали sections сутуни is_active ё is_visible ёфт нашуд.', 'error')
+      return
+    }
+
+    try {
+      const { error } = await db.from('sections')
+        .update({ [fields.active]: row[fields.active] === false })
+        .eq('id', row.id)
+
+      if (error) throw error
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const moveSection = async (section, directionValue) => {
+    if (!db || !admin) return
+
+    const ordered = [...sections].sort((a, b) => a.sort_order - b.sort_order)
+    const index = ordered.findIndex(item => item.slug === section.slug)
+    const nextIndex = index + directionValue
+
+    if (index < 0 || nextIndex < 0 || nextIndex >= ordered.length) return
+
+    const current = ordered[index]
+    const next = ordered[nextIndex]
+    const currentRow = sectionRows.find(row => String(row.id) === String(current.id))
+    const nextRow = sectionRows.find(row => String(row.id) === String(next.id))
+
+    if (!currentRow || !nextRow) {
+      notify('Барои тағйири тартиб бахшҳо бояд дар Supabase сабт шуда бошанд.', 'error')
+      return
+    }
+
+    const currentField = getSectionFields(currentRow).order
+    const nextField = getSectionFields(nextRow).order
+
+    if (!currentField || !nextField) {
+      notify('Сутуни sort_order ёфт нашуд.', 'error')
+      return
+    }
+
+    try {
+      const first = await db.from('sections')
+        .update({ [currentField]: next.sort_order })
+        .eq('id', current.id)
+
+      if (first.error) throw first.error
+
+      const second = await db.from('sections')
+        .update({ [nextField]: current.sort_order })
+        .eq('id', next.id)
+
+      if (second.error) throw second.error
+
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const deleteSection = async section => {
+    if (!db || !admin || !window.confirm(
+      'Бахш нест карда шавад? Маводҳои дохили он нест намешаванд.'
+    )) return
+
+    const row = sectionRows.find(item => String(item.id) === String(section.id))
+    if (!row) {
+      notify('Ин бахш дар ҷадвали sections сабт нашудааст.', 'error')
+      return
+    }
+
+    try {
+      const { error } = await db.from('sections').delete().eq('id', row.id)
+      if (error) throw error
+      await loadAdminData()
+      await loadPublicData()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const login = async event => {
+    event.preventDefault()
+    if (!db) return
+
+    try {
+      const { data, error } = await db.auth.signInWithPassword({
+        email: clean(email),
+        password
+      })
+
+      if (error) throw error
+
+      const userId = data?.user?.id
+      if (!userId) throw new Error('Истифодабаранда ёфт нашуд.')
+
+      const { data: profile, error: profileError } = await db
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle()
+
+      if (profileError) throw profileError
+
+      if (profile?.role !== 'admin') {
+        await db.auth.signOut()
+        throw new Error('Ин ҳисоб ҳуқуқи мудирро надорад.')
+      }
+
+      setAdmin(true)
+      setLoginOpen(false)
+      setPage('admin')
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const logout = async () => {
+    if (db) await db.auth.signOut()
+    setAdmin(false)
+    setPage('home')
+    notify(t.logout)
+  }
+
+  const publicContent = useMemo(() => {
+    if (!selectedSection) return []
+
+    if (selectedSection.slug === 'hadith') {
+      return hadithRows.map(item => ({ ...item, resultType: 'hadith' }))
+    }
+
+    return contentRows
+      .filter(item => item.section_slug === selectedSection.slug)
+      .map(item => ({ ...item, resultType: 'content' }))
+  }, [selectedSection, hadithRows, contentRows])
+
+  const renderMedia = item => {
+    const stored = parseStoredNote(item.source_note)
+    const audio = stored.meta.audio_url
+    const video = stored.meta.video_url
+
+    return (
+      <>
+        {audio && (
+          <div className="media-player">
+            <audio controls preload="none" src={audio}>
+              Браузери шумо аудиоро дастгирӣ намекунад.
+            </audio>
+          </div>
+        )}
+        {video && (
+          <div className="media-player">
+            <video controls preload="metadata" src={video}>
+              Браузери шумо видеоро дастгирӣ намекунад.
+            </video>
+          </div>
+        )}
+      </>
+    )
+  }
+
+  const renderHadithCard = (item, query = '') => {
+    const stored = parseStoredNote(item.source_note)
+
+    return (
+      <article className="public-item" key={`hadith-${item.id}`}>
+        <div className="item-number">
+          {getBookName(item.book_id)}
+          {item.hadith_number ? ` · Ҳадиси № ${item.hadith_number}` : ''}
+        </div>
+
+        {item.arabic_text && (
+          <p className="arabic-text">
+            <HighlightText text={item.arabic_text} query={query} />
+          </p>
+        )}
+
+        {item.tajik_text && (
+          <p>
+            <HighlightText text={item.tajik_text} query={query} />
+          </p>
+        )}
+
+        {stored.meta.explanation_tg && (
+          <div className="explanation">
+            <strong>Шарҳи ҳадис:</strong>
+            <p><HighlightText text={stored.meta.explanation_tg} query={query} /></p>
+          </div>
+        )}
+
+        {stored.meta.explanation_ar && (
+          <div className="explanation" dir="rtl">
+            <strong>شرح الحديث:</strong>
+            <p className="arabic-text">
+              <HighlightText text={stored.meta.explanation_ar} query={query} />
+            </p>
+          </div>
+        )}
+
+        {renderMedia(item)}
+
+        {stored.source && (
+          <div className="source-note">
+            <HighlightText text={stored.source} query={query} />
+          </div>
+        )}
+      </article>
+    )
+  }
+
+  const renderContentCard = (item, query = '') => {
+    const stored = parseStoredNote(item.source_note)
+
+    return (
+      <article className="public-item" key={`content-${item.id}`}>
+        {item.title && (
+          <h3><HighlightText text={item.title} query={query} /></h3>
+        )}
+
+        {item.arabic_text && (
+          <p className="arabic-text">
+            <HighlightText text={item.arabic_text} query={query} />
+          </p>
+        )}
+
+        {(item.tajik_text || item.content_text) && (
+          <p>
+            <HighlightText
+              text={item.tajik_text || item.content_text}
+              query={query}
+            />
+          </p>
+        )}
+
+        {stored.meta.explanation_tg && (
+          <div className="explanation">
+            <strong>Шарҳ:</strong>
+            <p><HighlightText text={stored.meta.explanation_tg} query={query} /></p>
+          </div>
+        )}
+
+        {stored.meta.explanation_ar && (
+          <div className="explanation" dir="rtl">
+            <strong>الشرح:</strong>
+            <p className="arabic-text">
+              <HighlightText text={stored.meta.explanation_ar} query={query} />
+            </p>
+          </div>
+        )}
+
+        {renderMedia(item)}
+
+        {stored.source && (
+          <div className="source-note">
+            <HighlightText text={stored.source} query={query} />
+          </div>
+        )}
+      </article>
+    )
+  }
+
+  const field = (label, value, onChange, placeholder = '', required = false) => (
+    <div className="form-group">
+      <label>{label}{required ? ' *' : ''}</label>
+      <input
+        value={value}
+        onChange={event => onChange(event.target.value)}
+        placeholder={placeholder}
+        required={required}
+      />
+    </div>
+  )
+
+  const textarea = (label, value, onChange, placeholder = '', rtl = false) => (
+    <div className="form-group">
+      <label>{label}</label>
+      <textarea
+        dir={rtl ? 'rtl' : 'auto'}
+        value={value}
+        onChange={event => onChange(event.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  )
+
+  const renderAdminHadith = () => (
+    <>
+      <form className="admin-form" onSubmit={saveHadith}>
+        <h3>{editingHadith ? t.editHadith : t.newHadith}</h3>
+
+        <div className="form-group">
+          <label>{t.book} *</label>
+          <select
+            value={hadithForm.book_id}
+            onChange={event => setHadithForm({ ...hadithForm, book_id: event.target.value })}
+            required
+          >
+            <option value="">Китобро интихоб кунед</option>
+            {books.map(book => (
+              <option value={book.id} key={book.id}>{book.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {field(t.number, hadithForm.hadith_number,
+          value => setHadithForm({ ...hadithForm, hadith_number: value }),
+          'Масалан: 15', true)}
+
+        {textarea(t.tajik, hadithForm.tajik_text,
+          value => setHadithForm({ ...hadithForm, tajik_text: value }),
+          'Тарҷумаи ҳадис...', false)}
+
+        {textarea(t.arabic, hadithForm.arabic_text,
+          value => setHadithForm({ ...hadithForm, arabic_text: value }),
+          'النص العربي...', true)}
+
+        {field(t.source, hadithForm.source_note,
+          value => setHadithForm({ ...hadithForm, source_note: value }))}
+
+        {textarea(t.explanationTg, hadithForm.explanation_tg,
+          value => setHadithForm({ ...hadithForm, explanation_tg: value }))}
+
+        {textarea(t.explanationAr, hadithForm.explanation_ar,
+          value => setHadithForm({ ...hadithForm, explanation_ar: value }),
+          '', true)}
+
+        {field(t.audio, hadithForm.audio_url,
+          value => setHadithForm({ ...hadithForm, audio_url: value }),
+          'https://...')}
+
+        {field(t.video, hadithForm.video_url,
+          value => setHadithForm({ ...hadithForm, video_url: value }),
+          'https://...')}
+
+        <div className="form-actions">
+          <button className="primary-button" type="submit" disabled={saving}>
+            {saving ? t.loading : t.save}
+          </button>
+          {editingHadith && (
+            <button className="secondary-button" type="button" onClick={resetHadithForm}>
+              {t.cancel}
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="admin-list">
+        {hadithRows.map(item => (
+          <div className="admin-item" key={item.id}>
+            <h4>{getBookName(item.book_id)} · № {item.hadith_number}</h4>
+            <p>{item.tajik_text || item.arabic_text || 'Матн ворид нашудааст.'}</p>
+            <div className="admin-item-status">
+              {item.is_published === false ? t.hidden : t.published}
+            </div>
+            <div className="admin-item-actions">
+              <button className="secondary-button" onClick={() => startEditHadith(item)}>{t.edit}</button>
+              <button className="secondary-button" onClick={() => toggleHadith(item)}>
+                {item.is_published === false ? t.show : t.hide}
+              </button>
+              <button className="danger-button" onClick={() => deleteHadith(item)}>{t.delete}</button>
+            </div>
+          </div>
+        ))}
+        {!hadithRows.length && <div className="empty-state">{t.noHadiths}</div>}
+      </div>
+    </>
+  )
+
+  const renderAdminBooks = () => (
+    <>
+      <form className="admin-form" onSubmit={saveBook}>
+        <h3>{editingBook ? t.edit : t.newBook}</h3>
+        {field(t.title, bookForm.name,
+          value => setBookForm({ name: value }), 'Саҳеҳи Бухорӣ', true)}
+        <div className="form-actions">
+          <button className="primary-button" type="submit" disabled={saving}>{t.save}</button>
+          {editingBook && (
+            <button className="secondary-button" type="button" onClick={resetBookForm}>{t.cancel}</button>
+          )}
+        </div>
+      </form>
+
+      <div className="admin-list">
+        {books.map(book => (
+          <div className="admin-item" key={book.id}>
+            <h4>{book.name}</h4>
+            <div className="admin-item-actions">
+              <button className="secondary-button" onClick={() => {
+                setEditingBook(book.id)
+                setBookForm({ name: book.name || '' })
+              }}>{t.edit}</button>
+              <button className="secondary-button" onClick={() => toggleBook(book)}>
+                {book.is_active === false ? t.show : t.hide}
+              </button>
+            </div>
+          </div>
+        ))}
+        {!books.length && <div className="empty-state">Китобҳо ҳоло илова нашудаанд.</div>}
+      </div>
+    </>
+  )
+
+  const renderAdminContent = () => (
+    <>
+      <form className="admin-form" onSubmit={saveContent}>
+        <h3>{editingContent ? t.editContent : t.newContent}</h3>
+
+        <div className="form-group">
+          <label>{t.section} *</label>
+          <select
+            value={contentForm.section_slug}
+            onChange={event => setContentForm({ ...contentForm, section_slug: event.target.value })}
+            required
+          >
+            {sections.filter(section => section.slug !== 'hadith').map(section => (
+              <option value={section.slug} key={section.slug}>{section.title}</option>
+            ))}
+          </select>
+        </div>
+
+        {field(t.title, contentForm.title,
+          value => setContentForm({ ...contentForm, title: value }))}
+
+        {textarea(t.tajik, contentForm.tajik_text,
+          value => setContentForm({ ...contentForm, tajik_text: value }))}
+
+        {textarea(t.arabic, contentForm.arabic_text,
+          value => setContentForm({ ...contentForm, arabic_text: value }), '', true)}
+
+        {textarea(t.explanationTg, contentForm.explanation_tg,
+          value => setContentForm({ ...contentForm, explanation_tg: value }))}
+
+        {textarea(t.explanationAr, contentForm.explanation_ar,
+          value => setContentForm({ ...contentForm, explanation_ar: value }), '', true)}
+
+        {field(t.source, contentForm.source_note,
+          value => setContentForm({ ...contentForm, source_note: value }))}
+
+        {field(t.audio, contentForm.audio_url,
+          value => setContentForm({ ...contentForm, audio_url: value }), 'https://...')}
+
+        {field(t.video, contentForm.video_url,
+          value => setContentForm({ ...contentForm, video_url: value }), 'https://...')}
+
+        <div className="form-actions">
+          <button className="primary-button" type="submit" disabled={saving}>
+            {saving ? t.loading : t.save}
+          </button>
+          {editingContent && (
+            <button className="secondary-button" type="button" onClick={resetContentForm}>{t.cancel}</button>
+          )}
+        </div>
+      </form>
+
+      <div className="admin-list">
+        {contentRows.map(item => (
+          <div className="admin-item" key={item.id}>
+            <h4>{item.title || item.section_slug}</h4>
+            <p>{item.tajik_text || item.content_text || item.arabic_text || ''}</p>
+            <div className="admin-item-status">
+              {item.section_slug} · {item.is_published === false ? t.hidden : t.published}
+            </div>
+            <div className="admin-item-actions">
+              <button className="secondary-button" onClick={() => startEditContent(item)}>{t.edit}</button>
+              <button className="secondary-button" onClick={() => toggleContent(item)}>
+                {item.is_published === false ? t.show : t.hide}
+              </button>
+              <button className="danger-button" onClick={() => deleteContent(item)}>{t.delete}</button>
+            </div>
+          </div>
+        ))}
+        {!contentRows.length && <div className="empty-state">{t.noContent}</div>}
+      </div>
+    </>
+  )
+
+  const renderAdminSections = () => (
+    <>
+      <form className="admin-form" onSubmit={saveSection}>
+        <h3>{editingSection ? t.editSection : t.newSection}</h3>
+
+        {field(t.title, sectionForm.title,
+          value => setSectionForm({ ...sectionForm, title: value }),
+          'Номи бахш', true)}
+
+        {field('Slug / рамзи бахш', sectionForm.slug,
+          value => setSectionForm({ ...sectionForm, slug: value }),
+          'Масалан: new-section')}
+
+        {field(t.icon, sectionForm.icon,
+          value => setSectionForm({ ...sectionForm, icon: value }),
+          '📚')}
+
+        {textarea(t.description, sectionForm.description,
+          value => setSectionForm({ ...sectionForm, description: value }))}
+
+        <div className="form-actions">
+          <button className="primary-button" type="submit" disabled={saving}>
+            {saving ? t.loading : t.save}
+          </button>
+          {editingSection && (
+            <button className="secondary-button" type="button" onClick={resetSectionForm}>
+              {t.cancel}
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="admin-list">
+        {[...sections].sort((a, b) => a.sort_order - b.sort_order).map((section, index) => (
+          <div className="admin-item" key={section.slug}>
+            <h4>{section.icon} {section.title}</h4>
+            <p>{section.description}</p>
+            <div className="admin-item-actions">
+              <button className="secondary-button" onClick={() => moveSection(section, -1)} disabled={index === 0}>
+                ↑ {t.moveUp}
+              </button>
+              <button className="secondary-button" onClick={() => moveSection(section, 1)} disabled={index === sections.length - 1}>
+                ↓ {t.moveDown}
+              </button>
+              <button className="secondary-button" onClick={() => startEditSection(section)}>{t.edit}</button>
+              <button className="secondary-button" onClick={() => toggleSection(section)}>{t.hide}</button>
+              <button className="danger-button" onClick={() => deleteSection(section)}>{t.delete}</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+
+  if (loading) {
+    return (
+      <div className="app theme-green" dir={direction}>
+        <div className="loading">{t.loading}</div>
+      </div>
+    )
   }
 
   return (
-    <div className={`app theme-${theme}`} dir={rtl ? 'rtl' : 'ltr'}>
-      {!loginOpen && page !== 'admin' && (
-        <>
-          <header className="site-header">
-            <div className="brand">Miftahulhadis</div>
-            <div className="header-arabic" dir="rtl">بَلِّغُوا عَنِّي وَلَوْ آيَةً</div>
-            <p className="header-translation">Аз ман бирасонед, ҳарчанд як оят бошад.</p>
-            <p className="header-subtitle">{t.welcome}</p>
-            <small>📚 Саҳеҳ ал-Бухорӣ · ҳадиси № 3461</small>
-          </header>
+    <div className="app theme-green" dir={direction}>
+      <header className="header">
+        <button className="brand-button" onClick={goHome}>
+          <span className="header-title">𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</span>
+          <span className="header-subtitle">Мифтаҳул Ҳадис</span>
+        </button>
 
-          <nav className="toolbar">
-            <label>
-              {t.language}
-              <select value={lang} onChange={e => setLang(e.target.value)}>
-                <option value="tg">Тоҷикӣ</option>
-                <option value="ru">Русский</option>
-                <option value="ar">العربية</option>
-              </select>
-            </label>
+        <div className="header-controls">
+          <select
+            className="language-selector"
+            value={lang}
+            onChange={event => setLang(event.target.value)}
+            aria-label="Language"
+          >
+            <option value="tg">Тоҷикӣ</option>
+            <option value="ru">Русский</option>
+            <option value="ar">العربية</option>
+          </select>
 
-            <button className="small-button" onClick={() => setSound(!sound)}>
-              {sound ? '🔊' : '🔇'}
-            </button>
-
-            <button className="small-button" onClick={() => setTheme(theme === 'green' ? 'white' : 'green')}>
-              {theme === 'green' ? '☀️' : '🌿'}
-            </button>
-
-            {adminAccess && (
-              <button className="small-button" onClick={() => setPage('admin')}>
-                🔐 {t.admin}
-              </button>
-            )}
-          </nav>
-        </>
-      )}
-
-      {loginOpen && (
-        <main className="page-wrap">
-          <button className="secondary-button" onClick={() => setLoginOpen(false)}>
-            ← {t.back}
-          </button>
-
-          <form className="panel form-panel" onSubmit={loginAdmin}>
-            <h2>{t.login}</h2>
-            <label>{t.email}
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-            </label>
-            <label>{t.password}
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-            </label>
-            {notice && <p className={`notice ${noticeType}`}>{notice}</p>}
-            <button className="primary-button" disabled={loading}>{t.enter}</button>
-          </form>
-        </main>
-      )}
-
-      {page === 'home' && !loginOpen && (
-        <main className="page-wrap">
-          {!db && <p className="notice error">{t.configError}</p>}
-
-          {dailyHadith && (
-            <article className="daily-card">
-              <h2>🌙 {t.daily}</h2>
-              <h3>{bookName(dailyHadith.book_id)} — № {dailyHadith.hadith_number}</h3>
-              {dailyHadith.arabic_text && <p className="arabic-text" dir="rtl">{dailyHadith.arabic_text}</p>}
-              <p>{lang === 'ru' ? dailyHadith.russian_text || dailyHadith.tajik_text : dailyHadith.tajik_text}</p>
-              {dailyHadith.source_note && <small>📚 {dailyHadith.source_note}</small>}
-            </article>
-          )}
-
-          <form className="search-form" onSubmit={searchAll}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t.search} />
-            <button className="primary-button">{t.searchButton}</button>
-          </form>
-
-          {search.trim() ? (
+          {admin ? (
             <>
-              <h2 className="section-heading">{t.searchResults}</h2>
-              {searching && <p>{t.loading}</p>}
-              {!searching && searchResults.length === 0 && <p className="empty">{t.noResults}</p>}
-              <div className="content-list">
-                {searchResults.map(item => (
-                  <article className="content-card" key={`${item.resultType}-${item.id}`}>
-                    <h3>{item.resultType === 'hadith' ? `${t.hadithTab} № ${item.hadith_number}` : item.title}</h3>
-                    {item.resultType === 'hadith' && <small>{bookName(item.book_id)}</small>}
-                    {item.arabic_text && <p className="arabic-text" dir="rtl">{item.arabic_text}</p>}
-                    <p>{lang === 'ru' && item.russian_text ? item.russian_text : item.tajik_text || item.content_text}</p>
-                    {item.source_note && <small>📚 {item.source_note}</small>}
-                  </article>
-                ))}
-              </div>
+              <button className="header-action" onClick={() => setPage('admin')}>{t.admin}</button>
+              <button className="header-action" onClick={logout}>{t.logout}</button>
             </>
           ) : (
-            <>
-              <h2 className="section-heading">{t.sections}</h2>
+            <button className="header-action" onClick={() => setLoginOpen(true)}>{t.admin}</button>
+          )}
+        </div>
+      </header>
 
-              <div className="section-grid">
-                {SECTIONS.map(section => (
+      {notice && (
+        <div className={`notice ${noticeType === 'error' ? 'error' : ''}`}>
+          <span>{notice}</span>
+          <button className="notice-close" onClick={() => setNotice('')}>×</button>
+        </div>
+      )}
+
+      {page !== 'admin' && (
+        <main className="main-content">
+          <section className="miftah-banner">
+            <h1 className="miftah-banner-title">𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</h1>
+            <p className="miftah-banner-arabic">بَلِّغُوا عَنِّي وَلَوْ آيَةً</p>
+            <p className="miftah-banner-translation">
+              Аз номи ман бирасонед, ҳарчанд як оят бошад.
+            </p>
+            <p className="miftah-banner-subtitle">
+              Саҳеҳи Бухорӣ · ҳадиси № 3461
+            </p>
+          </section>
+
+          {dailyHadith && (
+            <section className="daily-card">
+              <div className="daily-heading">
+                <span>🌙</span>
+                <h2>{t.daily}</h2>
+              </div>
+
+              {dailyHadith.arabic_text && (
+                <p className="arabic-text">{dailyHadith.arabic_text}</p>
+              )}
+
+              <p>{dailyHadith.tajik_text}</p>
+
+              <div className="source-note">
+                {getBookName(dailyHadith.book_id)}
+                {dailyHadith.hadith_number
+                  ? ` · Ҳадиси № ${dailyHadith.hadith_number}`
+                  : ''}
+              </div>
+            </section>
+          )}
+
+          <div className="search-box">
+            <input
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              onKeyDown={event => {
+                if (event.key === 'Enter') performSearch()
+              }}
+              placeholder={t.searchPlaceholder}
+            />
+            <button className="primary-button" onClick={performSearch}>
+              <span>⌕</span> {t.search}
+            </button>
+          </div>
+
+          {page === 'home' && (
+            <>
+              <section className="hero">
+                <h2>Мифтаҳул Ҳадис</h2>
+                <p>Манбаи омӯзиш ва мутолиаи Қуръон, ҳадис ва дигар илмҳои исломӣ.</p>
+              </section>
+
+              <div className="menu">
+                {sections.filter(section => section.is_active !== false).map(section => (
                   <button
+                    className="menu-card"
                     key={section.slug}
-                    className={`section-tile ${section.slug === 'hadith' ? 'hadith-tile' : ''}`}
                     onClick={() => openSection(section)}
                   >
-                    <span className="tile-icon">{section.icon}</span>
-                    <span className="tile-name">{section[lang] || section.tg}</span>
-                    <span className="tile-arabic">{section.ar}</span>
-                    <span className="tile-arrow">›</span>
+                    <span className="menu-card-icon">{section.icon}</span>
+                    <span>
+                      <h3>{section.title}</h3>
+                      <p>{section.description}</p>
+                    </span>
+                    <span className="menu-arrow">‹</span>
                   </button>
                 ))}
               </div>
             </>
           )}
+
+          {page === 'section' && selectedSection && (
+            <section className="content-page">
+              <button className="secondary-button back-button" onClick={goHome}>
+                ← {t.back}
+              </button>
+
+              <div className="section-intro">
+                <h2>{selectedSection.icon} {selectedSection.title}</h2>
+                <p>{selectedSection.description}</p>
+              </div>
+
+              <div className="public-list">
+                {publicContent.length ? (
+                  publicContent.map(item =>
+                    item.resultType === 'hadith'
+                      ? renderHadithCard(item)
+                      : renderContentCard(item)
+                  )
+                ) : (
+                  <div className="empty-state">
+                    {selectedSection.slug === 'hadith' ? t.noHadiths : t.noContent}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {page === 'search' && (
+            <section className="content-page">
+              <button className="secondary-button back-button" onClick={goHome}>
+                ← {t.back}
+              </button>
+
+              <div className="section-intro">
+                <h2>{t.search}</h2>
+                <p>{search}</p>
+              </div>
+
+              <div className="public-list">
+                {searchResults?.length ? (
+                  searchResults.map(item =>
+                    item.resultType === 'hadith'
+                      ? renderHadithCard(item, search)
+                      : renderContentCard(item, search)
+                  )
+                ) : (
+                  <div className="empty-state">{t.noResults}</div>
+                )}
+              </div>
+            </section>
+          )}
+
+          <footer className="footer">
+            <strong>𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</strong>
+            <p>© {new Date().getFullYear()} · Ҳамаи ҳуқуқҳо ҳифз шудаанд.</p>
+          </footer>
         </main>
       )}
 
-      {page === 'section' && !loginOpen && (
-        <main className="page-wrap">
-          <button className="secondary-button" onClick={() => setPage('home')}>
-            ← {t.back}
-          </button>
-
-          <section className="section-banner">
-            <span>{selectedSection?.icon}</span>
-            <h2>{selectedSection?.[lang] || selectedSection?.tg}</h2>
-          </section>
-
-          {selectedSection?.slug === 'hadith' ? (
-            <HadithList
-              db={db}
-              books={books}
-              language={lang}
-              initialRows={hadithRows}
-              t={t}
-            />
-          ) : currentContent.length === 0 ? (
-            <p className="empty">{t.empty}</p>
+      {page === 'admin' && (
+        <main className="admin-page">
+          {!admin ? (
+            <div className="empty-state">{t.adminOnly}</div>
           ) : (
-            <div className="content-list">
-              {currentContent.map(item => (
-                <article className="content-card" key={item.id}>
-                  <h3>{item.title}</h3>
-                  {item.arabic_text && <p className="arabic-text" dir="rtl">{item.arabic_text}</p>}
-                  <p>{lang === 'ru' && item.russian_text ? item.russian_text : item.tajik_text || item.content_text}</p>
-                  {item.source_note && <small>📚 {item.source_note}</small>}
-                  {item.media_url && <p><a href={item.media_url} target="_blank" rel="noreferrer">▶ Кушодани мавод</a></p>}
-                </article>
-              ))}
-            </div>
+            <>
+              <div className="admin-header">
+                <div>
+                  <h2>{t.admin}</h2>
+                  <p>Идоракунии пурраи Miftahulhadis</p>
+                </div>
+                <button className="secondary-button" onClick={goHome}>← {t.back}</button>
+              </div>
+
+              <div className="admin-tabs">
+                <button className={adminTab === 'hadith' ? 'active' : ''} onClick={() => setAdminTab('hadith')}>📚 {t.hadiths}</button>
+                <button className={adminTab === 'books' ? 'active' : ''} onClick={() => setAdminTab('books')}>📖 {t.books}</button>
+                <button className={adminTab === 'content' ? 'active' : ''} onClick={() => setAdminTab('content')}>📝 {t.contents}</button>
+                <button className={adminTab === 'sections' ? 'active' : ''} onClick={() => setAdminTab('sections')}>⚙️ {t.sections}</button>
+              </div>
+
+              {adminTab === 'hadith' && renderAdminHadith()}
+              {adminTab === 'books' && renderAdminBooks()}
+              {adminTab === 'content' && renderAdminContent()}
+              {adminTab === 'sections' && renderAdminSections()}
+            </>
           )}
         </main>
       )}
 
-      {page === 'admin' && admin && (
-        <main className="page-wrap admin-page">
-          <div className="admin-heading">
-            <h2>🔐 {t.admin}</h2>
-            <button className="secondary-button" onClick={() => setPage('home')}>{t.close}</button>
-          </div>
+      {loginOpen && (
+        <div className="modal-overlay" onClick={() => setLoginOpen(false)}>
+          <div className="login-page" onClick={event => event.stopPropagation()}>
+            <form className="login-card" onSubmit={login}>
+              <button type="button" className="modal-close" onClick={() => setLoginOpen(false)}>×</button>
+              <h2>{t.login}</h2>
+              <p>Барои идоракунии барнома ба ҳисоби мудир ворид шавед.</p>
 
-          <div className="admin-tabs">
-            <button className={adminTab === 'hadith' ? 'selected' : ''} onClick={() => setAdminTab('hadith')}>
-              {t.hadithTab}
-            </button>
-            <button className={adminTab === 'content' ? 'selected' : ''} onClick={() => setAdminTab('content')}>
-              {t.contentTab}
-            </button>
-          </div>
-
-          {notice && <p className={`notice ${noticeType}`}>{notice}</p>}
-          {loading && <p>{t.loading}</p>}
-
-          {adminTab === 'hadith' && (
-            <>
-              <form className="panel form-panel" onSubmit={saveHadith}>
-                <h3>{editingHadith ? t.edit : t.addHadith}</h3>
-
-                <label>{t.book}
-                  <select value={hadithForm.book_id} onChange={e => setHadithForm({ ...hadithForm, book_id: e.target.value })} required>
-                    <option value="">{t.chooseBook}</option>
-                    {books.filter(book => book.is_active !== false).map(book => (
-                      <option key={book.id} value={book.id}>{book.name}</option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>{t.number}
-                  <input type="number" min="1" step="1" value={hadithForm.hadith_number} onChange={e => setHadithForm({ ...hadithForm, hadith_number: e.target.value })} required />
-                </label>
-
-                <label>{t.text}
-                  <textarea value={hadithForm.tajik_text} onChange={e => setHadithForm({ ...hadithForm, tajik_text: e.target.value })} required />
-                </label>
-
-                <div className="form-actions">
-                  <button className="primary-button" disabled={loading}>{t.save}</button>
-                  <button type="button" className="secondary-button" onClick={() => { setHadithForm(emptyHadith); setEditingHadith(null) }}>{t.cancel}</button>
-                </div>
-              </form>
-
-              <h3>{t.items}: {hadithRows.length}</h3>
-              <div className="admin-list">
-                {hadithRows.map(item => (
-                  <article className="admin-card" key={item.id}>
-                    <h4>{bookName(item.book_id)} — № {item.hadith_number}</h4>
-                    <p>{item.tajik_text}</p>
-                    <small>{item.is_published ? t.published : t.unpublished}</small>
-                    <div className="form-actions">
-                      <button className="secondary-button" onClick={() => openHadithEditor(item)}>{t.edit}</button>
-                      <button className="secondary-button" onClick={() => togglePublished('hadith', item)}>{item.is_published ? t.hide : t.publish}</button>
-                      <button className="danger-button" onClick={() => removeItem('hadith', item.id)}>{t.delete}</button>
-                    </div>
-                  </article>
-                ))}
+              <div className="form-group">
+                <label>{t.email}</label>
+                <input type="email" value={email} onChange={event => setEmail(event.target.value)} required />
               </div>
-            </>
-          )}
 
-          {adminTab === 'content' && (
-            <>
-              <form className="panel form-panel" onSubmit={saveContent}>
-                <h3>{editingContent ? t.edit : t.addContent}</h3>
-
-                <label>{t.section}
-                  <select value={contentForm.section_slug} onChange={e => setContentForm({ ...contentForm, section_slug: e.target.value })}>
-                    {SECTIONS.filter(section => section.slug !== 'hadith').map(section => (
-                      <option key={section.slug} value={section.slug}>{section.tg}</option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>{t.title}
-                  <input value={contentForm.title} onChange={e => setContentForm({ ...contentForm, title: e.target.value })} required />
-                </label>
-
-                <label>{t.content}
-                  <textarea value={contentForm.content_text} onChange={e => setContentForm({ ...contentForm, content_text: e.target.value })} required />
-                </label>
-
-                <div className="form-actions">
-                  <button className="primary-button" disabled={loading}>{t.save}</button>
-                  <button type="button" className="secondary-button" onClick={() => { setContentForm(emptyContent); setEditingContent(null) }}>{t.cancel}</button>
-                </div>
-              </form>
-
-              <h3>{t.items}: {contentRows.length}</h3>
-              <div className="admin-list">
-                {contentRows.map(item => (
-                  <article className="admin-card" key={item.id}>
-                    <h4>{item.title}</h4>
-                    <p>{item.content_text || item.tajik_text}</p>
-                    <small>{item.is_published ? t.published : t.unpublished}</small>
-                    <div className="form-actions">
-                      <button className="secondary-button" onClick={() => openContentEditor(item)}>{t.edit}</button>
-                      <button className="secondary-button" onClick={() => togglePublished('content_items', item)}>{item.is_published ? t.hide : t.publish}</button>
-                      <button className="danger-button" onClick={() => removeItem('content_items', item.id)}>{t.delete}</button>
-                    </div>
-                  </article>
-                ))}
+              <div className="form-group">
+                <label>{t.password}</label>
+                <input type="password" value={password} onChange={event => setPassword(event.target.value)} required />
               </div>
-            </>
-          )}
 
-          <button className="danger-button logout-button" onClick={logout}>{t.logout}</button>
-        </main>
-      )}
-
-      {!loginOpen && page !== 'admin' && (
-        <footer className="site-footer">
-          <strong>Miftahulhadis</strong>
-          <p>{t.description}</p>
-          <small>© Miftahulhadis</small>
-        </footer>
+              <button className="primary-button" type="submit">{t.login}</button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
-  )
-}
-
-function HadithList({ db, books, language, initialRows, t }) {
-  const [rows, setRows] = useState(initialRows || [])
-  const [page, setPage] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [hasNext, setHasNext] = useState(true)
-  const PAGE_SIZE = 30
-
-  useEffect(() => {
-    setRows(initialRows || [])
-    setPage(0)
-  }, [initialRows])
-
-  const loadPage = async nextPage => {
-    if (!db || nextPage < 0) return
-
-    setLoading(true)
-    const start = nextPage * PAGE_SIZE
-
-    const { data, error } = await db.from('hadith')
-      .select('*')
-      .eq('is_published', true)
-      .order('created_at', { ascending: false })
-      .range(start, start + PAGE_SIZE - 1)
-
-    if (!error) {
-      setRows(data || [])
-      setPage(nextPage)
-      setHasNext((data || []).length === PAGE_SIZE)
-    }
-
-    setLoading(false)
-  }
-
-  if (!rows.length && !loading) {
-    return <p className="empty">{t.noHadith}</p>
-  }
-
-  return (
-    <>
-      <div className="content-list">
-        {rows.map(item => {
-          const book = books.find(b => String(b.id) === String(item.book_id))
-          return (
-            <article className="content-card hadith-card" key={item.id}>
-              <h3>{book?.name || ''} — № {item.hadith_number}</h3>
-
-              {item.arabic_text && (
-                <p className="arabic-text" dir="rtl">{item.arabic_text}</p>
-              )}
-
-              <p>{language === 'ru' ? item.russian_text || item.tajik_text : item.tajik_text}</p>
-
-              {item.source_note && <small>📚 {item.source_note}</small>}
-              {item.commentary && <p className="commentary">{item.commentary}</p>}
-            </article>
-          )
-        })}
-      </div>
-
-      <div className="pagination">
-        <button disabled={page === 0 || loading} onClick={() => loadPage(page - 1)}>
-          ← {t.previous}
-        </button>
-        <span>{page + 1}</span>
-        <button disabled={!hasNext || loading} onClick={() => loadPage(page + 1)}>
-          {t.next} →
-        </button>
-      </div>
-      {loading && <p>{t.loading}</p>}
-    </>
   )
 }
 
