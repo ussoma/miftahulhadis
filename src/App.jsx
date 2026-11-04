@@ -19,15 +19,117 @@ const DEFAULT_SECTIONS = [
   { slug: 'quran', title: 'Қуръони Карим', icon: '📗', description: 'Сураҳо ва оятҳои Қуръон', sort_order: 1, is_active: true },
   { slug: 'hadith', title: 'Ҳадисҳо', icon: '📚', description: 'Ҳадисҳои Расулуллоҳ ﷺ', sort_order: 2, is_active: true },
   { slug: 'salihin', title: 'Суханони Солеҳин', icon: '🌿', description: 'Суханони уламову солеҳон', sort_order: 3, is_active: true },
-  { slug: 'prophets', title: 'Қиссаи Паёмбарон عَلَيْهِمُ السَّلَامُ', icon: '🕌', description: 'Қиссаҳои паёмбарон', sort_order: 4, is_active: true },
-  { slug: 'seerah', title: 'Сирати Расулуллоҳ ﷺ', icon: '🌙', description: 'Зиндагии Расулуллоҳ ﷺ', sort_order: 5, is_active: true },
-  { slug: 'companions', title: 'Сирати саҳоба رضي الله عنهم', icon: '⭐', description: 'Зиндагии саҳоба', sort_order: 6, is_active: true },
-  { slug: 'duas', title: 'Дуоҳо', icon: '🤲', description: 'Дуоҳои Қуръонӣ ва набавӣ', sort_order: 7, is_active: true },
-  { slug: 'adhkar', title: 'Азкор', icon: '📿', description: 'Азкори саҳару шом', sort_order: 8, is_active: true },
-  { slug: 'sunnah', title: 'Суннатҳо', icon: '🌿', description: 'Суннатҳои Расулуллоҳ ﷺ', sort_order: 9, is_active: true },
+  { slug: 'duas', title: 'Дуоҳо', icon: '🤲', description: 'Дуоҳои Қуръонӣ ва набавӣ', sort_order: 4, is_active: true },
+  { slug: 'adhkar', title: 'Азкор', icon: '📿', description: 'Азкори саҳару шом', sort_order: 5, is_active: true },
+  { slug: 'sunnah', title: 'Суннатҳо', icon: '🌿', description: 'Суннатҳои Расулуллоҳ ﷺ', sort_order: 6, is_active: true },
+  { slug: 'prophets', title: 'Қиссаи Паёмбарон عَلَيْهِمُ السَّلَامُ', icon: '🕌', description: 'Қиссаҳои паёмбарон', sort_order: 7, is_active: true },
+  { slug: 'seerah', title: 'Сирати Расулуллоҳ ﷺ', icon: '🌙', description: 'Зиндагии Расулуллоҳ ﷺ', sort_order: 8, is_active: true },
+  { slug: 'companions', title: 'Сирати саҳоба رضي الله عنهم', icon: '⭐', description: 'Зиндагии саҳоба', sort_order: 9, is_active: true },
   { slug: 'lessons', title: 'Дарсҳои Исломӣ', icon: '🎓', description: 'Дарсҳои фоидабахши исломӣ', sort_order: 10, is_active: true },
   { slug: 'questions', title: 'Саволҳои Исломӣ', icon: '❔', description: 'Саволу ҷавобҳои исломӣ', sort_order: 11, is_active: true }
 ]
+
+const SECTION_TRANSLATIONS = {
+  quran: {
+    ru: ['Священный Коран', 'Суры и аяты Священного Корана'],
+    ar: ['القرآن الكريم', 'سور وآيات القرآن الكريم']
+  },
+  hadith: {
+    ru: ['Хадисы', 'Хадисы Посланника Аллаха ﷺ'],
+    ar: ['الأحاديث', 'أحاديث رسول الله ﷺ']
+  },
+  salihin: {
+    ru: ['Слова праведников', 'Изречения учёных и праведных людей'],
+    ar: ['أقوال الصالحين', 'أقوال العلماء والصالحين']
+  },
+  duas: {
+    ru: ['Дуа', 'Дуа из Корана и Сунны'],
+    ar: ['الأدعية', 'أدعية من القرآن والسنة']
+  },
+  adhkar: {
+    ru: ['Азкары', 'Утренние и вечерние поминания'],
+    ar: ['الأذكار', 'أذكار الصباح والمساء']
+  },
+  sunnah: {
+    ru: ['Сунна', 'Сунны Посланника Аллаха ﷺ'],
+    ar: ['السنن', 'سنن رسول الله ﷺ']
+  },
+  prophets: {
+    ru: ['Истории пророков', 'Истории пророков, мир им'],
+    ar: ['قصص الأنبياء', 'قصص الأنبياء عليهم السلام']
+  },
+  seerah: {
+    ru: ['Жизнеописание Посланника Аллаха ﷺ', 'Жизнь Посланника Аллаха ﷺ'],
+    ar: ['سيرة رسول الله ﷺ', 'حياة رسول الله ﷺ']
+  },
+  companions: {
+    ru: ['Жизнеописание сподвижников', 'Жизнь сподвижников رضي الله عنهم'],
+    ar: ['سير الصحابة', 'حياة الصحابة رضي الله عنهم']
+  },
+  lessons: {
+    ru: ['Исламские уроки', 'Полезные исламские уроки'],
+    ar: ['دروس إسلامية', 'دروس إسلامية نافعة']
+  },
+  questions: {
+    ru: ['Исламские вопросы', 'Вопросы и ответы по Исламу'],
+    ar: ['أسئلة إسلامية', 'أسئلة وأجوبة إسلامية']
+  }
+}
+
+function localizeSection(section, lang) {
+  const translation = SECTION_TRANSLATIONS[section?.slug]?.[lang]
+  if (!translation) return section
+  return { ...section, title: translation[0], description: translation[1] }
+}
+
+const LEGACY_DEFAULT_SECTION_ORDER = [
+  'quran', 'hadith', 'salihin', 'prophets', 'seerah',
+  'companions', 'duas', 'adhkar', 'lessons', 'questions'
+]
+
+function mergeDefaultSections(rows) {
+  const databaseSections = (rows || []).map(normalizeSection)
+  const merged = [...databaseSections]
+
+  for (const defaultSection of DEFAULT_SECTIONS) {
+    if (!merged.some(item => item.slug === defaultSection.slug)) {
+      merged.push(defaultSection)
+    }
+  }
+
+  const databaseDefaultOrder = databaseSections
+    .filter(item => LEGACY_DEFAULT_SECTION_ORDER.includes(item.slug))
+    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+    .map(item => item.slug)
+  const expectedLegacyOrder = LEGACY_DEFAULT_SECTION_ORDER
+    .filter(slug => databaseSections.some(item => item.slug === slug))
+
+  // Агар база ҳанӯз тартиби пешинаи пешфарзро дошта бошад,
+  // танҳо тартиби намоишро ба нақшаи нав мутобиқ мекунем; база тағйир намеёбад.
+  const isLegacyOrder = databaseDefaultOrder.length > 0 &&
+    databaseDefaultOrder.every((slug, index) => slug === expectedLegacyOrder[index]) &&
+    databaseDefaultOrder.length === expectedLegacyOrder.length
+
+  if (isLegacyOrder) {
+    const orderBySlug = new Map(DEFAULT_SECTIONS.map(item => [item.slug, item.sort_order]))
+    return merged.map(item => orderBySlug.has(item.slug)
+      ? { ...item, sort_order: orderBySlug.get(item.slug) }
+      : item)
+  }
+
+  return merged
+}
+
+const BOOK_TRANSLATIONS = {
+  'sahih-al-bukhari': ['Сахих аль-Бухари', 'صحيح البخاري'],
+  'sahih-muslim': ['Сахих Муслим', 'صحيح مسلم'],
+  'sunan-abi-dawud': ['Сунан Абу Дауд', 'سنن أبي داود'],
+  'jami-at-tirmidhi': ['Джами ат-Тирмизи', 'جامع الترمذي'],
+  'sunan-an-nasai': ['Сунан ан-Насаи', 'سنن النسائي'],
+  'sunan-ibn-majah': ['Сунан Ибн Маджа', 'سنن ابن ماجه'],
+  'muwatta-imam-malik': ['Муватта имама Малика', 'موطأ الإمام مالك'],
+  'riyad-as-salihin': ['Рияд ас-Салихин', 'رياض الصالحين']
+}
 
 const DEFAULT_BOOKS = [
   { name: 'Саҳеҳи Бухорӣ', slug: 'sahih-al-bukhari', sort_order: 1 },
@@ -501,8 +603,13 @@ function App() {
   }, [])
 
   const getBookName = useCallback(id => {
-    return books.find(book => String(book.id) === String(id))?.name || ''
-  }, [books])
+    const book = books.find(item => String(item.id) === String(id))
+    if (!book) return ''
+    const translated = BOOK_TRANSLATIONS[book.slug]
+    if (lang === 'ru' && translated) return translated[0]
+    if (lang === 'ar' && translated) return translated[1]
+    return book.name || ''
+  }, [books, lang])
 
   const sortByDate = rows => [...rows].sort((a, b) => {
     return new Date(b.created_at || 0).getTime() -
@@ -595,6 +702,9 @@ function App() {
       return
     }
 
+    // Меню аз аввал бо бахшҳои пешфарз дастрас мемонад;
+    // хатои ягон ҷадвал набояд ҳамаи бахшҳоро аз экран нест кунад.
+    setSections(DEFAULT_SECTIONS)
     setLoading(true)
 
     try {
@@ -621,19 +731,16 @@ function App() {
       setContentRows(loadedContent)
       refreshDaily(loadedHadith)
 
-      if (!sectionsRes.error && sectionsRes.data?.length) {
-        const normalized = sectionsRes.data
-          .map(normalizeSection)
-          .filter(item => item.is_active)
-          .sort((a, b) => a.sort_order - b.sort_order)
-        if (!normalized.some(item => item.slug === 'sunnah')) {
-          normalized.push(DEFAULT_SECTIONS.find(item => item.slug === 'sunnah'))
-        }
-        normalized.sort((a, b) => a.sort_order - b.sort_order)
-        setSections(normalized.length ? normalized : DEFAULT_SECTIONS)
-      } else {
-        setSections(DEFAULT_SECTIONS)
+      // Қаторҳои база танзимоти админро нигоҳ медоранд, аммо набудани
+      // бахшҳои стандартӣ дигар онҳоро аз меню нест намекунад.
+      if (sectionsRes.error) {
+        console.warn('Sections query failed; showing built-in sections:', sectionsRes.error)
       }
+      setSections(
+        mergeDefaultSections(sectionsRes.error ? [] : sectionsRes.data)
+          .filter(item => item.is_active !== false)
+          .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+      )
     } catch (error) {
       console.error('Public data error:', error)
       notify(t.error + (error.message || 'Хатои боркунӣ'), 'error')
@@ -671,11 +778,10 @@ function App() {
 
       if (!sectionsRes.error) {
         setSectionRows(allSectionRows)
-        const normalized = allSectionRows.map(normalizeSection)
-        if (!normalized.some(item => item.slug === 'sunnah')) {
-          normalized.push(DEFAULT_SECTIONS.find(item => item.slug === 'sunnah'))
-        }
-        setSections(normalized.sort((a, b) => a.sort_order - b.sort_order))
+        setSections(
+          mergeDefaultSections(allSectionRows)
+            .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+        )
       }
     } catch (error) {
       console.error('Admin data error:', error)
@@ -1968,7 +2074,9 @@ function App() {
               </section>
 
               <div className="menu">
-                {sections.filter(section => section.is_active !== false).map(section => (
+                {sections.filter(section => section.is_active !== false).map(section => {
+                  const displaySection = localizeSection(section, lang)
+                  return (
                   <button
                     className="menu-card"
                     key={section.slug}
@@ -1977,13 +2085,14 @@ function App() {
                     <span className="menu-card-icon">{section.icon}</span>
 
                     <span>
-                      <h3>{section.title}</h3>
-                      <p>{section.description}</p>
+                      <h3>{displaySection.title}</h3>
+                      <p>{displaySection.description}</p>
                     </span>
 
                     <span className="menu-arrow">‹</span>
                   </button>
-                ))}
+                  )
+                })}
               </div>
 
               {dailySunnah && (
@@ -2022,8 +2131,8 @@ function App() {
               </button>
 
               <div className="section-intro">
-                <h2>{selectedSection.icon} {selectedSection.title}</h2>
-                <p>{selectedSection.description}</p>
+                <h2>{selectedSection.icon} {localizeSection(selectedSection, lang).title}</h2>
+                <p>{localizeSection(selectedSection, lang).description}</p>
               </div>
 
               {selectedSection.slug === 'hadith' && !selectedBook ? (
@@ -2204,4 +2313,5 @@ function App() {
     </div>
   )
 }
+
 export default App
