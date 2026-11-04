@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './index.css'
@@ -29,14 +30,14 @@ const DEFAULT_SECTIONS = [
 ]
 
 const DEFAULT_BOOKS = [
-  'Саҳеҳи Бухорӣ',
-  'Саҳеҳи Муслим',
-  'Сунани Абу Довуд',
-  'Ҷомеъи Тирмизӣ',
-  'Сунани Насоӣ',
-  'Сунани Ибни Моҷа',
-  'Муваттаи Имом Молик',
-  'Риёзус-Солиҳин'
+  { name: 'Саҳеҳи Бухорӣ', slug: 'sahih-al-bukhari', sort_order: 1 },
+  { name: 'Саҳеҳи Муслим', slug: 'sahih-muslim', sort_order: 2 },
+  { name: 'Сунани Абу Довуд', slug: 'sunan-abi-dawud', sort_order: 3 },
+  { name: 'Ҷомеъи Тирмизӣ', slug: 'jami-at-tirmidhi', sort_order: 4 },
+  { name: 'Сунани Насоӣ', slug: 'sunan-an-nasai', sort_order: 5 },
+  { name: 'Сунани Ибни Моҷа', slug: 'sunan-ibn-majah', sort_order: 6 },
+  { name: 'Муваттаи Имом Молик', slug: 'muwatta-imam-malik', sort_order: 7 },
+  { name: 'Риёзус-Солиҳин', slug: 'riyad-as-salihin', sort_order: 8 }
 ]
 
 const LANG = {
@@ -54,6 +55,8 @@ const LANG = {
     noResults: 'Маълумот ёфт нашуд.',
     noHadiths: 'Ҳоло ҳадис илова нашудааст.',
     noContent: 'Дар ин бахш ҳоло мавод нест.',
+    noBooks: 'Китобҳои ҳадис ҳоло илова нашудаанд.',
+    chooseBook: 'Китобро интихоб кунед',
     back: 'Бозгашт',
     save: 'Сабт кардан',
     cancel: 'Бекор кардан',
@@ -94,8 +97,42 @@ const LANG = {
     required: 'Ин майдон ҳатмист.',
     adminOnly: 'Ин бахш танҳо барои мудир дастрас аст.',
     moveUp: 'Ба боло',
-    moveDown: 'Ба поён'
+    moveDown: 'Ба поён',
+    explanationHeading: 'Шарҳи ҳадис:',
+    selectBook: 'Китобро интихоб кунед',
+    exampleNumber: 'Масалан: 15',
+    hadithTranslationPlaceholder: 'Тарҷумаи ҳадис...',
+    sectionName: 'Номи бахш',
+    sectionSlug: 'Slug / рамзи бахш',
+    sectionSlugExample: 'Масалан: new-section',
+    bookExample: 'Саҳеҳи Бухорӣ',
+    bookNameRequired: 'Номи китобро навис.',
+    sectionNameRequired: 'Номи бахшро ворид кунед.',
+    hadithRequired: 'Рақами ҳадис ва матни тоҷикӣ ҳатмӣ мебошанд.',
+    chooseHadithBook: 'Лутфан китоби ҳадисро интихоб кунед.',
+    contentRequired: 'Барои мавод ҳадди ақал як матн ё пайванди аудио/видео ворид кунед.',
+    deleteSectionConfirm: 'Бахш нест карда шавад? Маводҳои дохили он нест намешаванд.',
+    sectionNotSaved: 'Ин бахш ҳоло дар ҷадвали sections сабт нашудааст.',
+    activeColumnMissing: 'Дар ҷадвали sections сутуни is_active ё is_visible ёфт нашуд.',
+    reorderNeedsSaved: 'Барои тағйири тартиб бахшҳо бояд дар Supabase сабт шуда бошанд.',
+    orderColumnMissing: 'Сутуни sort_order ёфт нашуд.',
+    userNotFound: 'Истифодабаранда ёфт нашуд.',
+    notAdmin: 'Ин ҳисоб ҳуқуқи мудирро надорад.',
+    supabaseMissing: 'Маълумоти Supabase дар Vercel танзим нашудааст.',
+    browserNoAudio: 'Браузери шумо аудиоро дастгирӣ намекунад.',
+    browserNoVideo: 'Браузери шумо видеоро дастгирӣ намекунад.',
+    textMissing: 'Матн ворид нашудааст.',
+    bannerTranslation: 'Аз номи ман бирасонед, ҳарчанд як оят бошад.',
+    bannerSource: 'Саҳеҳи Бухорӣ · ҳадиси № 3461',
+    heroTitle: 'Мифтаҳул Ҳадис',
+    heroDescription: 'Манбаи омӯзиш ва мутолиаи Қуръон, ҳадис ва дигар илмҳои исломӣ.',
+    copyright: 'Ҳамаи ҳуқуқҳо ҳифз шудаанд.',
+    adminDescription: 'Идоракунии пурраи Miftahulhadis',
+    loginDescription: 'Барои идоракунии барнома ба ҳисоби мудир ворид шавед.',
+    dailyExplanation: 'Шарҳи ҳадис:',
+    hadithLabel: 'Ҳадиси № '
   },
+
   ru: {
     admin: 'Панель управления',
     login: 'Войти',
@@ -110,6 +147,8 @@ const LANG = {
     noResults: 'Ничего не найдено.',
     noHadiths: 'Хадисы пока не добавлены.',
     noContent: 'В этом разделе пока нет материалов.',
+    noBooks: 'Сборники хадисов пока не добавлены.',
+    chooseBook: 'Выберите сборник',
     back: 'Назад',
     save: 'Сохранить',
     cancel: 'Отмена',
@@ -133,7 +172,7 @@ const LANG = {
     editHadith: 'Изменить хадис',
     newContent: 'Добавить материал',
     editContent: 'Изменить материал',
-    newBook: 'Добавить книгу',
+    newBook: 'Добавить сборник',
     newSection: 'Добавить раздел',
     editSection: 'Изменить раздел',
     description: 'Описание раздела',
@@ -150,8 +189,42 @@ const LANG = {
     required: 'Это поле обязательно.',
     adminOnly: 'Доступно только администратору.',
     moveUp: 'Вверх',
-    moveDown: 'Вниз'
+    moveDown: 'Вниз',
+    explanationHeading: 'Объяснение хадиса:',
+    selectBook: 'Выберите сборник',
+    exampleNumber: 'Например: 15',
+    hadithTranslationPlaceholder: 'Перевод хадиса...',
+    sectionName: 'Название раздела',
+    sectionSlug: 'Slug / код раздела',
+    sectionSlugExample: 'Например: new-section',
+    bookExample: 'Сахих аль-Бухари',
+    bookNameRequired: 'Введите название сборника.',
+    sectionNameRequired: 'Введите название раздела.',
+    hadithRequired: 'Номер хадиса и таджикский текст обязательны.',
+    chooseHadithBook: 'Пожалуйста, выберите сборник хадисов.',
+    contentRequired: 'Добавьте хотя бы один текст или ссылку на аудио/видео.',
+    deleteSectionConfirm: 'Удалить раздел? Материалы внутри него не будут удалены.',
+    sectionNotSaved: 'Этот раздел ещё не сохранён в таблице sections.',
+    activeColumnMissing: 'В таблице sections не найден столбец is_active или is_visible.',
+    reorderNeedsSaved: 'Для изменения порядка разделы должны быть сохранены в Supabase.',
+    orderColumnMissing: 'Столбец sort_order не найден.',
+    userNotFound: 'Пользователь не найден.',
+    notAdmin: 'У этой учётной записи нет прав администратора.',
+    supabaseMissing: 'Настройки Supabase не заданы в Vercel.',
+    browserNoAudio: 'Ваш браузер не поддерживает аудио.',
+    browserNoVideo: 'Ваш браузер не поддерживает видео.',
+    textMissing: 'Текст не введён.',
+    bannerTranslation: 'Передавайте от меня хотя бы один аят.',
+    bannerSource: 'Сахих аль-Бухари · хадис № 3461',
+    heroTitle: 'Мифтахул Хадис',
+    heroDescription: 'Источник для изучения Корана, хадисов и других исламских наук.',
+    copyright: 'Все права защищены.',
+    adminDescription: 'Полное управление Miftahulhadis',
+    loginDescription: 'Войдите в учётную запись администратора для управления приложением.',
+    dailyExplanation: 'Объяснение хадиса:',
+    hadithLabel: 'Хадис № '
   },
+
   ar: {
     admin: 'لوحة الإدارة',
     login: 'دخول',
@@ -166,6 +239,8 @@ const LANG = {
     noResults: 'لم يتم العثور على نتائج.',
     noHadiths: 'لم تتم إضافة أحاديث بعد.',
     noContent: 'لا توجد مواد في هذا القسم.',
+    noBooks: 'لم تتم إضافة كتب الحديث بعد.',
+    chooseBook: 'اختر الكتاب',
     back: 'رجوع',
     save: 'حفظ',
     cancel: 'إلغاء',
@@ -206,7 +281,40 @@ const LANG = {
     required: 'هذا الحقل مطلوب.',
     adminOnly: 'متاح للمسؤول فقط.',
     moveUp: 'للأعلى',
-    moveDown: 'للأسفل'
+    moveDown: 'للأسفل',
+    explanationHeading: 'شرح الحديث:',
+    selectBook: 'اختر الكتاب',
+    exampleNumber: 'مثال: 15',
+    hadithTranslationPlaceholder: 'ترجمة الحديث...',
+    sectionName: 'اسم القسم',
+    sectionSlug: 'رمز القسم',
+    sectionSlugExample: 'مثال: new-section',
+    bookExample: 'صحيح البخاري',
+    bookNameRequired: 'اكتب اسم الكتاب.',
+    sectionNameRequired: 'أدخل اسم القسم.',
+    hadithRequired: 'رقم الحديث والنص الطاجيكي مطلوبان.',
+    chooseHadithBook: 'يرجى اختيار كتاب الحديث.',
+    contentRequired: 'أدخل نصاً واحداً على الأقل أو رابطاً للصوت أو الفيديو.',
+    deleteSectionConfirm: 'هل تريد حذف القسم؟ لن يتم حذف المواد الموجودة بداخله.',
+    sectionNotSaved: 'هذا القسم غير محفوظ في جدول sections.',
+    activeColumnMissing: 'لم يتم العثور على عمود is_active أو is_visible في جدول sections.',
+    reorderNeedsSaved: 'يجب حفظ الأقسام في Supabase لتغيير ترتيبها.',
+    orderColumnMissing: 'لم يتم العثور على عمود sort_order.',
+    userNotFound: 'لم يتم العثور على المستخدم.',
+    notAdmin: 'هذا الحساب لا يملك صلاحيات المسؤول.',
+    supabaseMissing: 'لم يتم إعداد Supabase في Vercel.',
+    browserNoAudio: 'متصفحك لا يدعم الصوت.',
+    browserNoVideo: 'متصفحك لا يدعم الفيديو.',
+    textMissing: 'لم يتم إدخال النص.',
+    bannerTranslation: 'بلّغوا عني ولو آية.',
+    bannerSource: 'صحيح البخاري · الحديث رقم 3461',
+    heroTitle: 'مفتاح الحديث',
+    heroDescription: 'مصدر لتعلم القرآن والحديث والعلوم الإسلامية الأخرى.',
+    copyright: 'جميع الحقوق محفوظة.',
+    adminDescription: 'الإدارة الكاملة لتطبيق Miftahulhadis',
+    loginDescription: 'سجّل الدخول بحساب المسؤول لإدارة التطبيق.',
+    dailyExplanation: 'شرح الحديث:',
+    hadithLabel: 'الحديث رقم '
   }
 }
 
@@ -242,6 +350,7 @@ function clean(value) {
 
 function parseStoredNote(value) {
   const text = String(value || '')
+
   if (!text.startsWith(META_PREFIX)) {
     return { source: text, meta: {} }
   }
@@ -259,6 +368,7 @@ function parseStoredNote(value) {
 
 function makeStoredNote(source, meta) {
   const hasMeta = Object.values(meta || {}).some(value => clean(value))
+
   if (!hasMeta) return clean(source) || null
 
   return META_PREFIX + JSON.stringify({
@@ -297,6 +407,7 @@ function HighlightText({ text, query }) {
         const matched = words.some(
           word => part.toLowerCase() === word.toLowerCase()
         )
+
         return matched
           ? <mark className="highlight" key={index}>{part}</mark>
           : <React.Fragment key={index}>{part}</React.Fragment>
@@ -322,6 +433,7 @@ function getSectionFields(row) {
 
 function normalizeSection(row, index) {
   const fields = getSectionFields(row)
+
   return {
     ...row,
     slug: row?.[fields.slug] || `section-${index + 1}`,
@@ -337,6 +449,7 @@ function App() {
   const [lang, setLang] = useState('tg')
   const [page, setPage] = useState('home')
   const [selectedSection, setSelectedSection] = useState(null)
+  const [selectedBook, setSelectedBook] = useState(null)
 
   const [sections, setSections] = useState(DEFAULT_SECTIONS)
   const [sectionRows, setSectionRows] = useState([])
@@ -391,8 +504,11 @@ function App() {
       new Date(a.created_at || 0).getTime()
   })
 
+  // Ҳар рӯзи UTC як ҳадиси нашршуда интихоб мешавад.
+  // Ҳамаи дастгоҳҳо бо як рӯйхати ҳадисҳо як натиҷа мегиранд.
   const refreshDaily = useCallback(rows => {
-    const published = rows.filter(item => item.is_published !== false)
+    const published = rows
+      .filter(item => item.is_published === true)
       .sort((a, b) => String(a.id).localeCompare(String(b.id)))
 
     if (!published.length) {
@@ -400,17 +516,46 @@ function App() {
       return
     }
 
-    // Ҳадиси рӯз аз рӯйи рӯзи UTC интихоб мешавад:
-    // дар тамоми дастгоҳҳо барои як рӯз як ҳадис нишон дода мешавад.
     const dayNumber = Math.floor(Date.now() / 86400000)
-    const index = ((dayNumber % published.length) + published.length) % published.length
+    const index = dayNumber % published.length
+
     setDailyHadith(published[index])
   }, [])
+
+  // Китобҳои пешфарз танҳо дар ҳолати набудан илова мешаванд.
+  // Китобҳои мавҷуда ва ҳадисҳои онҳо тағйир намеёбанд.
+  const ensureDefaultBooks = async existingBooks => {
+    const existingNames = new Set(
+      existingBooks.map(book => clean(book.name).toLocaleLowerCase())
+    )
+
+    const missingBooks = DEFAULT_BOOKS.filter(
+      book => !existingNames.has(book.name.toLocaleLowerCase())
+    )
+
+    if (!missingBooks.length) return existingBooks
+
+    const payload = missingBooks.map(book => ({
+      name: book.name,
+      slug: book.slug,
+      sort_order: book.sort_order,
+      is_active: true
+    }))
+
+    const { data, error } = await db
+      .from('hadith_books')
+      .insert(payload)
+      .select('*')
+
+    if (error) throw error
+
+    return [...existingBooks, ...(data || [])]
+  }
 
   const loadPublicData = useCallback(async () => {
     if (!db) {
       setLoading(false)
-      notify('Маълумоти Supabase дар Vercel танзим нашудааст.', 'error')
+      notify(t.supabaseMissing, 'error')
       return
     }
 
@@ -419,7 +564,7 @@ function App() {
     try {
       const [booksRes, hadithRes, contentRes, sectionsRes] = await Promise.all([
         db.from('hadith_books').select('*'),
-        db.from('hadith').select('*').eq('is_published', true),
+        db.from('hadiths').select('*').eq('is_published', true),
         db.from('content_items').select('*').eq('is_published', true),
         db.from('sections').select('*')
       ])
@@ -456,7 +601,7 @@ function App() {
     } finally {
       setLoading(false)
     }
-  }, [notify, refreshDaily, t.error])
+  }, [notify, refreshDaily, t.error, t.supabaseMissing])
 
   const loadAdminData = useCallback(async () => {
     if (!db || !admin) return
@@ -464,7 +609,7 @@ function App() {
     try {
       const [booksRes, hadithRes, contentRes, sectionsRes] = await Promise.all([
         db.from('hadith_books').select('*'),
-        db.from('hadith').select('*'),
+        db.from('hadiths').select('*'),
         db.from('content_items').select('*'),
         db.from('sections').select('*')
       ])
@@ -473,7 +618,12 @@ function App() {
       if (hadithRes.error) throw hadithRes.error
       if (contentRes.error) throw contentRes.error
 
-      const loadedBooks = (booksRes.data || []).sort(
+      let allBooks = booksRes.data || []
+
+      // Илова кардани китобҳои пешфарз, ки ҳоло дар база нестанд.
+      allBooks = await ensureDefaultBooks(allBooks)
+
+      const loadedBooks = allBooks.sort(
         (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
       )
 
@@ -483,9 +633,11 @@ function App() {
       setBooks(loadedBooks)
       setHadithRows(loadedHadith)
       setContentRows(loadedContent)
+      refreshDaily(loadedHadith)
 
       if (!sectionsRes.error) {
         setSectionRows(sectionsRes.data || [])
+
         if (sectionsRes.data?.length) {
           setSections(sectionsRes.data.map(normalizeSection)
             .sort((a, b) => a.sort_order - b.sort_order))
@@ -495,7 +647,7 @@ function App() {
       console.error('Admin data error:', error)
       notify(t.error + (error.message || 'Хатои боркунӣ'), 'error')
     }
-  }, [admin, notify, t.error])
+  }, [admin, notify, refreshDaily, t.error])
 
   useEffect(() => {
     loadPublicData()
@@ -512,6 +664,7 @@ function App() {
 
     db.auth.getSession().then(async ({ data, error }) => {
       if (error || !active) return
+
       const user = data?.session?.user
       if (!user) return
 
@@ -543,20 +696,31 @@ function App() {
 
   const openSection = section => {
     setSelectedSection(section)
+    setSelectedBook(null)
     setPage('section')
     setSearch('')
     setSearchResults(null)
   }
 
+  const openBook = book => {
+    setSelectedBook(book)
+  }
+
+  const goBackToBooks = () => {
+    setSelectedBook(null)
+  }
+
   const goHome = () => {
     setPage('home')
     setSelectedSection(null)
+    setSelectedBook(null)
     setSearch('')
     setSearchResults(null)
   }
 
   const performSearch = () => {
     const query = clean(search)
+
     if (!query) {
       setSearchResults(null)
       return
@@ -564,14 +728,16 @@ function App() {
 
     const words = query.toLocaleLowerCase().split(/\s+/).filter(Boolean)
 
-    const matches = (fields, item) => {
+    const matches = fields => {
       const text = fields.map(value => String(value ?? '')).join(' ')
         .toLocaleLowerCase()
+
       return words.some(word => text.includes(word))
     }
 
     const hadithMatches = hadithRows.filter(item => {
       const stored = parseStoredNote(item.source_note)
+
       return matches([
         item.arabic_text,
         item.tajik_text,
@@ -579,13 +745,15 @@ function App() {
         item.hadith_number,
         getBookName(item.book_id),
         stored.source,
+        item.commentary,
         stored.meta.explanation_tg,
         stored.meta.explanation_ar
-      ], item)
+      ])
     }).map(item => ({ ...item, resultType: 'hadith' }))
 
     const contentMatches = contentRows.filter(item => {
       const stored = parseStoredNote(item.source_note)
+
       return matches([
         item.title,
         item.arabic_text,
@@ -595,7 +763,7 @@ function App() {
         stored.source,
         stored.meta.explanation_tg,
         stored.meta.explanation_ar
-      ], item)
+      ])
     }).map(item => ({ ...item, resultType: 'content' }))
 
     setSearchResults([...hadithMatches, ...contentMatches])
@@ -624,15 +792,16 @@ function App() {
 
   const saveHadith = async event => {
     event.preventDefault()
+
     if (!db || !admin || saving) return
 
     if (!clean(hadithForm.hadith_number) || !clean(hadithForm.tajik_text)) {
-      notify('Рақами ҳадис ва матни тоҷикӣ ҳатмӣ мебошанд.', 'error')
+      notify(t.hadithRequired, 'error')
       return
     }
 
     if (!hadithForm.book_id) {
-      notify('Лутфан китоби ҳадисро интихоб кунед.', 'error')
+      notify(t.chooseHadithBook, 'error')
       return
     }
 
@@ -652,13 +821,14 @@ function App() {
         tajik_text: clean(hadithForm.tajik_text),
         arabic_text: clean(hadithForm.arabic_text) || null,
         source_note: makeStoredNote(hadithForm.source_note, meta),
+        commentary: clean(hadithForm.explanation_tg) || null,
         is_published: true,
         updated_at: new Date().toISOString()
       }
 
       const result = editingHadith
-        ? await db.from('hadith').update(payload).eq('id', editingHadith)
-        : await db.from('hadith').insert(payload)
+        ? await db.from('hadiths').update(payload).eq('id', editingHadith)
+        : await db.from('hadiths').insert(payload)
 
       if (result.error) throw result.error
 
@@ -676,6 +846,7 @@ function App() {
 
   const startEditHadith = item => {
     const stored = parseStoredNote(item.source_note)
+
     setEditingHadith(item.id)
     setHadithForm({
       book_id: item.book_id || '',
@@ -683,19 +854,21 @@ function App() {
       tajik_text: item.tajik_text || '',
       arabic_text: item.arabic_text || '',
       source_note: stored.source,
-      explanation_tg: stored.meta.explanation_tg || '',
+      explanation_tg: item.commentary || stored.meta.explanation_tg || '',
       explanation_ar: stored.meta.explanation_ar || '',
       audio_url: stored.meta.audio_url || '',
       video_url: stored.meta.video_url || ''
     })
+
     setAdminTab('hadith')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const toggleHadith = async item => {
     if (!db || !admin) return
+
     try {
-      const { error } = await db.from('hadith')
+      const { error } = await db.from('hadiths')
         .update({
           is_published: item.is_published === false,
           updated_at: new Date().toISOString()
@@ -703,6 +876,7 @@ function App() {
         .eq('id', item.id)
 
       if (error) throw error
+
       await loadAdminData()
       await loadPublicData()
       notify(t.saved)
@@ -713,9 +887,12 @@ function App() {
 
   const deleteHadith = async item => {
     if (!db || !admin || !window.confirm(t.confirm)) return
+
     try {
-      const { error } = await db.from('hadith').delete().eq('id', item.id)
+      const { error } = await db.from('hadiths').delete().eq('id', item.id)
+
       if (error) throw error
+
       await loadAdminData()
       await loadPublicData()
       notify(t.saved)
@@ -726,22 +903,30 @@ function App() {
 
   const saveBook = async event => {
     event.preventDefault()
+
     if (!db || !admin || saving) return
 
     const name = clean(bookForm.name)
-    if (!name) return notify('Номи китобро навис.', 'error')
+
+    if (!name) {
+      notify(t.bookNameRequired, 'error')
+      return
+    }
 
     setSaving(true)
+
     try {
       const result = editingBook
         ? await db.from('hadith_books').update({ name }).eq('id', editingBook)
         : await db.from('hadith_books').insert({
             name,
+            slug: slugify(name),
             is_active: true,
             sort_order: books.length + 1
           })
 
       if (result.error) throw result.error
+
       resetBookForm()
       await loadAdminData()
       await loadPublicData()
@@ -755,12 +940,14 @@ function App() {
 
   const toggleBook = async book => {
     if (!db || !admin) return
+
     try {
       const { error } = await db.from('hadith_books')
         .update({ is_active: book.is_active === false })
         .eq('id', book.id)
 
       if (error) throw error
+
       await loadAdminData()
       await loadPublicData()
       notify(t.saved)
@@ -771,6 +958,7 @@ function App() {
 
   const saveContent = async event => {
     event.preventDefault()
+
     if (!db || !admin || saving) return
 
     if (
@@ -780,7 +968,7 @@ function App() {
       !clean(contentForm.audio_url) &&
       !clean(contentForm.video_url)
     ) {
-      notify('Барои мавод ҳадди ақал як матн ё пайванди аудио/видео ворид кунед.', 'error')
+      notify(t.contentRequired, 'error')
       return
     }
 
@@ -828,6 +1016,7 @@ function App() {
 
   const startEditContent = item => {
     const stored = parseStoredNote(item.source_note)
+
     setEditingContent(item.id)
     setContentForm({
       section_slug: item.section_slug || 'salihin',
@@ -840,12 +1029,14 @@ function App() {
       audio_url: stored.meta.audio_url || '',
       video_url: stored.meta.video_url || ''
     })
+
     setAdminTab('content')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const toggleContent = async item => {
     if (!db || !admin) return
+
     try {
       const { error } = await db.from('content_items')
         .update({
@@ -855,6 +1046,7 @@ function App() {
         .eq('id', item.id)
 
       if (error) throw error
+
       await loadAdminData()
       await loadPublicData()
       notify(t.saved)
@@ -865,11 +1057,13 @@ function App() {
 
   const deleteContent = async item => {
     if (!db || !admin || !window.confirm(t.confirm)) return
+
     try {
       const { error } = await db.from('content_items')
         .delete().eq('id', item.id)
 
       if (error) throw error
+
       await loadAdminData()
       await loadPublicData()
       notify(t.saved)
@@ -880,10 +1074,15 @@ function App() {
 
   const saveSection = async event => {
     event.preventDefault()
+
     if (!db || !admin || saving) return
 
     const title = clean(sectionForm.title)
-    if (!title) return notify('Номи бахшро ворид кунед.', 'error')
+
+    if (!title) {
+      notify(t.sectionNameRequired, 'error')
+      return
+    }
 
     setSaving(true)
 
@@ -899,8 +1098,8 @@ function App() {
 
       const payload = {}
 
-      const setField = (field, fallback, value) => {
-        if (field) payload[field] = value
+      const setField = (fieldName, fallback, value) => {
+        if (fieldName) payload[fieldName] = value
         else payload[fallback] = value
       }
 
@@ -948,14 +1147,16 @@ function App() {
     if (!db || !admin) return
 
     const row = sectionRows.find(item => String(item.id) === String(section.id))
+
     if (!row) {
-      notify('Ин бахш ҳоло дар ҷадвали sections сабт нашудааст.', 'error')
+      notify(t.sectionNotSaved, 'error')
       return
     }
 
     const fields = getSectionFields(row)
+
     if (!fields.active) {
-      notify('Дар ҷадвали sections сутуни is_active ё is_visible ёфт нашуд.', 'error')
+      notify(t.activeColumnMissing, 'error')
       return
     }
 
@@ -965,6 +1166,7 @@ function App() {
         .eq('id', row.id)
 
       if (error) throw error
+
       await loadAdminData()
       await loadPublicData()
       notify(t.saved)
@@ -988,7 +1190,7 @@ function App() {
     const nextRow = sectionRows.find(row => String(row.id) === String(next.id))
 
     if (!currentRow || !nextRow) {
-      notify('Барои тағйири тартиб бахшҳо бояд дар Supabase сабт шуда бошанд.', 'error')
+      notify(t.reorderNeedsSaved, 'error')
       return
     }
 
@@ -996,7 +1198,7 @@ function App() {
     const nextField = getSectionFields(nextRow).order
 
     if (!currentField || !nextField) {
-      notify('Сутуни sort_order ёфт нашуд.', 'error')
+      notify(t.orderColumnMissing, 'error')
       return
     }
 
@@ -1022,19 +1224,20 @@ function App() {
   }
 
   const deleteSection = async section => {
-    if (!db || !admin || !window.confirm(
-      'Бахш нест карда шавад? Маводҳои дохили он нест намешаванд.'
-    )) return
+    if (!db || !admin || !window.confirm(t.deleteSectionConfirm)) return
 
     const row = sectionRows.find(item => String(item.id) === String(section.id))
+
     if (!row) {
-      notify('Ин бахш дар ҷадвали sections сабт нашудааст.', 'error')
+      notify(t.sectionNotSaved, 'error')
       return
     }
 
     try {
       const { error } = await db.from('sections').delete().eq('id', row.id)
+
       if (error) throw error
+
       await loadAdminData()
       await loadPublicData()
       notify(t.saved)
@@ -1045,6 +1248,7 @@ function App() {
 
   const login = async event => {
     event.preventDefault()
+
     if (!db) return
 
     try {
@@ -1056,7 +1260,8 @@ function App() {
       if (error) throw error
 
       const userId = data?.user?.id
-      if (!userId) throw new Error('Истифодабаранда ёфт нашуд.')
+
+      if (!userId) throw new Error(t.userNotFound)
 
       const { data: profile, error: profileError } = await db
         .from('profiles')
@@ -1068,7 +1273,7 @@ function App() {
 
       if (profile?.role !== 'admin') {
         await db.auth.signOut()
-        throw new Error('Ин ҳисоб ҳуқуқи мудирро надорад.')
+        throw new Error(t.notAdmin)
       }
 
       setAdmin(true)
@@ -1082,6 +1287,7 @@ function App() {
 
   const logout = async () => {
     if (db) await db.auth.signOut()
+
     setAdmin(false)
     setPage('home')
     notify(t.logout)
@@ -1091,13 +1297,17 @@ function App() {
     if (!selectedSection) return []
 
     if (selectedSection.slug === 'hadith') {
-      return hadithRows.map(item => ({ ...item, resultType: 'hadith' }))
+      if (!selectedBook) return []
+
+      return hadithRows
+        .filter(item => String(item.book_id) === String(selectedBook.id))
+        .map(item => ({ ...item, resultType: 'hadith' }))
     }
 
     return contentRows
       .filter(item => item.section_slug === selectedSection.slug)
       .map(item => ({ ...item, resultType: 'content' }))
-  }, [selectedSection, hadithRows, contentRows])
+  }, [selectedSection, selectedBook, hadithRows, contentRows])
 
   const renderMedia = item => {
     const stored = parseStoredNote(item.source_note)
@@ -1109,14 +1319,15 @@ function App() {
         {audio && (
           <div className="media-player">
             <audio controls preload="none" src={audio}>
-              Браузери шумо аудиоро дастгирӣ намекунад.
+              {t.browserNoAudio}
             </audio>
           </div>
         )}
+
         {video && (
           <div className="media-player">
             <video controls preload="metadata" src={video}>
-              Браузери шумо видеоро дастгирӣ намекунад.
+              {t.browserNoVideo}
             </video>
           </div>
         )}
@@ -1126,12 +1337,13 @@ function App() {
 
   const renderHadithCard = (item, query = '') => {
     const stored = parseStoredNote(item.source_note)
+    const commentary = item.commentary || stored.meta.explanation_tg
 
     return (
       <article className="public-item" key={`hadith-${item.id}`}>
         <div className="item-number">
           {getBookName(item.book_id)}
-          {item.hadith_number ? ` · Ҳадиси № ${item.hadith_number}` : ''}
+          {item.hadith_number ? ` · ${t.hadithLabel}${item.hadith_number}` : ''}
         </div>
 
         {item.arabic_text && (
@@ -1146,10 +1358,10 @@ function App() {
           </p>
         )}
 
-        {stored.meta.explanation_tg && (
+        {commentary && (
           <div className="explanation">
-            <strong>Шарҳи ҳадис:</strong>
-            <p><HighlightText text={stored.meta.explanation_tg} query={query} /></p>
+            <strong>{t.explanationHeading}</strong>
+            <p><HighlightText text={commentary} query={query} /></p>
           </div>
         )}
 
@@ -1199,7 +1411,7 @@ function App() {
 
         {stored.meta.explanation_tg && (
           <div className="explanation">
-            <strong>Шарҳ:</strong>
+            <strong>{lang === 'ru' ? 'Пояснение:' : lang === 'ar' ? 'الشرح:' : 'Шарҳ:'}</strong>
             <p><HighlightText text={stored.meta.explanation_tg} query={query} /></p>
           </div>
         )}
@@ -1260,7 +1472,7 @@ function App() {
             onChange={event => setHadithForm({ ...hadithForm, book_id: event.target.value })}
             required
           >
-            <option value="">Китобро интихоб кунед</option>
+            <option value="">{t.selectBook}</option>
             {books.map(book => (
               <option value={book.id} key={book.id}>{book.name}</option>
             ))}
@@ -1269,11 +1481,11 @@ function App() {
 
         {field(t.number, hadithForm.hadith_number,
           value => setHadithForm({ ...hadithForm, hadith_number: value }),
-          'Масалан: 15', true)}
+          t.exampleNumber, true)}
 
         {textarea(t.tajik, hadithForm.tajik_text,
           value => setHadithForm({ ...hadithForm, tajik_text: value }),
-          'Тарҷумаи ҳадис...', false)}
+          t.hadithTranslationPlaceholder)}
 
         {textarea(t.arabic, hadithForm.arabic_text,
           value => setHadithForm({ ...hadithForm, arabic_text: value }),
@@ -1301,6 +1513,7 @@ function App() {
           <button className="primary-button" type="submit" disabled={saving}>
             {saving ? t.loading : t.save}
           </button>
+
           {editingHadith && (
             <button className="secondary-button" type="button" onClick={resetHadithForm}>
               {t.cancel}
@@ -1313,19 +1526,28 @@ function App() {
         {hadithRows.map(item => (
           <div className="admin-item" key={item.id}>
             <h4>{getBookName(item.book_id)} · № {item.hadith_number}</h4>
-            <p>{item.tajik_text || item.arabic_text || 'Матн ворид нашудааст.'}</p>
+            <p>{item.tajik_text || item.arabic_text || t.textMissing}</p>
+
             <div className="admin-item-status">
               {item.is_published === false ? t.hidden : t.published}
             </div>
+
             <div className="admin-item-actions">
-              <button className="secondary-button" onClick={() => startEditHadith(item)}>{t.edit}</button>
+              <button className="secondary-button" onClick={() => startEditHadith(item)}>
+                {t.edit}
+              </button>
+
               <button className="secondary-button" onClick={() => toggleHadith(item)}>
                 {item.is_published === false ? t.show : t.hide}
               </button>
-              <button className="danger-button" onClick={() => deleteHadith(item)}>{t.delete}</button>
+
+              <button className="danger-button" onClick={() => deleteHadith(item)}>
+                {t.delete}
+              </button>
             </div>
           </div>
         ))}
+
         {!hadithRows.length && <div className="empty-state">{t.noHadiths}</div>}
       </div>
     </>
@@ -1335,12 +1557,18 @@ function App() {
     <>
       <form className="admin-form" onSubmit={saveBook}>
         <h3>{editingBook ? t.edit : t.newBook}</h3>
-        {field(t.title, bookForm.name,
-          value => setBookForm({ name: value }), 'Саҳеҳи Бухорӣ', true)}
+
+        {field(t.title, bookForm.name, value => setBookForm({ name: value }), t.bookExample, true)}
+
         <div className="form-actions">
-          <button className="primary-button" type="submit" disabled={saving}>{t.save}</button>
+          <button className="primary-button" type="submit" disabled={saving}>
+            {t.save}
+          </button>
+
           {editingBook && (
-            <button className="secondary-button" type="button" onClick={resetBookForm}>{t.cancel}</button>
+            <button className="secondary-button" type="button" onClick={resetBookForm}>
+              {t.cancel}
+            </button>
           )}
         </div>
       </form>
@@ -1349,18 +1577,23 @@ function App() {
         {books.map(book => (
           <div className="admin-item" key={book.id}>
             <h4>{book.name}</h4>
+
             <div className="admin-item-actions">
               <button className="secondary-button" onClick={() => {
                 setEditingBook(book.id)
                 setBookForm({ name: book.name || '' })
-              }}>{t.edit}</button>
+              }}>
+                {t.edit}
+              </button>
+
               <button className="secondary-button" onClick={() => toggleBook(book)}>
                 {book.is_active === false ? t.show : t.hide}
               </button>
             </div>
           </div>
         ))}
-        {!books.length && <div className="empty-state">Китобҳо ҳоло илова нашудаанд.</div>}
+
+        {!books.length && <div className="empty-state">{t.noBooks}</div>}
       </div>
     </>
   )
@@ -1411,8 +1644,11 @@ function App() {
           <button className="primary-button" type="submit" disabled={saving}>
             {saving ? t.loading : t.save}
           </button>
+
           {editingContent && (
-            <button className="secondary-button" type="button" onClick={resetContentForm}>{t.cancel}</button>
+            <button className="secondary-button" type="button" onClick={resetContentForm}>
+              {t.cancel}
+            </button>
           )}
         </div>
       </form>
@@ -1422,18 +1658,27 @@ function App() {
           <div className="admin-item" key={item.id}>
             <h4>{item.title || item.section_slug}</h4>
             <p>{item.tajik_text || item.content_text || item.arabic_text || ''}</p>
+
             <div className="admin-item-status">
               {item.section_slug} · {item.is_published === false ? t.hidden : t.published}
             </div>
+
             <div className="admin-item-actions">
-              <button className="secondary-button" onClick={() => startEditContent(item)}>{t.edit}</button>
+              <button className="secondary-button" onClick={() => startEditContent(item)}>
+                {t.edit}
+              </button>
+
               <button className="secondary-button" onClick={() => toggleContent(item)}>
                 {item.is_published === false ? t.show : t.hide}
               </button>
-              <button className="danger-button" onClick={() => deleteContent(item)}>{t.delete}</button>
+
+              <button className="danger-button" onClick={() => deleteContent(item)}>
+                {t.delete}
+              </button>
             </div>
           </div>
         ))}
+
         {!contentRows.length && <div className="empty-state">{t.noContent}</div>}
       </div>
     </>
@@ -1446,23 +1691,23 @@ function App() {
 
         {field(t.title, sectionForm.title,
           value => setSectionForm({ ...sectionForm, title: value }),
-          'Номи бахш', true)}
+          t.sectionName, true)}
 
-        {field('Slug / рамзи бахш', sectionForm.slug,
+        {field(t.sectionSlug, sectionForm.slug,
           value => setSectionForm({ ...sectionForm, slug: value }),
-          'Масалан: new-section')}
+          t.sectionSlugExample)}
 
         {field(t.icon, sectionForm.icon,
-          value => setSectionForm({ ...sectionForm, icon: value }),
-          '📚')}
+          value => setSectionForm({ ...sectionForm, icon: value }), '📚')}
 
         {textarea(t.description, sectionForm.description,
-          value => setSectionForm({ ...sectionForm, description: value }))}
+          value => setSectionForm({ ...sectionForm, description: value })}
 
         <div className="form-actions">
           <button className="primary-button" type="submit" disabled={saving}>
             {saving ? t.loading : t.save}
           </button>
+
           {editingSection && (
             <button className="secondary-button" type="button" onClick={resetSectionForm}>
               {t.cancel}
@@ -1476,16 +1721,27 @@ function App() {
           <div className="admin-item" key={section.slug}>
             <h4>{section.icon} {section.title}</h4>
             <p>{section.description}</p>
+
             <div className="admin-item-actions">
               <button className="secondary-button" onClick={() => moveSection(section, -1)} disabled={index === 0}>
                 ↑ {t.moveUp}
               </button>
+
               <button className="secondary-button" onClick={() => moveSection(section, 1)} disabled={index === sections.length - 1}>
                 ↓ {t.moveDown}
               </button>
-              <button className="secondary-button" onClick={() => startEditSection(section)}>{t.edit}</button>
-              <button className="secondary-button" onClick={() => toggleSection(section)}>{t.hide}</button>
-              <button className="danger-button" onClick={() => deleteSection(section)}>{t.delete}</button>
+
+              <button className="secondary-button" onClick={() => startEditSection(section)}>
+                {t.edit}
+              </button>
+
+              <button className="secondary-button" onClick={() => toggleSection(section)}>
+                {t.hide}
+              </button>
+
+              <button className="danger-button" onClick={() => deleteSection(section)}>
+                {t.delete}
+              </button>
             </div>
           </div>
         ))}
@@ -1523,11 +1779,18 @@ function App() {
 
           {admin ? (
             <>
-              <button className="header-action" onClick={() => setPage('admin')}>{t.admin}</button>
-              <button className="header-action" onClick={logout}>{t.logout}</button>
+              <button className="header-action" onClick={() => setPage('admin')}>
+                {t.admin}
+              </button>
+
+              <button className="header-action" onClick={logout}>
+                {t.logout}
+              </button>
             </>
           ) : (
-            <button className="header-action" onClick={() => setLoginOpen(true)}>{t.admin}</button>
+            <button className="header-action" onClick={() => setLoginOpen(true)}>
+              {t.admin}
+            </button>
           )}
         </div>
       </header>
@@ -1544,12 +1807,8 @@ function App() {
           <section className="miftah-banner">
             <h1 className="miftah-banner-title">𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</h1>
             <p className="miftah-banner-arabic">بَلِّغُوا عَنِّي وَلَوْ آيَةً</p>
-            <p className="miftah-banner-translation">
-              Аз номи ман бирасонед, ҳарчанд як оят бошад.
-            </p>
-            <p className="miftah-banner-subtitle">
-              Саҳеҳи Бухорӣ · ҳадиси № 3461
-            </p>
+            <p className="miftah-banner-translation">{t.bannerTranslation}</p>
+            <p className="miftah-banner-subtitle">{t.bannerSource}</p>
           </section>
 
           {dailyHadith && (
@@ -1565,10 +1824,17 @@ function App() {
 
               <p>{dailyHadith.tajik_text}</p>
 
+              {dailyHadith.commentary && (
+                <div className="explanation">
+                  <strong>{t.dailyExplanation}</strong>
+                  <p>{dailyHadith.commentary}</p>
+                </div>
+              )}
+
               <div className="source-note">
                 {getBookName(dailyHadith.book_id)}
                 {dailyHadith.hadith_number
-                  ? ` · Ҳадиси № ${dailyHadith.hadith_number}`
+                  ? ` · ${t.hadithLabel}${dailyHadith.hadith_number}`
                   : ''}
               </div>
             </section>
@@ -1583,6 +1849,7 @@ function App() {
               }}
               placeholder={t.searchPlaceholder}
             />
+
             <button className="primary-button" onClick={performSearch}>
               <span>⌕</span> {t.search}
             </button>
@@ -1591,8 +1858,8 @@ function App() {
           {page === 'home' && (
             <>
               <section className="hero">
-                <h2>Мифтаҳул Ҳадис</h2>
-                <p>Манбаи омӯзиш ва мутолиаи Қуръон, ҳадис ва дигар илмҳои исломӣ.</p>
+                <h2>{t.heroTitle}</h2>
+                <p>{t.heroDescription}</p>
               </section>
 
               <div className="menu">
@@ -1603,10 +1870,12 @@ function App() {
                     onClick={() => openSection(section)}
                   >
                     <span className="menu-card-icon">{section.icon}</span>
+
                     <span>
                       <h3>{section.title}</h3>
                       <p>{section.description}</p>
                     </span>
+
                     <span className="menu-arrow">‹</span>
                   </button>
                 ))}
@@ -1625,19 +1894,55 @@ function App() {
                 <p>{selectedSection.description}</p>
               </div>
 
-              <div className="public-list">
-                {publicContent.length ? (
-                  publicContent.map(item =>
-                    item.resultType === 'hadith'
-                      ? renderHadithCard(item)
-                      : renderContentCard(item)
-                  )
-                ) : (
-                  <div className="empty-state">
-                    {selectedSection.slug === 'hadith' ? t.noHadiths : t.noContent}
+              {selectedSection.slug === 'hadith' && !selectedBook ? (
+                <div className="menu">
+                  {books.map(book => (
+                    <button
+                      className="menu-card"
+                      key={book.id}
+                      onClick={() => openBook(book)}
+                    >
+                      <span className="menu-card-icon">📚</span>
+
+                      <span>
+                        <h3>{book.name}</h3>
+                        <p>{lang === 'ru' ? 'Открыть хадисы этого сборника' : lang === 'ar' ? 'عرض أحاديث هذا الكتاب' : 'Дидани ҳадисҳои ин китоб'}</p>
+                      </span>
+
+                      <span className="menu-arrow">‹</span>
+                    </button>
+                  ))}
+
+                  {!books.length && (
+                    <div className="empty-state">{t.noBooks}</div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {selectedSection.slug === 'hadith' && selectedBook && (
+                    <div className="section-intro">
+                      <button className="secondary-button back-button" onClick={goBackToBooks}>
+                        ← {t.back}
+                      </button>
+                      <h3>📚 {selectedBook.name}</h3>
+                    </div>
+                  )}
+
+                  <div className="public-list">
+                    {publicContent.length ? (
+                      publicContent.map(item =>
+                        item.resultType === 'hadith'
+                          ? renderHadithCard(item)
+                          : renderContentCard(item)
+                      )
+                    ) : (
+                      <div className="empty-state">
+                        {selectedSection.slug === 'hadith' ? t.noHadiths : t.noContent}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </section>
           )}
 
@@ -1668,7 +1973,7 @@ function App() {
 
           <footer className="footer">
             <strong>𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</strong>
-            <p>© {new Date().getFullYear()} · Ҳамаи ҳуқуқҳо ҳифз шудаанд.</p>
+            <p>© {new Date().getFullYear()} · {t.copyright}</p>
           </footer>
         </main>
       )}
@@ -1682,16 +1987,30 @@ function App() {
               <div className="admin-header">
                 <div>
                   <h2>{t.admin}</h2>
-                  <p>Идоракунии пурраи Miftahulhadis</p>
+                  <p>{t.adminDescription}</p>
                 </div>
-                <button className="secondary-button" onClick={goHome}>← {t.back}</button>
+
+                <button className="secondary-button" onClick={goHome}>
+                  ← {t.back}
+                </button>
               </div>
 
               <div className="admin-tabs">
-                <button className={adminTab === 'hadith' ? 'active' : ''} onClick={() => setAdminTab('hadith')}>📚 {t.hadiths}</button>
-                <button className={adminTab === 'books' ? 'active' : ''} onClick={() => setAdminTab('books')}>📖 {t.books}</button>
-                <button className={adminTab === 'content' ? 'active' : ''} onClick={() => setAdminTab('content')}>📝 {t.contents}</button>
-                <button className={adminTab === 'sections' ? 'active' : ''} onClick={() => setAdminTab('sections')}>⚙️ {t.sections}</button>
+                <button className={adminTab === 'hadith' ? 'active' : ''} onClick={() => setAdminTab('hadith')}>
+                  📚 {t.hadiths}
+                </button>
+
+                <button className={adminTab === 'books' ? 'active' : ''} onClick={() => setAdminTab('books')}>
+                  📖 {t.books}
+                </button>
+
+                <button className={adminTab === 'content' ? 'active' : ''} onClick={() => setAdminTab('content')}>
+                  📝 {t.contents}
+                </button>
+
+                <button className={adminTab === 'sections' ? 'active' : ''} onClick={() => setAdminTab('sections')}>
+                  ⚙️ {t.sections}
+                </button>
               </div>
 
               {adminTab === 'hadith' && renderAdminHadith()}
@@ -1707,21 +2026,36 @@ function App() {
         <div className="modal-overlay" onClick={() => setLoginOpen(false)}>
           <div className="login-page" onClick={event => event.stopPropagation()}>
             <form className="login-card" onSubmit={login}>
-              <button type="button" className="modal-close" onClick={() => setLoginOpen(false)}>×</button>
+              <button type="button" className="modal-close" onClick={() => setLoginOpen(false)}>
+                ×
+              </button>
+
               <h2>{t.login}</h2>
-              <p>Барои идоракунии барнома ба ҳисоби мудир ворид шавед.</p>
+              <p>{t.loginDescription}</p>
 
               <div className="form-group">
                 <label>{t.email}</label>
-                <input type="email" value={email} onChange={event => setEmail(event.target.value)} required />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={event => setEmail(event.target.value)}
+                  required
+                />
               </div>
 
               <div className="form-group">
                 <label>{t.password}</label>
-                <input type="password" value={password} onChange={event => setPassword(event.target.value)} required />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={event => setPassword(event.target.value)}
+                  required
+                />
               </div>
 
-              <button className="primary-button" type="submit">{t.login}</button>
+              <button className="primary-button" type="submit">
+                {t.login}
+              </button>
             </form>
           </div>
         </div>
