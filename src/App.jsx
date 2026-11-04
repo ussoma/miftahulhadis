@@ -24,8 +24,9 @@ const DEFAULT_SECTIONS = [
   { slug: 'companions', title: 'Сирати саҳоба رضي الله عنهم', icon: '⭐', description: 'Зиндагии саҳоба', sort_order: 6, is_active: true },
   { slug: 'duas', title: 'Дуоҳо', icon: '🤲', description: 'Дуоҳои Қуръонӣ ва набавӣ', sort_order: 7, is_active: true },
   { slug: 'adhkar', title: 'Азкор', icon: '📿', description: 'Азкори саҳару шом', sort_order: 8, is_active: true },
-  { slug: 'lessons', title: 'Дарсҳои Исломӣ', icon: '🎓', description: 'Дарсҳои фоидабахши исломӣ', sort_order: 9, is_active: true },
-  { slug: 'questions', title: 'Саволҳои Исломӣ', icon: '❔', description: 'Саволу ҷавобҳои исломӣ', sort_order: 10, is_active: true }
+  { slug: 'sunnah', title: 'Суннатҳо', icon: '🌿', description: 'Суннатҳои Расулуллоҳ ﷺ', sort_order: 9, is_active: true },
+  { slug: 'lessons', title: 'Дарсҳои Исломӣ', icon: '🎓', description: 'Дарсҳои фоидабахши исломӣ', sort_order: 10, is_active: true },
+  { slug: 'questions', title: 'Саволҳои Исломӣ', icon: '❔', description: 'Саволу ҷавобҳои исломӣ', sort_order: 11, is_active: true }
 ]
 
 const DEFAULT_BOOKS = [
@@ -325,6 +326,8 @@ const EMPTY_HADITH = {
   source_note: '',
   explanation_tg: '',
   explanation_ar: '',
+  russian_text: '',
+  explanation_ru: '',
   audio_url: '',
   video_url: ''
 }
@@ -336,6 +339,9 @@ const EMPTY_CONTENT = {
   arabic_text: '',
   explanation_tg: '',
   explanation_ar: '',
+  russian_text: '',
+  explanation_ru: '',
+  is_daily_sunnah: false,
   source_note: '',
   audio_url: '',
   video_url: ''
@@ -520,61 +526,66 @@ function App() {
     setDailyHadith(published[index])
   }, [])
 
-  // 8 китоби пешфарзро бе такрор месозад.
-  // Китобҳои мавҷударо фаъол мекунад ва китобҳои навро танҳо дар ҳолати набудан илова мекунад.
+  // Китобҳои пешфарзро танҳо агар набошанд илова мекунад.
+  // Китобҳои мавҷуда, ҳолати фаъолият ва тартиби онҳоро тағйир намедиҳад.
   const ensureDefaultBooks = async existingBooks => {
     let result = [...existingBooks]
 
     for (const defaultBook of DEFAULT_BOOKS) {
-      const existing = result.find(book =>
+      const exists = result.some(book =>
         clean(book.slug).toLowerCase() === defaultBook.slug.toLowerCase() ||
         clean(book.name).toLowerCase() === defaultBook.name.toLowerCase()
       )
 
-      if (existing) {
-        if (
-          existing.is_active === false ||
-          Number(existing.sort_order) !== defaultBook.sort_order
-        ) {
-          const { data, error } = await db
-            .from('hadith_books')
-            .update({
-              is_active: true,
-              sort_order: defaultBook.sort_order
-            })
-            .eq('id', existing.id)
-            .select('*')
-            .maybeSingle()
+      if (exists) continue
 
-          if (error) throw error
+      const { data, error } = await db
+        .from('hadith_books')
+        .insert({
+          name: defaultBook.name,
+          slug: defaultBook.slug,
+          sort_order: defaultBook.sort_order,
+          is_active: true
+        })
+        .select('*')
+        .single()
 
-          if (data) {
-            result = result.map(book =>
-              String(book.id) === String(existing.id) ? data : book
-            )
-          }
-        }
-      } else {
-        const { data, error } = await db
-          .from('hadith_books')
-          .insert({
-            name: defaultBook.name,
-            slug: defaultBook.slug,
-            sort_order: defaultBook.sort_order,
-            is_active: true
-          })
-          .select('*')
-          .single()
-
-        if (error) throw error
-
-        if (data) result.push(data)
-      }
+      if (error) throw error
+      if (data) result.push(data)
     }
 
-    return result.sort(
-      (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
-    )
+    return result.sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+  }
+
+  // Бахши «Суннатҳо»-ро танҳо дар сурати набудан илова мекунад.
+  // Ҳеҷ бахши мавҷударо навсозӣ ё нест намекунад.
+  const ensureSunnahSection = async existingRows => {
+    const found = existingRows.some(row => {
+      const fields = getSectionFields(row)
+      return clean(row?.[fields.slug]).toLowerCase() === 'sunnah'
+    })
+    if (found) return existingRows
+
+    const maxOrder = existingRows.reduce((max, row, index) => {
+      const fields = getSectionFields(row)
+      return Math.max(max, Number(row?.[fields.order] ?? index + 1))
+    }, 0)
+
+    const payload = {
+      slug: 'sunnah',
+      title: 'Суннатҳо',
+      description: 'Суннатҳои Расулуллоҳ ﷺ',
+      icon: '🌿',
+      sort_order: maxOrder + 1,
+      is_active: true
+    }
+
+    const { data, error } = await db.from('sections').insert(payload).select('*').single()
+    if (error) {
+      console.warn('Бахши Суннатҳо ба база илова нашуд; намоиши маҳаллӣ истифода мешавад:', error)
+      return existingRows
+    }
+    return [...existingRows, data]
   }
 
   const loadPublicData = useCallback(async () => {
@@ -615,7 +626,10 @@ function App() {
           .map(normalizeSection)
           .filter(item => item.is_active)
           .sort((a, b) => a.sort_order - b.sort_order)
-
+        if (!normalized.some(item => item.slug === 'sunnah')) {
+          normalized.push(DEFAULT_SECTIONS.find(item => item.slug === 'sunnah'))
+        }
+        normalized.sort((a, b) => a.sort_order - b.sort_order)
         setSections(normalized.length ? normalized : DEFAULT_SECTIONS)
       } else {
         setSections(DEFAULT_SECTIONS)
@@ -643,8 +657,9 @@ function App() {
       if (hadithRes.error) throw hadithRes.error
       if (contentRes.error) throw contentRes.error
 
-      // Аввал 8 китоби пешфарзро таъмин мекунем.
+      // Танҳо китобҳои набударо илова мекунем; китобҳои мавҷуда бетағйир мемонанд.
       const allBooks = await ensureDefaultBooks(booksRes.data || [])
+      const allSectionRows = await ensureSunnahSection(sectionsRes.data || [])
 
       const loadedHadith = sortByDate(hadithRes.data || [])
       const loadedContent = sortByDate(contentRes.data || [])
@@ -655,15 +670,12 @@ function App() {
       refreshDaily(loadedHadith)
 
       if (!sectionsRes.error) {
-        setSectionRows(sectionsRes.data || [])
-
-        if (sectionsRes.data?.length) {
-          setSections(
-            sectionsRes.data
-              .map(normalizeSection)
-              .sort((a, b) => a.sort_order - b.sort_order)
-          )
+        setSectionRows(allSectionRows)
+        const normalized = allSectionRows.map(normalizeSection)
+        if (!normalized.some(item => item.slug === 'sunnah')) {
+          normalized.push(DEFAULT_SECTIONS.find(item => item.slug === 'sunnah'))
         }
+        setSections(normalized.sort((a, b) => a.sort_order - b.sort_order))
       }
     } catch (error) {
       console.error('Admin data error:', error)
@@ -830,9 +842,15 @@ function App() {
     setSaving(true)
 
     try {
+      const previousMeta = editingHadith
+        ? parseStoredNote(hadithRows.find(row => String(row.id) === String(editingHadith))?.source_note).meta
+        : {}
       const meta = {
+        ...previousMeta,
         explanation_tg: clean(hadithForm.explanation_tg),
         explanation_ar: clean(hadithForm.explanation_ar),
+        russian_text: clean(hadithForm.russian_text),
+        explanation_ru: clean(hadithForm.explanation_ru),
         audio_url: clean(hadithForm.audio_url),
         video_url: clean(hadithForm.video_url)
       }
@@ -878,6 +896,8 @@ function App() {
       source_note: stored.source,
       explanation_tg: item.commentary || stored.meta.explanation_tg || '',
       explanation_ar: stored.meta.explanation_ar || '',
+      russian_text: stored.meta.russian_text || item.russian_text || '',
+      explanation_ru: stored.meta.explanation_ru || '',
       audio_url: stored.meta.audio_url || '',
       video_url: stored.meta.video_url || ''
     })
@@ -987,6 +1007,7 @@ function App() {
       !clean(contentForm.title) &&
       !clean(contentForm.tajik_text) &&
       !clean(contentForm.arabic_text) &&
+      !clean(contentForm.russian_text) &&
       !clean(contentForm.audio_url) &&
       !clean(contentForm.video_url)
     ) {
@@ -997,9 +1018,16 @@ function App() {
     setSaving(true)
 
     try {
+      const previousMeta = editingContent
+        ? parseStoredNote(contentRows.find(row => String(row.id) === String(editingContent))?.source_note).meta
+        : {}
       const meta = {
+        ...previousMeta,
         explanation_tg: clean(contentForm.explanation_tg),
         explanation_ar: clean(contentForm.explanation_ar),
+        russian_text: clean(contentForm.russian_text),
+        explanation_ru: clean(contentForm.explanation_ru),
+        is_daily_sunnah: contentForm.section_slug === 'sunnah' && Boolean(contentForm.is_daily_sunnah),
         audio_url: clean(contentForm.audio_url),
         video_url: clean(contentForm.video_url)
       }
@@ -1048,6 +1076,9 @@ function App() {
       source_note: stored.source,
       explanation_tg: stored.meta.explanation_tg || '',
       explanation_ar: stored.meta.explanation_ar || '',
+      russian_text: stored.meta.russian_text || item.russian_text || '',
+      explanation_ru: stored.meta.explanation_ru || '',
+      is_daily_sunnah: Boolean(stored.meta.is_daily_sunnah),
       audio_url: stored.meta.audio_url || '',
       video_url: stored.meta.video_url || ''
     })
@@ -1332,6 +1363,17 @@ function App() {
       .map(item => ({ ...item, resultType: 'content' }))
   }, [selectedSection, selectedBook, hadithRows, contentRows])
 
+  const dailySunnah = useMemo(() => {
+    const candidates = contentRows.filter(item => {
+      const meta = parseStoredNote(item.source_note).meta
+      return item.section_slug === 'sunnah' && meta.is_daily_sunnah === true
+    })
+    return candidates.sort((a, b) =>
+      new Date(b.updated_at || b.created_at || 0).getTime() -
+      new Date(a.updated_at || a.created_at || 0).getTime()
+    )[0] || null
+  }, [contentRows])
+
   const renderMedia = item => {
     const stored = parseStoredNote(item.source_note)
     const audio = stored.meta.audio_url
@@ -1360,7 +1402,12 @@ function App() {
 
   const renderHadithCard = (item, query = '') => {
     const stored = parseStoredNote(item.source_note)
-    const commentary = item.commentary || stored.meta.explanation_tg
+    const commentary = lang === 'ru'
+      ? (stored.meta.explanation_ru || item.commentary || stored.meta.explanation_tg)
+      : (item.commentary || stored.meta.explanation_tg)
+    const translatedHadith = lang === 'ru'
+      ? (stored.meta.russian_text || item.russian_text || item.tajik_text)
+      : (lang === 'ar' ? (item.arabic_text || item.tajik_text) : item.tajik_text)
 
     return (
       <article className="public-item" key={`hadith-${item.id}`}>
@@ -1375,10 +1422,8 @@ function App() {
           </p>
         )}
 
-        {item.tajik_text && (
-          <p>
-            <HighlightText text={item.tajik_text} query={query} />
-          </p>
+        {translatedHadith && (
+          <p><HighlightText text={translatedHadith} query={query} /></p>
         )}
 
         {commentary && (
@@ -1410,6 +1455,14 @@ function App() {
 
   const renderContentCard = (item, query = '') => {
     const stored = parseStoredNote(item.source_note)
+    const localizedText = lang === 'ru'
+      ? (stored.meta.russian_text || item.russian_text || item.tajik_text || item.content_text)
+      : (lang === 'ar'
+        ? (item.arabic_text || item.tajik_text || item.content_text)
+        : (item.tajik_text || item.content_text))
+    const localizedExplanation = lang === 'ru'
+      ? (stored.meta.explanation_ru || stored.meta.explanation_tg)
+      : stored.meta.explanation_tg
 
     return (
       <article className="public-item" key={`content-${item.id}`}>
@@ -1423,19 +1476,14 @@ function App() {
           </p>
         )}
 
-        {(item.tajik_text || item.content_text) && (
-          <p>
-            <HighlightText
-              text={item.tajik_text || item.content_text}
-              query={query}
-            />
-          </p>
+        {localizedText && (
+          <p><HighlightText text={localizedText} query={query} /></p>
         )}
 
-        {stored.meta.explanation_tg && (
+        {localizedExplanation && (
           <div className="explanation">
             <strong>{lang === 'ru' ? 'Пояснение:' : lang === 'ar' ? 'الشرح:' : 'Шарҳ:'}</strong>
-            <p><HighlightText text={stored.meta.explanation_tg} query={query} /></p>
+            <p><HighlightText text={localizedExplanation} query={query} /></p>
           </div>
         )}
 
@@ -1510,6 +1558,9 @@ function App() {
           value => setHadithForm({ ...hadithForm, tajik_text: value }),
           t.hadithTranslationPlaceholder)}
 
+        {textarea('Матни русӣ / Русский перевод', hadithForm.russian_text,
+          value => setHadithForm({ ...hadithForm, russian_text: value }))}
+
         {textarea(t.arabic, hadithForm.arabic_text,
           value => setHadithForm({ ...hadithForm, arabic_text: value }),
           'النص العربي...', true)}
@@ -1519,6 +1570,9 @@ function App() {
 
         {textarea(t.explanationTg, hadithForm.explanation_tg,
           value => setHadithForm({ ...hadithForm, explanation_tg: value }))}
+
+        {textarea('Шарҳи русӣ / Объяснение на русском', hadithForm.explanation_ru,
+          value => setHadithForm({ ...hadithForm, explanation_ru: value }))}
 
         {textarea(t.explanationAr, hadithForm.explanation_ar,
           value => setHadithForm({ ...hadithForm, explanation_ar: value }),
@@ -1645,17 +1699,36 @@ function App() {
         {textarea(t.tajik, contentForm.tajik_text,
           value => setContentForm({ ...contentForm, tajik_text: value }))}
 
+        {textarea('Матни русӣ / Русский текст', contentForm.russian_text,
+          value => setContentForm({ ...contentForm, russian_text: value }))}
+
         {textarea(t.arabic, contentForm.arabic_text,
           value => setContentForm({ ...contentForm, arabic_text: value }), '', true)}
 
         {textarea(t.explanationTg, contentForm.explanation_tg,
           value => setContentForm({ ...contentForm, explanation_tg: value }))}
 
+        {textarea('Шарҳи русӣ / Объяснение на русском', contentForm.explanation_ru,
+          value => setContentForm({ ...contentForm, explanation_ru: value }))}
+
         {textarea(t.explanationAr, contentForm.explanation_ar,
           value => setContentForm({ ...contentForm, explanation_ar: value }), '', true)}
 
         {field(t.source, contentForm.source_note,
           value => setContentForm({ ...contentForm, source_note: value }))}
+
+        {contentForm.section_slug === 'sunnah' && (
+          <div className="form-group checkbox-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={Boolean(contentForm.is_daily_sunnah)}
+                onChange={event => setContentForm({ ...contentForm, is_daily_sunnah: event.target.checked })}
+              />
+              <span>Инро ҳамчун «Суннати рӯз» дар саҳифаи асосӣ нишон деҳ</span>
+            </label>
+          </div>
+        )}
 
         {field(t.audio, contentForm.audio_url,
           value => setContentForm({ ...contentForm, audio_url: value }), 'https://...')}
@@ -1831,13 +1904,6 @@ function App() {
 
       {page !== 'admin' && (
         <main className="main-content">
-          <section className="miftah-banner">
-            <h1 className="miftah-banner-title">𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</h1>
-            <p className="miftah-banner-arabic">بَلِّغُوا عَنِّي وَلَوْ آيَةً</p>
-            <p className="miftah-banner-translation">{t.bannerTranslation}</p>
-            <p className="miftah-banner-subtitle">{t.bannerSource}</p>
-          </section>
-
           {dailyHadith && (
             <section className="daily-card">
               <div className="daily-heading">
@@ -1849,7 +1915,9 @@ function App() {
                 <p className="arabic-text">{dailyHadith.arabic_text}</p>
               )}
 
-              <p>{dailyHadith.tajik_text}</p>
+              <p>{lang === 'ru'
+                ? (parseStoredNote(dailyHadith.source_note).meta.russian_text || dailyHadith.tajik_text)
+                : (lang === 'ar' ? (dailyHadith.arabic_text || dailyHadith.tajik_text) : dailyHadith.tajik_text)}</p>
 
               {(dailyHadith.commentary || parseStoredNote(dailyHadith.source_note).meta.explanation_tg) && (
                 <div className="explanation">
@@ -1869,6 +1937,13 @@ function App() {
               </div>
             </section>
           )}
+
+          <section className="miftah-banner">
+            <h1 className="miftah-banner-title">𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</h1>
+            <p className="miftah-banner-arabic">بَلِّغُوا عَنِّي وَلَوْ آيَةً</p>
+            <p className="miftah-banner-translation">{t.bannerTranslation}</p>
+            <p className="miftah-banner-subtitle">{t.bannerSource}</p>
+          </section>
 
           <div className="search-box">
             <input
@@ -1910,6 +1985,33 @@ function App() {
                   </button>
                 ))}
               </div>
+
+              {dailySunnah && (
+                <section className="daily-card sunnah-daily-card">
+                  <div className="daily-heading">
+                    <span>🌿</span>
+                    <h2>{lang === 'ru' ? 'Сунна дня' : lang === 'ar' ? 'سنة اليوم' : 'Суннати рӯз'}</h2>
+                  </div>
+                  {dailySunnah.title && <h3>{dailySunnah.title}</h3>}
+                  {dailySunnah.arabic_text && <p className="arabic-text">{dailySunnah.arabic_text}</p>}
+                  <p>{lang === 'ru'
+                    ? (parseStoredNote(dailySunnah.source_note).meta.russian_text || dailySunnah.tajik_text || dailySunnah.content_text)
+                    : (lang === 'ar'
+                      ? (dailySunnah.arabic_text || dailySunnah.tajik_text || dailySunnah.content_text)
+                      : (dailySunnah.tajik_text || dailySunnah.content_text))}</p>
+                  {parseStoredNote(dailySunnah.source_note).meta.explanation_tg && (
+                    <div className="explanation">
+                      <strong>{lang === 'ru' ? 'Пояснение:' : lang === 'ar' ? 'الشرح:' : 'Шарҳ:'}</strong>
+                      <p>{lang === 'ru'
+                        ? (parseStoredNote(dailySunnah.source_note).meta.explanation_ru || parseStoredNote(dailySunnah.source_note).meta.explanation_tg)
+                        : parseStoredNote(dailySunnah.source_note).meta.explanation_tg}</p>
+                    </div>
+                  )}
+                  {parseStoredNote(dailySunnah.source_note).source && (
+                    <div className="source-note">{parseStoredNote(dailySunnah.source_note).source}</div>
+                  )}
+                </section>
+              )}
             </>
           )}
 
@@ -2102,5 +2204,4 @@ function App() {
     </div>
   )
 }
-
 export default App
