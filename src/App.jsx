@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './index.css'
@@ -31,7 +32,7 @@ const SECTIONS = [
 
 const T = {
   tg: {
-    title: '𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔',
+    title: 'Miftahulhadis',
     welcome: 'Китобхонаи донишҳои исломӣ',
     description: 'Сарчашмаҳои исломӣ барои омӯзиши дониш ва татбиқи он дар зиндагӣ.',
     sections: 'Бахшҳои исломӣ',
@@ -75,23 +76,22 @@ const T = {
     hide: 'Пинҳон кардан',
     chooseBook: 'Китобро интихоб кунед',
     hadithSeparate: 'Ҳадисҳо дар ҷадвали алоҳида нигоҳ дошта мешаванд.',
-    quranInfo: 'Маводи Қуръонро дар ҳамин бахш илова кунед.',
     configError: 'Пайвасти Supabase танзим нашудааст.',
     light: 'Сафед',
     green: 'Сабзи торик',
     sound: 'Садо',
-    on: 'Фаъол',
-    off: 'Хомӯш',
     loading: 'Маълумот бор шуда истодааст...',
     noHadith: 'Дар ин бахш ҳоло ҳадис нест.',
     hadithRequired: 'Китоб, рақам ва матни тоҷикӣ ҳатмист.',
     numberError: 'Рақами ҳадис бояд адади мусбат бошад.',
     titleRequired: 'Сарлавҳа ҳатмист.',
-    contentRequired: 'Матнро ворид кунед.'
+    contentRequired: 'Матнро ворид кунед.',
+    daily: 'Ҳадиси рӯз',
+    published: 'Нашршуда',
+    unpublished: 'Нашрнашуда'
   },
-
   ru: {
-    title: '𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔',
+    title: 'Miftahulhadis',
     welcome: 'Библиотека исламских знаний',
     description: 'Исламские источники для изучения знаний и применения их в жизни.',
     sections: 'Исламские разделы',
@@ -135,23 +135,22 @@ const T = {
     hide: 'Скрыть',
     chooseBook: 'Выберите книгу',
     hadithSeparate: 'Хадисы хранятся в отдельной таблице.',
-    quranInfo: 'Материалы Корана добавляйте в этом разделе.',
     configError: 'Подключение Supabase не настроено.',
     light: 'Светлая',
     green: 'Тёмно-зелёная',
     sound: 'Звук',
-    on: 'Включён',
-    off: 'Выключен',
     loading: 'Загрузка данных...',
     noHadith: 'В этом разделе пока нет хадисов.',
     hadithRequired: 'Книга, номер и основной текст обязательны.',
     numberError: 'Номер хадиса должен быть положительным числом.',
     titleRequired: 'Заголовок обязателен.',
-    contentRequired: 'Введите текст.'
+    contentRequired: 'Введите текст.',
+    daily: 'Хадис дня',
+    published: 'Опубликован',
+    unpublished: 'Не опубликован'
   },
-
   ar: {
-    title: '𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔',
+    title: 'Miftahulhadis',
     welcome: 'مكتبة العلوم الإسلامية',
     description: 'مصادر إسلامية لطلب العلم والعمل به.',
     sections: 'الأقسام الإسلامية',
@@ -195,19 +194,19 @@ const T = {
     hide: 'إخفاء',
     chooseBook: 'اختر الكتاب',
     hadithSeparate: 'تُحفظ الأحاديث في جدول منفصل.',
-    quranInfo: 'أضف مواد القرآن في هذا القسم.',
     configError: 'لم يتم إعداد اتصال Supabase.',
     light: 'فاتح',
     green: 'أخضر داكن',
     sound: 'الصوت',
-    on: 'مفعل',
-    off: 'متوقف',
     loading: 'جارٍ تحميل البيانات...',
     noHadith: 'لا توجد أحاديث في هذا القسم حالياً.',
     hadithRequired: 'الكتاب والرقم والنص الأساسي مطلوبة.',
     numberError: 'يجب أن يكون رقم الحديث عدداً موجباً.',
     titleRequired: 'العنوان مطلوب.',
-    contentRequired: 'أدخل النص.'
+    contentRequired: 'أدخل النص.',
+    daily: 'حديث اليوم',
+    published: 'منشور',
+    unpublished: 'غير منشور'
   }
 }
 
@@ -221,15 +220,6 @@ const emptyContent = {
   section_slug: 'sunnah',
   title: '',
   content_text: '',
-  question_text: '',
-  answer_text: '',
-  arabic_text: '',
-  tajik_text: '',
-  russian_text: '',
-  source_note: '',
-  commentary: '',
-  media_url: '',
-  is_published: true,
   sort_order: 0
 }
 
@@ -254,19 +244,31 @@ const inputStyle = {
 
 function App() {
   const [lang, setLang] = useState(() => {
-    const saved = localStorage.getItem('miftah_lang')
-    return ['tg', 'ru', 'ar'].includes(saved) ? saved : 'tg'
+    try {
+      const saved = localStorage.getItem('miftah_lang')
+      return ['tg', 'ru', 'ar'].includes(saved) ? saved : 'tg'
+    } catch {
+      return 'tg'
+    }
   })
 
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('miftah_theme') === 'white'
-      ? 'white'
-      : 'green'
+    try {
+      return localStorage.getItem('miftah_theme') === 'white'
+        ? 'white'
+        : 'green'
+    } catch {
+      return 'green'
+    }
   })
 
-  const [sound, setSound] = useState(
-    () => localStorage.getItem('miftah_sound') !== 'false'
-  )
+  const [sound, setSound] = useState(() => {
+    try {
+      return localStorage.getItem('miftah_sound') !== 'false'
+    } catch {
+      return true
+    }
+  })
 
   const [page, setPage] = useState('home')
   const [selectedSection, setSelectedSection] = useState(null)
@@ -289,6 +291,7 @@ function App() {
   const [books, setBooks] = useState([])
   const [hadithRows, setHadithRows] = useState([])
   const [contentRows, setContentRows] = useState([])
+  const [dailyHadith, setDailyHadith] = useState(null)
 
   const [adminTab, setAdminTab] = useState('content')
   const [editingHadith, setEditingHadith] = useState(null)
@@ -301,15 +304,21 @@ function App() {
   const isRTL = lang === 'ar'
 
   useEffect(() => {
-    localStorage.setItem('miftah_lang', lang)
+    try {
+      localStorage.setItem('miftah_lang', lang)
+    } catch {}
   }, [lang])
 
   useEffect(() => {
-    localStorage.setItem('miftah_theme', theme)
+    try {
+      localStorage.setItem('miftah_theme', theme)
+    } catch {}
   }, [theme])
 
   useEffect(() => {
-    localStorage.setItem('miftah_sound', String(sound))
+    try {
+      localStorage.setItem('miftah_sound', String(sound))
+    } catch {}
   }, [sound])
 
   const say = (text, type = 'info') => {
@@ -332,25 +341,21 @@ function App() {
 
       oscillator.type = 'sine'
       oscillator.frequency.setValueAtTime(650, audio.currentTime)
-      gain.gain.setValueAtTime(0.035, audio.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.045)
+      gain.gain.setValueAtTime(0.025, audio.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.04)
 
       oscillator.connect(gain)
       gain.connect(audio.destination)
-
       oscillator.start()
-      oscillator.stop(audio.currentTime + 0.05)
+      oscillator.stop(audio.currentTime + 0.045)
       oscillator.onended = () => audio.close()
-    } catch {
-      // Садо дар браузер дастгирӣ намешавад.
-    }
+    } catch {}
   }
 
   const toggleTheme = () => {
     setTheme(current => current === 'green' ? 'white' : 'green')
   }
 
-  // Санҷиши ҳуқуқи админ барои намоён кардани тугма.
   const checkAdminAccess = useCallback(async () => {
     if (!db) {
       setAdminAccess(false)
@@ -364,18 +369,50 @@ function App() {
       return false
     }
 
-    const user = sessionData.session.user
-
-    const { data: profile, error: profileError } = await db
+    const { data: profile, error } = await db
       .from('profiles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', sessionData.session.user.id)
       .maybeSingle()
 
-    const allowed = !profileError && profile?.role === 'admin'
+    const allowed = !error && profile?.role === 'admin'
     setAdminAccess(allowed)
-
     return allowed
+  }, [])
+
+  const loadDailyHadith = useCallback(async () => {
+    if (!db) return
+
+    const { count, error: countError } = await db
+      .from('hadith')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_published', true)
+
+    if (countError || !count) {
+      setDailyHadith(null)
+      return
+    }
+
+    const now = new Date()
+    const dateText = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
+
+    const dailyIndex = Array.from(dateText).reduce(
+      (sum, char) => sum + char.charCodeAt(0),
+      0
+    ) % count
+
+    const { data, error } = await db
+      .from('hadith')
+      .select('*')
+      .eq('is_published', true)
+      .order('created_at', { ascending: true })
+      .range(dailyIndex, dailyIndex)
+
+    if (!error && data?.length) {
+      setDailyHadith(data[0])
+    } else {
+      setDailyHadith(null)
+    }
   }, [])
 
   const loadPublicData = useCallback(async () => {
@@ -390,19 +427,26 @@ function App() {
         .select('*')
         .eq('is_published', true)
         .order('created_at', { ascending: false })
-        .range(0, 49),
+        .range(0, 99),
 
       db.from('content_items')
         .select('*')
         .eq('is_published', true)
         .order('sort_order', { ascending: true })
-        .range(0, 99)
+        .range(0, 199)
     ])
 
     if (booksRes.data) setBooks(booksRes.data)
     if (hadithRes.data) setHadithRows(hadithRes.data)
     if (contentRes.data) setContentRows(contentRes.data)
-  }, [])
+
+    if (booksRes.error || hadithRes.error || contentRes.error) {
+      const error = booksRes.error || hadithRes.error || contentRes.error
+      say(`${tr.loadError} ${error.message}`, 'error')
+    }
+
+    await loadDailyHadith()
+  }, [loadDailyHadith, tr.loadError])
 
   const loadAdminData = useCallback(async () => {
     if (!db) return
@@ -417,25 +461,18 @@ function App() {
       db.from('hadith')
         .select('*')
         .order('created_at', { ascending: false })
-        .range(0, 99),
+        .range(0, 499),
 
       db.from('content_items')
         .select('*')
         .order('sort_order', { ascending: true })
-        .range(0, 199)
+        .range(0, 499)
     ])
 
-    const errors = [
-      bookRes.error,
-      hadithRes.error,
-      contentRes.error
-    ].filter(Boolean)
+    const errors = [bookRes.error, hadithRes.error, contentRes.error].filter(Boolean)
 
     if (errors.length) {
-      say(
-        `${tr.loadError} ${errors.map(error => error.message).join(' | ')}`,
-        'error'
-      )
+      say(`${tr.loadError} ${errors.map(error => error.message).join(' | ')}`, 'error')
     } else {
       setBooks(bookRes.data || [])
       setHadithRows(hadithRes.data || [])
@@ -463,15 +500,13 @@ function App() {
       return false
     }
 
-    const user = sessionData.session.user
-
-    const { data: profile, error: profileError } = await db
+    const { data: profile, error } = await db
       .from('profiles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', sessionData.session.user.id)
       .maybeSingle()
 
-    if (profileError || profile?.role !== 'admin') {
+    if (error || profile?.role !== 'admin') {
       setAdmin(false)
       setAdminAccess(false)
       setLogin(true)
@@ -483,7 +518,6 @@ function App() {
     setAdminAccess(true)
     setLogin(false)
     setPage('admin')
-
     return true
   }, [])
 
@@ -496,7 +530,6 @@ function App() {
     loadPublicData()
   }, [loadPublicData])
 
-  // Санҷиши сессия ва ҳуқуқи админ ҳангоми кушодани барнома.
   useEffect(() => {
     if (!db) {
       setAdminAccess(false)
@@ -514,10 +547,9 @@ function App() {
         setAdmin(false)
         setAdminAccess(false)
       } else {
-        // Санҷиши нақши корбар баъд аз тағйири сессия.
-        setTimeout(() => {
+        Promise.resolve().then(() => {
           if (alive) checkAdminAccess()
-        }, 0)
+        })
       }
     })
 
@@ -530,9 +562,7 @@ function App() {
       }
     }
 
-    if (window.location.hash === '#admin') {
-      verifyAdmin()
-    }
+    if (window.location.hash === '#admin') verifyAdmin()
 
     window.addEventListener('hashchange', handleHashChange)
 
@@ -544,9 +574,7 @@ function App() {
   }, [verifyAdmin, checkAdminAccess])
 
   useEffect(() => {
-    if (admin && page === 'admin') {
-      loadAdminData()
-    }
+    if (admin && page === 'admin') loadAdminData()
   }, [admin, page, loadAdminData])
 
   const doLogin = async event => {
@@ -650,33 +678,25 @@ function App() {
         .select('*')
         .eq('is_published', true)
         .or(`title.ilike.%${term}%,content_text.ilike.%${term}%,tajik_text.ilike.%${term}%,russian_text.ilike.%${term}%,arabic_text.ilike.%${term}%`)
-        .range(0, 49),
+        .range(0, 99),
 
       db.from('hadith')
         .select('*')
         .eq('is_published', true)
         .or(`tajik_text.ilike.%${term}%,arabic_text.ilike.%${term}%,source_note.ilike.%${term}%`)
-        .range(0, 49)
+        .range(0, 99)
     ])
 
     const found = [
-      ...(hadithRes.data || []).map(item => ({
-        ...item,
-        resultType: 'hadith'
-      })),
-      ...(contentRes.data || []).map(item => ({
-        ...item,
-        resultType: 'content'
-      }))
+      ...(hadithRes.data || []).map(item => ({ ...item, resultType: 'hadith' })),
+      ...(contentRes.data || []).map(item => ({ ...item, resultType: 'content' }))
     ]
 
     setSearchResults(found)
 
     if (contentRes.error || hadithRes.error) {
-      say(
-        `${tr.loadError} ${(contentRes.error || hadithRes.error).message}`,
-        'error'
-      )
+      const error = contentRes.error || hadithRes.error
+      say(`${tr.loadError} ${error.message}`, 'error')
     }
 
     setSearching(false)
@@ -689,7 +709,6 @@ function App() {
 
   const highlight = text => {
     const value = String(text || '')
-
     if (!search.trim()) return value
 
     const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -728,28 +747,21 @@ function App() {
     setLoading(true)
     say('')
 
-    const oldHadith = editingHadith
-      ? hadithRows.find(item => item.id === editingHadith)
-      : null
-
-    const payload = {
-      ...(oldHadith || {}),
+    // Ҳангоми таҳрир танҳо майдонҳои тағйирёфтаро нав мекунем.
+    // Арабӣ, шарҳ, манбаъ ва дигар маълумоти мавҷуда нигоҳ дошта мешаванд.
+    const changes = {
       book_id: hadithForm.book_id,
       hadith_number: number,
       tajik_text: hadithForm.tajik_text.trim(),
-      arabic_text: oldHadith?.arabic_text || '',
-      source_note: oldHadith?.source_note || '',
-      commentary: oldHadith?.commentary || '',
-      is_published: oldHadith?.is_published ?? true,
       updated_at: new Date().toISOString()
     }
 
-    delete payload.id
-    delete payload.created_at
-
     const result = editingHadith
-      ? await db.from('hadith').update(payload).eq('id', editingHadith)
-      : await db.from('hadith').insert(payload)
+      ? await db.from('hadith').update(changes).eq('id', editingHadith)
+      : await db.from('hadith').insert({
+          ...changes,
+          is_published: true
+        })
 
     if (result.error) {
       say(`${tr.saveError} ${result.error.message}`, 'error')
@@ -772,25 +784,12 @@ function App() {
       return
     }
 
-    if (contentForm.section_slug === 'hadith') {
-      setAdminTab('hadith')
-      say(tr.hadithSeparate, 'info')
-      return
-    }
-
     if (!contentForm.title.trim()) {
       say(tr.titleRequired, 'error')
       return
     }
 
-    const mainText = String(
-      contentForm.content_text ||
-      contentForm.tajik_text ||
-      contentForm.answer_text ||
-      ''
-    ).trim()
-
-    if (!mainText) {
+    if (!contentForm.content_text.trim()) {
       say(tr.contentRequired, 'error')
       return
     }
@@ -798,36 +797,22 @@ function App() {
     setLoading(true)
     say('')
 
-    const oldContent = editingContent
-      ? contentRows.find(item => item.id === editingContent)
-      : null
-
-    const payload = {
-      ...(oldContent || {}),
+    // Ҳангоми таҳрир танҳо майдонҳои лозимиро нав мекунем.
+    const changes = {
       section_slug: contentForm.section_slug,
       title: contentForm.title.trim(),
-      content_text: mainText,
-      question_text: contentForm.section_slug === 'questions'
-        ? contentForm.title.trim()
-        : (oldContent?.question_text || ''),
-      answer_text: oldContent?.answer_text || '',
-      arabic_text: oldContent?.arabic_text || '',
-      tajik_text: mainText,
-      russian_text: oldContent?.russian_text || '',
-      source_note: oldContent?.source_note || '',
-      commentary: oldContent?.commentary || '',
-      media_url: oldContent?.media_url || '',
-      is_published: oldContent?.is_published ?? true,
+      content_text: contentForm.content_text.trim(),
+      tajik_text: contentForm.content_text.trim(),
       sort_order: Number(contentForm.sort_order || 0),
       updated_at: new Date().toISOString()
     }
 
-    delete payload.id
-    delete payload.created_at
-
     const result = editingContent
-      ? await db.from('content_items').update(payload).eq('id', editingContent)
-      : await db.from('content_items').insert(payload)
+      ? await db.from('content_items').update(changes).eq('id', editingContent)
+      : await db.from('content_items').insert({
+          ...changes,
+          is_published: true
+        })
 
     if (result.error) {
       say(`${tr.saveError} ${result.error.message}`, 'error')
@@ -850,14 +835,16 @@ function App() {
     })
 
     setEditingHadith(item.id)
+    setAdminTab('hadith')
     say('')
   }
 
   const editContent = item => {
     setContentForm({
-      ...emptyContent,
-      ...item,
-      content_text: item.content_text || item.tajik_text || item.answer_text || ''
+      section_slug: item.section_slug || 'sunnah',
+      title: item.title || '',
+      content_text: item.content_text || item.tajik_text || item.answer_text || '',
+      sort_order: item.sort_order || 0
     })
 
     setEditingContent(item.id)
@@ -906,12 +893,11 @@ function App() {
   const renderLogin = () => (
     <main className="content-page login-page">
       <button
-        className="back-button"
+        className="secondary-button back-button"
         onClick={() => {
           setLogin(false)
           setPage('home')
           say('')
-
           window.history.replaceState(
             null,
             '',
@@ -949,9 +935,7 @@ function App() {
           />
         </label>
 
-        {message && (
-          <p className={`notice ${messageType}`}>{message}</p>
-        )}
+        {message && <p className={`notice ${messageType}`}>{message}</p>}
 
         <button className="primary-button" disabled={loading}>
           {loading ? '...' : tr.enter}
@@ -976,14 +960,9 @@ function App() {
           required
         >
           <option value="">{tr.chooseBook}</option>
-
-          {books
-            .filter(book => book.is_active !== false)
-            .map(book => (
-              <option value={book.id} key={book.id}>
-                {book.name}
-              </option>
-            ))}
+          {books.filter(book => book.is_active !== false).map(book => (
+            <option value={book.id} key={book.id}>{book.name}</option>
+          ))}
         </select>
       </label>
 
@@ -1050,33 +1029,13 @@ function App() {
             section_slug: event.target.value
           })}
         >
-          {SECTIONS.map(section => (
+          {SECTIONS.filter(section => section.slug !== 'hadith').map(section => (
             <option value={section.slug} key={section.slug}>
               {sectionName(section)}
             </option>
           ))}
         </select>
       </label>
-
-      {contentForm.section_slug === 'hadith' && (
-        <div className="notice info">
-          {tr.hadithSeparate}
-          <button
-            type="button"
-            className="secondary-button inline-action"
-            onClick={() => {
-              setAdminTab('hadith')
-              setEditingContent(null)
-            }}
-          >
-            {tr.adminHadith}
-          </button>
-        </div>
-      )}
-
-      {contentForm.section_slug === 'quran' && (
-        <p className="notice info">{tr.quranInfo}</p>
-      )}
 
       <label style={fieldStyle}>
         {tr.titleField}
@@ -1105,10 +1064,7 @@ function App() {
       </label>
 
       <div className="button-row">
-        <button
-          className="primary-button"
-          disabled={loading || contentForm.section_slug === 'hadith'}
-        >
+        <button className="primary-button" disabled={loading}>
           {loading ? '...' : tr.save}
         </button>
 
@@ -1142,7 +1098,7 @@ function App() {
 
       <div className="button-row admin-tabs">
         <button
-          className={adminTab === 'content' ? 'primary-button' : 'secondary-button'}
+          className={adminTab === 'content' ? 'active' : ''}
           onClick={() => {
             setAdminTab('content')
             say('')
@@ -1152,7 +1108,7 @@ function App() {
         </button>
 
         <button
-          className={adminTab === 'hadith' ? 'primary-button' : 'secondary-button'}
+          className={adminTab === 'hadith' ? 'active' : ''}
           onClick={() => {
             setAdminTab('hadith')
             say('')
@@ -1162,71 +1118,50 @@ function App() {
         </button>
       </div>
 
-      {message && (
-        <p className={`notice ${messageType}`}>{message}</p>
-      )}
-
-      {loading && (
-        <p className="loading-line">{tr.loading}</p>
-      )}
+      {message && <p className={`notice ${messageType}`}>{message}</p>}
+      {loading && <p className="loading">{tr.loading}</p>}
 
       {adminTab === 'content' && (
         <>
-          <div className="button-row">
-            <button
-              className="primary-button"
-              onClick={() => {
-                setContentForm(emptyContent)
-                setEditingContent(null)
-                say('')
-              }}
-            >
-              + {tr.addContent}
-            </button>
-          </div>
+          <button
+            className="primary-button"
+            onClick={() => {
+              setContentForm(emptyContent)
+              setEditingContent(null)
+              say('')
+            }}
+          >
+            + {tr.addContent}
+          </button>
 
           {renderContentForm()}
 
           <h3>{tr.items} ({contentRows.length})</h3>
 
-          {contentRows.map(item => (
-            <article key={item.id} className="section-intro admin-item">
-              <strong>{item.title || '(Бе сарлавҳа)'}</strong>
+          <div className="admin-list">
+            {contentRows.map(item => (
+              <article key={item.id} className="admin-item">
+                <h4>{item.title || '(Бе сарлавҳа)'}</h4>
+                <p>
+                  {sectionName(SECTIONS.find(section => section.slug === item.section_slug))
+                    || item.section_slug}
+                </p>
+                <small>{item.is_published ? tr.published : tr.unpublished}</small>
 
-              <p>
-                {sectionName(
-                  SECTIONS.find(section => section.slug === item.section_slug)
-                ) || item.section_slug}
-              </p>
-
-              <small>
-                {item.is_published ? tr.show : tr.hide}
-              </small>
-
-              <div className="button-row">
-                <button
-                  className="secondary-button"
-                  onClick={() => editContent(item)}
-                >
-                  {tr.edit}
-                </button>
-
-                <button
-                  className="secondary-button"
-                  onClick={() => togglePublished('content_items', item)}
-                >
-                  {item.is_published ? tr.hide : tr.show}
-                </button>
-
-                <button
-                  className="secondary-button danger"
-                  onClick={() => deleteItem('content_items', item.id)}
-                >
-                  {tr.delete}
-                </button>
-              </div>
-            </article>
-          ))}
+                <div className="admin-item-actions">
+                  <button className="secondary-button" onClick={() => editContent(item)}>
+                    {tr.edit}
+                  </button>
+                  <button className="secondary-button" onClick={() => togglePublished('content_items', item)}>
+                    {item.is_published ? tr.hide : tr.show}
+                  </button>
+                  <button className="danger-button" onClick={() => deleteItem('content_items', item.id)}>
+                    {tr.delete}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
         </>
       )}
 
@@ -1236,49 +1171,31 @@ function App() {
 
           <h3>{tr.items} ({hadithRows.length})</h3>
 
-          {hadithRows.map(item => (
-            <article key={item.id} className="section-intro admin-item">
-              <strong>
-                {bookName(item.book_id)} — № {item.hadith_number}
-              </strong>
+          <div className="admin-list">
+            {hadithRows.map(item => (
+              <article key={item.id} className="admin-item">
+                <h4>{bookName(item.book_id)} — № {item.hadith_number}</h4>
+                <p>{String(item.tajik_text || '').slice(0, 220)}</p>
+                <small>{item.is_published ? tr.published : tr.unpublished}</small>
 
-              <p>{String(item.tajik_text || '').slice(0, 220)}</p>
-
-              <small>
-                {item.is_published ? tr.show : tr.hide}
-              </small>
-
-              <div className="button-row">
-                <button
-                  className="secondary-button"
-                  onClick={() => editHadith(item)}
-                >
-                  {tr.edit}
-                </button>
-
-                <button
-                  className="secondary-button"
-                  onClick={() => togglePublished('hadith', item)}
-                >
-                  {item.is_published ? tr.hide : tr.show}
-                </button>
-
-                <button
-                  className="secondary-button danger"
-                  onClick={() => deleteItem('hadith', item.id)}
-                >
-                  {tr.delete}
-                </button>
-              </div>
-            </article>
-          ))}
+                <div className="admin-item-actions">
+                  <button className="secondary-button" onClick={() => editHadith(item)}>
+                    {tr.edit}
+                  </button>
+                  <button className="secondary-button" onClick={() => togglePublished('hadith', item)}>
+                    {item.is_published ? tr.hide : tr.show}
+                  </button>
+                  <button className="danger-button" onClick={() => deleteItem('hadith', item.id)}>
+                    {tr.delete}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
         </>
       )}
 
-      <button
-        className="secondary-button logout-button"
-        onClick={logout}
-      >
+      <button className="secondary-button logout-button" onClick={logout}>
         {tr.logout}
       </button>
     </main>
@@ -1287,7 +1204,7 @@ function App() {
   const renderSection = () => (
     <main className="content-page">
       <button
-        className="back-button"
+        className="secondary-button back-button"
         onClick={() => {
           setPage('home')
           setSelectedSection(null)
@@ -1301,69 +1218,49 @@ function App() {
         <h2>{sectionName(selectedSection)}</h2>
       </div>
 
-      <div className="section-body">
-        {selectedSection?.slug === 'hadith' ? (
-          <HadithPublic
-            db={db}
-            lang={lang}
-            books={books}
-            initialRows={hadithRows}
-            tr={tr}
-          />
-        ) : selectedContent.length === 0 ? (
-          <div className="empty-result">
-            <span>📚</span>
-            <p>{tr.empty}</p>
-          </div>
-        ) : (
-          <div className="menu">
-            {selectedContent.map(item => (
-              <article
-                className="section-intro public-item"
-                key={item.id}
-              >
-                <h3>{item.title}</h3>
+      {selectedSection?.slug === 'hadith' ? (
+        <HadithPublic
+          db={db}
+          lang={lang}
+          books={books}
+          initialRows={hadithRows}
+          tr={tr}
+        />
+      ) : selectedContent.length === 0 ? (
+        <div className="empty-state">
+          <span>📚</span>
+          <p>{tr.empty}</p>
+        </div>
+      ) : (
+        <div className="public-list">
+          {selectedContent.map(item => (
+            <article className="public-item" key={item.id}>
+              <h3>{item.title}</h3>
 
-                {item.arabic_text && (
-                  <p className="arabic-text" dir="rtl">
-                    {item.arabic_text}
-                  </p>
-                )}
+              {item.arabic_text && (
+                <p className="arabic-text" dir="rtl">{item.arabic_text}</p>
+              )}
 
+              <p>
+                {lang === 'ru' && item.russian_text
+                  ? item.russian_text
+                  : item.tajik_text || item.content_text || item.answer_text}
+              </p>
+
+              {item.source_note && <small className="source-note">📚 {item.source_note}</small>}
+              {item.commentary && <p>{item.commentary}</p>}
+
+              {item.media_url && (
                 <p>
-                  {lang === 'ru' && item.russian_text
-                    ? item.russian_text
-                    : (
-                      item.tajik_text ||
-                      item.content_text ||
-                      item.answer_text
-                    )}
+                  <a href={item.media_url} target="_blank" rel="noreferrer">
+                    ▶ Кушодани мавод
+                  </a>
                 </p>
-
-                {item.source_note && (
-                  <small>📚 {item.source_note}</small>
-                )}
-
-                {item.commentary && (
-                  <p>{item.commentary}</p>
-                )}
-
-                {item.media_url && (
-                  <p>
-                    <a
-                      href={item.media_url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      ▶ Кушодани мавод
-                    </a>
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
     </main>
   )
 
@@ -1378,97 +1275,22 @@ function App() {
       {!login && page !== 'admin' && (
         <>
           <header className="header">
-            <div
-              className="miftah-banner"
-              style={{
-                background: theme === 'green' ? '#102F25' : '#FFFFFF',
-                color: theme === 'green' ? '#F2E8CF' : '#174C37',
-                border: theme === 'green'
-                  ? '1px solid #476B59'
-                  : '1px solid #D9E4DC',
-                borderRadius: 20,
-                padding: '25px 18px 20px',
-                margin: '12px 0 18px',
-                textAlign: 'center',
-                boxShadow: '0 5px 20px rgba(0,0,0,0.08)'
-              }}
-            >
-              <h1
-                style={{
-                  fontFamily: 'Georgia, serif',
-                  fontSize: 'clamp(25px, 7vw, 34px)',
-                  fontWeight: 700,
-                  fontStyle: 'italic',
-                  margin: '0 0 18px',
-                  letterSpacing: '-1px'
-                }}
-              >
-                𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔
-              </h1>
-
-              <div
-                style={{
-                  height: 1,
-                  background: theme === 'green' ? '#476B59' : '#D9E4DC',
-                  marginBottom: 20
-                }}
-              />
-
-              <p
-                dir="rtl"
-                style={{
-                  fontFamily: 'serif',
-                  fontSize: 'clamp(24px, 6vw, 31px)',
-                  lineHeight: 1.9,
-                  margin: '0 0 10px',
-                  color: theme === 'green' ? '#FFFFFF' : '#174C37'
-                }}
-              >
+            <div className="miftah-banner">
+              <h1 className="miftah-banner-title">𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝑯𝒂𝒅𝒊𝒔</h1>
+              <div className="miftah-banner-arabic" dir="rtl">
                 بَلِّغُوا عَنِّي وَلَوْ آيَةً
-              </p>
-
-              <p
-                style={{
-                  fontSize: 14,
-                  lineHeight: 1.8,
-                  margin: '0 0 8px',
-                  color: theme === 'green' ? '#E4E9E5' : '#34483D'
-                }}
-              >
+              </div>
+              <p className="miftah-banner-translation">
                 Аз ман бирасонед, ҳарчанд як оят бошад.
               </p>
-
-              <p
-                style={{
-                  fontSize: 11,
-                  letterSpacing: '1px',
-                  margin: '0 0 18px',
-                  color: theme === 'green' ? '#B7C9BE' : '#718077'
-                }}
-              >
-                Китобхонаи донишҳои исломӣ
-              </p>
-
-              <div
-                style={{
-                  height: 1,
-                  background: theme === 'green' ? '#476B59' : '#D9E4DC',
-                  marginBottom: 13
-                }}
-              />
-
-              <small
-                style={{
-                  fontSize: 11,
-                  color: theme === 'green' ? '#D8CBAA' : '#66776C'
-                }}
-              >
+              <p className="miftah-banner-subtitle">{tr.welcome}</p>
+              <p className="miftah-banner-source">
                 📚 Саҳеҳ ал-Бухорӣ · ҳадиси № 3461
-              </small>
+              </p>
             </div>
           </header>
 
-          <div className="language-selector app-toolbar">
+          <div className="app-toolbar">
             <label>
               {tr.language}:
               <select
@@ -1486,7 +1308,6 @@ function App() {
               type="button"
               className="secondary-button"
               onClick={() => setSound(current => !current)}
-              title={tr.sound}
             >
               {sound ? '🔊' : '🔇'} {tr.sound}
             </button>
@@ -1495,7 +1316,6 @@ function App() {
               type="button"
               className="secondary-button"
               onClick={toggleTheme}
-              title={tr.green}
             >
               {theme === 'green' ? '☀️' : '🌿'} {theme === 'green' ? tr.light : tr.green}
             </button>
@@ -1504,21 +1324,36 @@ function App() {
       )}
 
       {login && renderLogin()}
-
       {page === 'admin' && admin && renderAdmin()}
-
       {page === 'section' && renderSection()}
 
       {page === 'home' && !login && (
         <>
           <main className="main-content">
-            {!db && (
-              <p className="notice error">{tr.configError}</p>
+            {!db && <p className="notice error">{tr.configError}</p>}
+
+            {dailyHadith && (
+              <article className="daily-hadith">
+                <h2>🌙 {tr.daily}</h2>
+                <h3>{bookName(dailyHadith.book_id)} — № {dailyHadith.hadith_number}</h3>
+
+                {dailyHadith.arabic_text && (
+                  <p className="arabic-text" dir="rtl">{dailyHadith.arabic_text}</p>
+                )}
+
+                <p>
+                  {lang === 'ru'
+                    ? dailyHadith.russian_text || dailyHadith.tajik_text
+                    : dailyHadith.tajik_text}
+                </p>
+
+                {dailyHadith.source_note && (
+                  <small>📚 {dailyHadith.source_note}</small>
+                )}
+              </article>
             )}
 
             <form className="search-box" onSubmit={submitSearch}>
-              <span>⌕</span>
-
               <input
                 value={search}
                 onChange={event => runSearch(event.target.value)}
@@ -1528,7 +1363,7 @@ function App() {
               {search && (
                 <button
                   type="button"
-                  className="clear-search"
+                  className="secondary-button"
                   onClick={() => {
                     setSearch('')
                     setSearchResults([])
@@ -1538,18 +1373,14 @@ function App() {
                 </button>
               )}
 
-              <button type="submit" className="primary-button search-submit">
+              <button type="submit" className="primary-button">
                 {tr.searchButton}
               </button>
             </form>
 
             {adminAccess && (
               <div className="button-row home-admin-row">
-                <button
-                  type="button"
-                  className="secondary-button admin-open-button"
-                  onClick={openAdmin}
-                >
+                <button className="primary-button" onClick={openAdmin}>
                   🔐 {tr.admin}
                 </button>
               </div>
@@ -1559,30 +1390,23 @@ function App() {
               <>
                 <div className="section-heading">
                   <h2>{tr.searchResults}</h2>
-                  <span className="section-count">
-                    {searchResults.length}
-                  </span>
+                  <span>{searchResults.length}</span>
                 </div>
 
-                {searching && <p>...</p>}
+                {searching && <p className="loading">...</p>}
 
                 {!searching && searchResults.length === 0 && (
-                  <div className="empty-result">
-                    <p>{tr.noResults}</p>
-                  </div>
+                  <div className="empty-state">{tr.noResults}</div>
                 )}
 
-                <div className="menu">
+                <div className="public-list">
                   {searchResults.map(item => (
-                    <article
-                      className="section-intro public-item"
-                      key={`${item.resultType}-${item.id}`}
-                    >
-                      <strong>
+                    <article className="public-item" key={`${item.resultType}-${item.id}`}>
+                      <h3>
                         {item.resultType === 'hadith'
                           ? `${tr.hadith} № ${item.hadith_number}`
                           : item.title}
-                      </strong>
+                      </h3>
 
                       {item.resultType === 'hadith' && (
                         <small>{bookName(item.book_id)}</small>
@@ -1596,16 +1420,13 @@ function App() {
 
                       <p>
                         {highlight(
-                          item.tajik_text ||
-                          item.content_text ||
-                          item.question_text ||
-                          ''
+                          lang === 'ru' && item.russian_text
+                            ? item.russian_text
+                            : item.tajik_text || item.content_text || item.question_text || ''
                         )}
                       </p>
 
-                      {item.source_note && (
-                        <small>{highlight(item.source_note)}</small>
-                      )}
+                      {item.source_note && <small>📚 {highlight(item.source_note)}</small>}
                     </article>
                   ))}
                 </div>
@@ -1614,9 +1435,7 @@ function App() {
               <>
                 <div className="section-heading">
                   <h2>{tr.sections}</h2>
-                  <span className="section-count">
-                    {SECTIONS.length}
-                  </span>
+                  <span>{SECTIONS.length}</span>
                 </div>
 
                 <div className="menu">
@@ -1626,19 +1445,11 @@ function App() {
                       key={section.slug}
                       onClick={() => openSection(section)}
                     >
-                      <span className="card-number">
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
-
-                      <span className="card-icon">
-                        {section.icon}
-                      </span>
-
+                      <span className="menu-card-icon">{section.icon}</span>
                       <span className="card-text">
                         <strong>{sectionName(section)}</strong>
                         <small>{section.ar}</small>
                       </span>
-
                       <span className="card-arrow">›</span>
                     </button>
                   ))}
@@ -1660,7 +1471,7 @@ function App() {
 
 function HadithPublic({ db, lang, books, initialRows = [], tr }) {
   const [rows, setRows] = useState(initialRows)
-  const [loading, setLoading] = useState(!initialRows.length)
+  const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
 
@@ -1668,10 +1479,11 @@ function HadithPublic({ db, lang, books, initialRows = [], tr }) {
 
   useEffect(() => {
     setRows(initialRows)
+    setPage(0)
   }, [initialRows])
 
   const loadPage = async nextPage => {
-    if (!db) return
+    if (!db || nextPage < 0) return
 
     setLoading(true)
 
@@ -1684,63 +1496,52 @@ function HadithPublic({ db, lang, books, initialRows = [], tr }) {
       .order('created_at', { ascending: false })
       .range(from, from + PAGE_SIZE - 1)
 
-    if (!error) {
-      setRows(data || [])
-      setPage(nextPage)
-      setHasMore((data || []).length === PAGE_SIZE)
+    if (error) {
+      setLoading(false)
+      return
     }
 
+    setRows(data || [])
+    setPage(nextPage)
+    setHasMore((data || []).length === PAGE_SIZE)
     setLoading(false)
   }
 
   if (loading && !rows.length) {
-    return <p className="loading-line">...</p>
+    return <p className="loading">{tr.loading}</p>
   }
 
   if (!rows.length) {
-    return (
-      <div className="empty-result">
-        <p>{tr?.noHadith || 'Дар ин бахш ҳоло ҳадис нест.'}</p>
-      </div>
-    )
+    return <div className="empty-state">{tr.noHadith}</div>
   }
 
   return (
     <>
-      <div className="menu">
+      <div className="public-list">
         {rows.map(item => {
           const book = books.find(
             current => String(current.id) === String(item.book_id)
           )
 
           return (
-            <article
-              className="section-intro public-item"
-              key={item.id}
-            >
-              <h3>
-                {book?.name || ''} — № {item.hadith_number}
-              </h3>
+            <article className="public-item" key={item.id}>
+              <h3>{book?.name || ''} — № {item.hadith_number}</h3>
 
               {item.arabic_text && (
-                <p className="arabic-text" dir="rtl">
-                  {item.arabic_text}
-                </p>
+                <p className="arabic-text" dir="rtl">{item.arabic_text}</p>
               )}
 
               <p>
                 {lang === 'ru'
-                  ? (item.russian_text || item.tajik_text)
+                  ? item.russian_text || item.tajik_text
                   : item.tajik_text}
               </p>
 
               {item.source_note && (
-                <small>📚 {item.source_note}</small>
+                <small className="source-note">📚 {item.source_note}</small>
               )}
 
-              {item.commentary && (
-                <p>{item.commentary}</p>
-              )}
+              {item.commentary && <p>{item.commentary}</p>}
             </article>
           )
         })}
@@ -1748,7 +1549,6 @@ function HadithPublic({ db, lang, books, initialRows = [], tr }) {
 
       <div className="pagination">
         <button
-          className="secondary-button"
           disabled={page === 0 || loading}
           onClick={() => loadPage(page - 1)}
         >
@@ -1758,7 +1558,6 @@ function HadithPublic({ db, lang, books, initialRows = [], tr }) {
         <span>{page + 1}</span>
 
         <button
-          className="secondary-button"
           disabled={!hasMore || loading}
           onClick={() => loadPage(page + 1)}
         >
