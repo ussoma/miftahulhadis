@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './index.css'
 
@@ -134,6 +134,170 @@ function Icon({ name, filled = false }) {
       <path d={ICONS[name] || ICONS.grid} />
     </svg>
   )
+}
+
+const SURAH_TG = [
+  'Ал-Фотиҳа',
+  'Ал-Бақара',
+  'Оли Имрон',
+  'Ан-Нисо',
+  'Ал-Моида',
+  'Ал-Анъом',
+  'Ал-Аъроф',
+  'Ал-Анфол',
+  'Ат-Тавба',
+  'Юнус',
+  'Ҳуд',
+  'Юсуф',
+  'Ар-Раъд',
+  'Иброҳим',
+  'Ал-Ҳиҷр',
+  'Ан-Наҳл',
+  'Ал-Исро',
+  'Ал-Каҳф',
+  'Марям',
+  'Тоҳо',
+  'Ал-Анбиё',
+  'Ал-Ҳаҷ',
+  'Ал-Муъминун',
+  'Ан-Нур',
+  'Ал-Фурқон',
+  'Аш-Шуаро',
+  'Ан-Намл',
+  'Ал-Қасас',
+  'Ал-Анкабут',
+  'Ар-Рум',
+  'Луқмон',
+  'Ас-Саҷда',
+  'Ал-Аҳзоб',
+  'Сабаъ',
+  'Фотир',
+  'Ёсин',
+  'Ас-Соффот',
+  'Сод',
+  'Аз-Зумар',
+  'Ғофир',
+  'Фуссилат',
+  'Аш-Шуро',
+  'Аз-Зухруф',
+  'Ад-Духон',
+  'Ал-Ҷосия',
+  'Ал-Аҳқоф',
+  'Муҳаммад',
+  'Ал-Фатҳ',
+  'Ал-Ҳуҷурот',
+  'Қоф',
+  'Аз-Зориёт',
+  'Ат-Тур',
+  'Ан-Наҷм',
+  'Ал-Қамар',
+  'Ар-Раҳмон',
+  'Ал-Воқиъа',
+  'Ал-Ҳадид',
+  'Ал-Муҷодала',
+  'Ал-Ҳашр',
+  'Ал-Мумтаҳина',
+  'Ас-Соф',
+  'Ал-Ҷумъа',
+  'Ал-Мунофиқун',
+  'Ат-Тағобун',
+  'Ат-Талоқ',
+  'Ат-Таҳрим',
+  'Ал-Мулк',
+  'Ал-Қалам',
+  'Ал-Ҳоққа',
+  'Ал-Маориҷ',
+  'Нуҳ',
+  'Ал-Ҷинн',
+  'Ал-Музаммил',
+  'Ал-Муддассир',
+  'Ал-Қиёма',
+  'Ал-Инсон',
+  'Ал-Мурсалот',
+  'Ан-Набаъ',
+  'Ан-Нозиот',
+  'Абаса',
+  'Ат-Таквир',
+  'Ал-Инфитор',
+  'Ал-Мутаффифин',
+  'Ал-Иншиқоқ',
+  'Ал-Буруҷ',
+  'Ат-Ториқ',
+  'Ал-Аъло',
+  'Ал-Ғошия',
+  'Ал-Фаҷр',
+  'Ал-Балад',
+  'Аш-Шамс',
+  'Ал-Лайл',
+  'Аз-Зуҳо',
+  'Аш-Шарҳ',
+  'Ат-Тин',
+  'Ал-Алақ',
+  'Ал-Қадр',
+  'Ал-Баййина',
+  'Аз-Залзала',
+  'Ал-Одиёт',
+  'Ал-Қориа',
+  'Ат-Такосур',
+  'Ал-Аср',
+  'Ал-Ҳумаза',
+  'Ал-Фил',
+  'Қурайш',
+  'Ал-Моъун',
+  'Ал-Кавсар',
+  'Ал-Кофирун',
+  'Ан-Наср',
+  'Ал-Масад',
+  'Ал-Ихлос',
+  'Ал-Фалақ',
+  'Ан-Нос'
+]
+
+const QURAN_API = 'https://api.alquran.cloud/v1'
+const BISMILLAH = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ'
+const RECITER_KEY = 'miftah_reciter_v1'
+const QURAN_FAVORITES_KEY = 'miftah_quran_favorites_v1'
+
+const FALLBACK_RECITERS = [
+  { id: 'ar.alafasy', name: 'Mishary Alafasy' },
+  { id: 'ar.husary', name: 'Mahmoud Khalil Al-Husary' },
+  { id: 'ar.minshawi', name: 'Mohamed Siddiq El-Minshawi' },
+  { id: 'ar.abdulbasitmurattal', name: 'Abdul Basit (Murattal)' }
+]
+
+async function quranFetch(path) {
+  const response = await fetch(QURAN_API + path)
+  if (!response.ok) throw new Error('API ' + response.status)
+  const json = await response.json()
+  return json.data
+}
+
+// Дар аввали оятҳои сураҳо (ғайр аз 1 ва 9) бисмиллоҳ дохил аст; онро алоҳида нишон медиҳем.
+function stripBismillah(text, surahNumber, ayahIndex) {
+  if (ayahIndex !== 0 || surahNumber === 1 || surahNumber === 9) return text
+  const norm = word => String(word || '').replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+  const words = String(text).split(/\s+/)
+  if (words.length > 4 && norm(words[0]) === 'بسم' && norm(words[1]).endsWith('لله')) {
+    return words.slice(4).join(' ')
+  }
+  return text
+}
+
+function loadReciter() {
+  try {
+    return window.localStorage.getItem(RECITER_KEY) || 'ar.alafasy'
+  } catch {
+    return 'ar.alafasy'
+  }
+}
+
+function loadQuranFavorites() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(QURAN_FAVORITES_KEY) || '{}')
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
 }
 
 const FAVORITES_KEY = 'miftah_favorites_v1'
@@ -330,7 +494,25 @@ const LANG = {
     sunnahTags: 'Матни арабӣ · Тарҷума · Аудио',
     sunnahMore: 'Суннатҳои дигар низ аз дохили бахш дастрас мешаванд.',
     explanationShort: 'Шарҳ:',
-    hadithWord: 'ҳадиси'
+    hadithWord: 'ҳадиси',
+    quranWord: 'Қуръони Карим',
+    surahWord: 'Сураи',
+    ayahsCount: 'оят',
+    ayahWord: 'ояти',
+    makki: 'Маккӣ',
+    madani: 'Мадинӣ',
+    playAyah: 'Шунидан',
+    playFrom: 'То охир',
+    playAll: 'Аз аввал то охир',
+    stopAudio: 'Бас кардан',
+    reciter: 'Қорӣ',
+    surahFilter: 'Ҷустуҷӯи сура (ном ё рақам)...',
+    surahLoading: 'Сура бор шуда истодааст...',
+    surahError: 'Сураро бор кардан муяссар нашуд. Интернетро санҷед.',
+    retry: 'Дубора кӯшиш кардан',
+    quranSource: 'Матн ва аудио: api.alquran.cloud · Тарҷумаи тоҷикӣ: Абдулмуҳаммад Оятӣ · Русӣ: Э. Кулиев',
+    extraMaterials: 'Маводҳои иловагӣ',
+    audioUnavailable: 'Аудио барои ин оят дастрас нест.'
   },
 
   ru: {
@@ -447,7 +629,25 @@ const LANG = {
     sunnahTags: 'Арабский текст · Перевод · Аудио',
     sunnahMore: 'Другие сунны доступны внутри раздела.',
     explanationShort: 'Пояснение:',
-    hadithWord: 'хадис'
+    hadithWord: 'хадис',
+    quranWord: 'Священный Коран',
+    surahWord: 'Сура',
+    ayahsCount: 'аятов',
+    ayahWord: 'аят',
+    makki: 'Мекканская',
+    madani: 'Мединская',
+    playAyah: 'Слушать',
+    playFrom: 'До конца',
+    playAll: 'С начала до конца',
+    stopAudio: 'Остановить',
+    reciter: 'Чтец',
+    surahFilter: 'Поиск суры (название или номер)...',
+    surahLoading: 'Сура загружается...',
+    surahError: 'Не удалось загрузить суру. Проверьте интернет.',
+    retry: 'Повторить',
+    quranSource: 'Текст и аудио: api.alquran.cloud · Перевод: Э. Кулиев · Таджикский: Абдулмухаммад Айати',
+    extraMaterials: 'Дополнительные материалы',
+    audioUnavailable: 'Аудио для этого аята недоступно.'
   }
 }
 
@@ -628,8 +828,21 @@ function App() {
 
   const [favorites, setFavorites] = useState(loadFavorites)
   const [sunnahOpen, setSunnahOpen] = useState(false)
-  const [quranForm, setQuranForm] = useState({ surah: '', from: '', to: '' })
-  const [importing, setImporting] = useState(false)
+  const [selectedSurah, setSelectedSurah] = useState(null)
+  const [surahList, setSurahList] = useState(
+    SURAH_TG.map((name, index) => ({ number: index + 1, name }))
+  )
+  const [surahFilter, setSurahFilter] = useState('')
+  const [surahData, setSurahData] = useState(null)
+  const [surahLoading, setSurahLoading] = useState(false)
+  const [surahError, setSurahError] = useState(false)
+  const [surahRetry, setSurahRetry] = useState(0)
+  const [reciters, setReciters] = useState(FALLBACK_RECITERS)
+  const [reciter, setReciter] = useState(loadReciter)
+  const [playing, setPlaying] = useState({ index: -1, mode: 'idle' })
+  const [quranFavs, setQuranFavs] = useState(loadQuranFavorites)
+  const audioRef = useRef(null)
+  const quranCache = useRef({})
 
   const t = LANG[lang] || LANG.tg
   const direction = lang === 'ar' ? 'rtl' : 'ltr'
@@ -883,6 +1096,7 @@ function App() {
   const openSection = section => {
     setSelectedSection(section)
     setSelectedBook(null)
+    setSelectedSurah(null)
     setPage('section')
     setSearch('')
     setSearchResults(null)
@@ -1619,103 +1833,363 @@ function App() {
     [hadithRows, favorites]
   )
 
-  // Воридоти худкори сураҳои Қуръон аз api.alquran.cloud (матни араб + русӣ + тоҷикӣ, агар дастрас бошад).
-  const importSurah = async () => {
-    if (!db || !admin || importing) return
+  /* ---------- Қуръони Карим: ҳамаи 114 сура аз интернет ---------- */
 
-    const number = Number(quranForm.surah)
-    if (!Number.isInteger(number) || number < 1 || number > 114) {
-      notify('Рақами сураро аз 1 то 114 ворид кунед.', 'error')
-      return
+  const stopAudio = useCallback(() => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.pause()
+      audio.removeAttribute('src')
+    }
+    setPlaying({ index: -1, mode: 'idle' })
+  }, [])
+
+  // Рӯйхати сураҳо (шумораи оятҳо, номи арабӣ) ва рӯйхати қориҳо — як маротиба.
+  useEffect(() => {
+    let active = true
+
+    quranFetch('/surah').then(list => {
+      if (!active || !Array.isArray(list)) return
+      setSurahList(current => current.map(item => {
+        const found = list.find(row => row.number === item.number)
+        return found
+          ? { ...item, arabic: found.name, english: found.englishName, ayahs: found.numberOfAyahs, type: found.revelationType }
+          : item
+      }))
+    }).catch(() => {})
+
+    quranFetch('/edition?format=audio&language=ar&type=versebyverse').then(list => {
+      if (!active || !Array.isArray(list) || !list.length) return
+      const mapped = list.map(item => ({ id: item.identifier, name: item.englishName || item.name }))
+      setReciters(mapped)
+      setReciter(current => mapped.some(item => item.id === current) ? current : mapped[0].id)
+    }).catch(() => {})
+
+    return () => { active = false }
+  }, [])
+
+  // Боркунии сураи интихобшуда: матни арабӣ + тоҷикӣ + русӣ + аудиои қорӣ.
+  useEffect(() => {
+    if (!selectedSurah) {
+      setSurahData(null)
+      return undefined
     }
 
-    const from = quranForm.from ? Number(quranForm.from) : null
-    const to = quranForm.to ? Number(quranForm.to) : null
-    const importKey = `${number}:${from || ''}-${to || ''}`
+    let active = true
+    setSurahLoading(true)
+    setSurahError(false)
 
-    const duplicate = contentRows.some(row =>
-      row.section_slug === 'quran' &&
-      parseStoredNote(row.source_note).meta.import_key === importKey
-    )
-    if (duplicate) {
-      notify('Ин сура аллакай илова шудааст.', 'error')
-      return
-    }
-
-    setImporting(true)
-
-    try {
-      const api = 'https://api.alquran.cloud/v1'
-      const getData = async path => {
-        const response = await fetch(api + path)
-        if (!response.ok) throw new Error('API ' + response.status)
-        const json = await response.json()
-        return json.data
-      }
-
-      let tajikEdition = ''
+    const load = async () => {
       try {
-        const editions = await getData('/edition?format=text&language=tg')
-        tajikEdition = editions?.[0]?.identifier || ''
-      } catch {
-        tajikEdition = ''
+        let text = quranCache.current[`t${selectedSurah}`]
+        if (!text) {
+          const data = await quranFetch(`/surah/${selectedSurah}/editions/quran-uthmani,tg.ayati,ru.kuliev`)
+          const by = id => (data.find(item => item.edition?.identifier === id)?.ayahs) || []
+          text = { arabic: by('quran-uthmani'), tajik: by('tg.ayati'), russian: by('ru.kuliev') }
+          if (!text.arabic.length) throw new Error('empty')
+          quranCache.current[`t${selectedSurah}`] = text
+        }
+
+        let audio = quranCache.current[`a${selectedSurah}:${reciter}`]
+        if (!audio) {
+          try {
+            const data = await quranFetch(`/surah/${selectedSurah}/${reciter}`)
+            audio = (data.ayahs || []).map(item => item.audio || '')
+            quranCache.current[`a${selectedSurah}:${reciter}`] = audio
+          } catch {
+            audio = []
+          }
+        }
+
+        if (!active) return
+
+        setSurahData({
+          number: selectedSurah,
+          ayahs: text.arabic.map((ayah, index) => ({
+            n: ayah.numberInSurah,
+            arabic: stripBismillah(ayah.text, selectedSurah, index),
+            tajik: text.tajik[index]?.text || '',
+            russian: text.russian[index]?.text || '',
+            audio: audio[index] || ''
+          }))
+        })
+      } catch (error) {
+        console.error('Quran load error:', error)
+        if (active) setSurahError(true)
+      } finally {
+        if (active) setSurahLoading(false)
       }
-
-      const [arabic, russian, tajik] = await Promise.all([
-        getData(`/surah/${number}/quran-uthmani`),
-        getData(`/surah/${number}/ru.kuliev`),
-        tajikEdition ? getData(`/surah/${number}/${tajikEdition}`) : Promise.resolve(null)
-      ])
-
-      const pick = data => (data?.ayahs || []).filter(ayah =>
-        (!from || ayah.numberInSurah >= from) && (!to || ayah.numberInSurah <= to)
-      )
-      const numbered = ayahs => ayahs.map(ayah => `${ayah.numberInSurah}. ${ayah.text}`).join('\n')
-
-      const arabicText = pick(arabic)
-        .map(ayah => `${ayah.text} ﴿${ayah.numberInSurah}﴾`).join('\n')
-      const tajikText = tajik ? numbered(pick(tajik)) : ''
-      const russianText = numbered(pick(russian))
-
-      if (!arabicText) throw new Error('Оятҳо ёфт нашуданд.')
-
-      const range = (from || to)
-        ? ` · оятҳои ${from || 1}–${to || arabic.numberOfAyahs}`
-        : ''
-      const name = arabic.englishName || `№ ${number}`
-
-      const meta = {
-        title_ru: `Сура ${name} (${number})${range.replace('оятҳои', 'аяты')}`,
-        russian_text: russianText,
-        sura_number: String(number),
-        import_key: importKey
-      }
-
-      const { error } = await db.from('content_items').insert({
-        section_slug: 'quran',
-        title: `Сураи ${name} (${number})${range}`,
-        tajik_text: tajikText || null,
-        arabic_text: arabicText,
-        content_text: tajikText || arabicText,
-        source_note: makeStoredNote(`Қуръони Карим · ${arabic.name} · api.alquran.cloud`, meta),
-        is_published: true,
-        updated_at: new Date().toISOString()
-      })
-
-      if (error) throw error
-
-      setQuranForm({ surah: '', from: '', to: '' })
-      await loadAdminData()
-      await loadPublicData()
-      notify(tajikText
-        ? t.saved
-        : 'Сура илова шуд, аммо тарҷумаи тоҷикӣ дар API ёфт нашуд — онро дастӣ дар «Таҳрир» илова кунед.')
-    } catch (error) {
-      console.error(error)
-      notify(t.error + error.message, 'error')
-    } finally {
-      setImporting(false)
     }
+
+    load()
+    return () => { active = false }
+  }, [selectedSurah, reciter, surahRetry])
+
+  // Аудио танҳо дар саҳифаи сура кор мекунад.
+  useEffect(() => {
+    if (page !== 'section' || !selectedSurah) stopAudio()
+  }, [page, selectedSurah, stopAudio])
+
+  useEffect(() => () => stopAudio(), [stopAudio])
+
+  const playAyah = (index, mode) => {
+    const ayah = surahData?.ayahs?.[index]
+    const audio = audioRef.current
+
+    if (!audio) return
+    if (!ayah?.audio) {
+      notify(t.audioUnavailable, 'error')
+      return
+    }
+
+    audio.src = ayah.audio
+    audio.play().catch(() => notify(t.audioUnavailable, 'error'))
+    setPlaying({ index, mode })
+
+    if (mode === 'all') {
+      setTimeout(() => {
+        document.getElementById(`ayah-${index}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 80)
+    }
+  }
+
+  const handleAudioEnded = () => {
+    const total = surahData?.ayahs?.length || 0
+    if (playing.mode === 'all' && playing.index < total - 1) {
+      playAyah(playing.index + 1, 'all')
+    } else {
+      setPlaying({ index: -1, mode: 'idle' })
+    }
+  }
+
+  const changeReciter = id => {
+    stopAudio()
+    setReciter(id)
+    try {
+      window.localStorage.setItem(RECITER_KEY, id)
+    } catch {
+      // нигоҳдорӣ дастрас нест
+    }
+  }
+
+  const surahDisplayName = item => (lang === 'ru' ? (item.english || item.name) : item.name)
+
+  const toggleAyahFavorite = item => {
+    const key = `${item.surah}:${item.n}`
+    setQuranFavs(current => {
+      const next = { ...current }
+      if (next[key]) delete next[key]
+      else next[key] = {
+        surah: item.surah,
+        n: item.n,
+        surahName: item.surahName,
+        arabic: item.arabic,
+        tajik: item.tajik,
+        russian: item.russian
+      }
+      try {
+        window.localStorage.setItem(QURAN_FAVORITES_KEY, JSON.stringify(next))
+      } catch {
+        // нигоҳдорӣ дастрас нест
+      }
+      return next
+    })
+  }
+
+  const renderAyahCard = (item, index = -1, live = false) => {
+    const key = `${item.surah}:${item.n}`
+    const isFavorite = Boolean(quranFavs[key])
+    const translation = lang === 'ru'
+      ? (item.russian || item.tajik)
+      : (item.tajik || item.russian)
+    const isCurrent = live && playing.index === index
+    const plain = [
+      item.arabic,
+      translation,
+      `${t.quranWord}, ${t.surahWord} ${item.surahName}, ${t.ayahWord} ${item.n}`
+    ].filter(Boolean).join('\n\n')
+
+    return (
+      <article
+        className={`public-item ayah-card ${isCurrent ? 'is-playing' : ''}`}
+        id={live ? `ayah-${index}` : undefined}
+        key={key}
+      >
+        <div className="item-number">
+          {t.surahWord} {item.surahName} · {t.ayahWord} {item.n}
+        </div>
+
+        <p className="arabic-text">{item.arabic}</p>
+        {translation && <p>{translation}</p>}
+
+        {live && (
+          <div className="ayah-audio">
+            <button
+              className="play-chip"
+              type="button"
+              onClick={() => (isCurrent && playing.mode === 'one' ? stopAudio() : playAyah(index, 'one'))}
+            >
+              <Icon name="play" filled />
+              <span>{isCurrent && playing.mode === 'one' ? t.stopAudio : t.playAyah}</span>
+            </button>
+
+            <button className="play-chip" type="button" onClick={() => playAyah(index, 'all')}>
+              <Icon name="speaker" />
+              <span>{t.playFrom}</span>
+            </button>
+          </div>
+        )}
+
+        <div className="card-actions">
+          <button className="action-button" type="button" onClick={() => copyText(plain)}>
+            <Icon name="copy" />
+            <span>{t.copy}</span>
+          </button>
+
+          <button
+            className={`action-button ${isFavorite ? 'is-on' : ''}`}
+            type="button"
+            onClick={() => toggleAyahFavorite(item)}
+            aria-pressed={isFavorite}
+          >
+            <Icon name="heart" />
+            <span>{t.favorite}</span>
+          </button>
+
+          <button className="action-button" type="button" onClick={() => shareText(plain)}>
+            <Icon name="share" />
+            <span>{t.share}</span>
+          </button>
+        </div>
+      </article>
+    )
+  }
+
+  const renderQuran = () => {
+    if (!selectedSurah) {
+      const query = clean(surahFilter).toLowerCase()
+      const list = surahList.filter(item =>
+        !query ||
+        String(item.number) === query ||
+        item.name.toLowerCase().includes(query) ||
+        (item.english || '').toLowerCase().includes(query) ||
+        (item.arabic || '').includes(query)
+      )
+      const extras = contentRows.filter(item => item.section_slug === 'quran')
+
+      return (
+        <>
+          <div className="surah-search">
+            <input
+              value={surahFilter}
+              onChange={event => setSurahFilter(event.target.value)}
+              placeholder={t.surahFilter}
+            />
+          </div>
+
+          <div className="menu menu-list">
+            {list.map(item => (
+              <button
+                className="menu-card"
+                key={item.number}
+                type="button"
+                onClick={() => setSelectedSurah(item.number)}
+              >
+                <span className="surah-number">{item.number}</span>
+
+                <span className="menu-card-body">
+                  <h3>{surahDisplayName(item)}</h3>
+                  <p>
+                    {item.ayahs ? `${item.ayahs} ${t.ayahsCount}` : ''}
+                    {item.type ? `${item.ayahs ? ' · ' : ''}${item.type === 'Meccan' ? t.makki : t.madani}` : ''}
+                  </p>
+                </span>
+
+                {item.arabic && <span className="surah-arabic">{item.arabic}</span>}
+              </button>
+            ))}
+          </div>
+
+          {extras.length > 0 && (
+            <>
+              <h3 className="extras-title">{t.extraMaterials}</h3>
+              <div className="public-list">{extras.map(item => renderContentCard(item))}</div>
+            </>
+          )}
+        </>
+      )
+    }
+
+    const current = surahList.find(item => item.number === selectedSurah) || { number: selectedSurah, name: '' }
+    const surahName = surahDisplayName(current)
+    const ayahs = surahData?.number === selectedSurah ? surahData.ayahs : []
+
+    return (
+      <>
+        <button className="secondary-button back-button" type="button" onClick={() => setSelectedSurah(null)}>
+          ← {t.back}
+        </button>
+
+        <div className="section-intro">
+          <h3>{t.surahWord} {surahName}</h3>
+          <p>
+            {current.arabic ? `${current.arabic} · ` : ''}
+            {current.ayahs ? `${current.ayahs} ${t.ayahsCount}` : ''}
+            {current.type ? ` · ${current.type === 'Meccan' ? t.makki : t.madani}` : ''}
+          </p>
+        </div>
+
+        <div className="player-card">
+          <label htmlFor="reciter-select">{t.reciter}</label>
+          <select
+            id="reciter-select"
+            value={reciter}
+            onChange={event => changeReciter(event.target.value)}
+          >
+            {reciters.map(item => (
+              <option value={item.id} key={item.id}>{item.name}</option>
+            ))}
+          </select>
+
+          <button
+            className="primary-button"
+            type="button"
+            disabled={!ayahs.length}
+            onClick={() => (playing.mode === 'all' ? stopAudio() : playAyah(0, 'all'))}
+          >
+            {playing.mode === 'all' ? `■ ${t.stopAudio}` : `▶ ${t.playAll}`}
+          </button>
+        </div>
+
+        {surahLoading && !ayahs.length && <div className="empty-state">{t.surahLoading}</div>}
+
+        {surahError && !ayahs.length && (
+          <div className="empty-state">
+            <p>{t.surahError}</p>
+            <button className="secondary-button" type="button" onClick={() => setSurahRetry(value => value + 1)}>
+              {t.retry}
+            </button>
+          </div>
+        )}
+
+        {ayahs.length > 0 && selectedSurah !== 1 && selectedSurah !== 9 && (
+          <p className="bismillah arabic-text">{BISMILLAH}</p>
+        )}
+
+        <div className="public-list">
+          {ayahs.map((ayah, index) => renderAyahCard({
+            surah: selectedSurah,
+            surahName,
+            n: ayah.n,
+            arabic: ayah.arabic,
+            tajik: ayah.tajik,
+            russian: ayah.russian
+          }, index, true))}
+        </div>
+
+        {ayahs.length > 0 && <p className="quran-source">{t.quranSource}</p>}
+      </>
+    )
   }
 
   const renderMedia = item => {
@@ -2072,35 +2546,6 @@ function App() {
           </select>
         </div>
 
-        {contentForm.section_slug === 'quran' && !editingContent && (
-          <div className="import-panel">
-            <strong>Воридоти худкори Қуръон</strong>
-            <p>Рақами сураро нависед — матни арабӣ, тарҷумаи русӣ ва (агар бошад) тоҷикӣ худкор илова мешавад. Оятҳо ихтиёрӣ.</p>
-            <div className="import-row">
-              <input
-                type="number" min="1" max="114" inputMode="numeric"
-                placeholder="Сура (1–114)"
-                value={quranForm.surah}
-                onChange={event => setQuranForm({ ...quranForm, surah: event.target.value })}
-              />
-              <input
-                type="number" min="1" inputMode="numeric"
-                placeholder="Аз ояти"
-                value={quranForm.from}
-                onChange={event => setQuranForm({ ...quranForm, from: event.target.value })}
-              />
-              <input
-                type="number" min="1" inputMode="numeric"
-                placeholder="То ояти"
-                value={quranForm.to}
-                onChange={event => setQuranForm({ ...quranForm, to: event.target.value })}
-              />
-            </div>
-            <button className="primary-button" type="button" onClick={importSurah} disabled={importing}>
-              {importing ? t.loading : 'Сураро ворид кардан'}
-            </button>
-          </div>
-        )}
 
         {field(t.title, contentForm.title,
           value => setContentForm({ ...contentForm, title: value }))}
@@ -2497,7 +2942,7 @@ function App() {
                 <p>{localizeSection(selectedSection, lang).description}</p>
               </div>
 
-              {selectedSection.slug === 'hadith' && !selectedBook ? (
+              {selectedSection.slug === 'quran' ? renderQuran() : selectedSection.slug === 'hadith' && !selectedBook ? (
                 <div className="menu menu-list">
                   {books
                     .filter(book => book.is_active !== false)
@@ -2590,9 +3035,11 @@ function App() {
               </div>
 
               <div className="public-list">
-                {favoriteHadiths.length
-                  ? favoriteHadiths.map(item => renderHadithCard(item))
-                  : <div className="empty-state">{t.favoritesEmpty}</div>}
+                {favoriteHadiths.map(item => renderHadithCard(item))}
+                {Object.values(quranFavs).map(item => renderAyahCard(item))}
+                {!favoriteHadiths.length && !Object.keys(quranFavs).length && (
+                  <div className="empty-state">{t.favoritesEmpty}</div>
+                )}
               </div>
             </section>
           )}
@@ -2693,6 +3140,8 @@ function App() {
           )}
         </main>
       )}
+
+      <audio ref={audioRef} onEnded={handleAudioEnded} preload="none" />
 
       <nav className="bottom-nav" aria-label="Navigation">
         <button className={`nav-item ${navActive.home ? 'active' : ''}`} type="button" onClick={goHome}>
