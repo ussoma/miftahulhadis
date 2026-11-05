@@ -975,3 +975,18 @@ input[type='checkbox'] {
   html { scroll-behavior: auto; }
   * { transition: none !important; }
 }
+
+/* QURAN IMPORT */
+
+.import-panel {
+  background: var(--surface-deep);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 15px;
+}
+
+.import-panel strong { color: var(--gold); font-size: 14px; }
+.import-panel p { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 6px 0 12px; }
+.import-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.import-row input { padding: 10px; font-size: 14px; }
