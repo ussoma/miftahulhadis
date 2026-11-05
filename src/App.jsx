@@ -82,6 +82,79 @@ function localizeSection(section, lang) {
   return { ...section, title: translation[0], description: translation[1] }
 }
 
+// Номи кӯтоҳ барои плиткаҳои меню: ибораҳои арабии дуоӣ (عَلَيْهِمُ السَّلَامُ ва ғ.)
+// дар плитка пинҳон мешаванд, аммо ﷺ мемонад. Дар саҳифаи бахш номи пурра нишон дода мешавад.
+function tileTitle(title, lang) {
+  const text = String(title || '')
+  if (lang === 'ar') return text
+  const short = text.replace(/[\u0600-\u06FF\u0750-\u077F]+/g, '').replace(/\s{2,}/g, ' ').trim()
+  return short || text
+}
+
+/* ---------- Нишонаҳои хатӣ (SVG) ---------- */
+
+const circ = (cx, cy, r) => `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`
+
+const ICONS = {
+  grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+  home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  heart: 'M12 20.5s-8-4.7-8-10.2A4.3 4.3 0 0 1 12 8a4.3 4.3 0 0 1 8 2.3c0 5.5-8 10.2-8 10.2z',
+  settings: `M4 7h9M17 7h3M4 17h3M11 17h9${circ(15, 7, 2)}${circ(9, 17, 2)}`,
+  quran: 'M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5zM12 6.5v13',
+  hadith: 'M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5zM5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3',
+  salihin: 'M4 4h12v9H9l-4 3.5V13H4zM18 8h2v10l-3-2h-6v-2',
+  duas: `M12 11s-4-2.3-4-5a2.2 2.2 0 0 1 4-1.2A2.2 2.2 0 0 1 16 6c0 2.7-4 5-4 5zM3 15l4-1 6 1.5c1 .3 1 1.7 0 2L9 18.5M7 14.5V20M13 16l5-2.5 3 1-6 5.5H9`,
+  adhkar: 'M12 3v4M5.6 7.6l2.1 2.1M18.4 7.6l-2.1 2.1M7 17a5 5 0 0 1 10 0M3 17h18M5 21h14',
+  sunnah: 'M12 20.5s-8-4.7-8-10.2A4.3 4.3 0 0 1 12 8a4.3 4.3 0 0 1 8 2.3c0 5.5-8 10.2-8 10.2z',
+  prophets: 'M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4',
+  seerah: `M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z${circ(12, 10, 2.5)}M8 17c.5-2 2-3 4-3s3.5 1 4 3`,
+  companions: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM20 20v-1.5a3.5 3.5 0 0 0-2.5-3.3M15.5 4.2a3.5 3.5 0 0 1 0 6.6',
+  lessons: 'M2 9l10-5 10 5-10 5zM6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5M22 9v6',
+  questions: `${circ(12, 12, 9)}M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01`,
+  search: `${circ(11, 11, 7)}M20 20l-4-4`,
+  copy: 'M11 9h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2zM5 15V6a2 2 0 0 1 2-2h9',
+  share: `${circ(18, 5, 3)}${circ(6, 12, 3)}${circ(18, 19, 3)}M8.6 13.5l6.8 4M15.4 6.5l-6.8 4`,
+  play: 'M8 5v14l11-7z',
+  speaker: 'M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13',
+  utensils: 'M6 3v7a2 2 0 0 0 4 0V3M8 3v18M17 3c-2 2-3 5-3 8h3v10'
+}
+
+function Icon({ name, filled = false }) {
+  return (
+    <svg
+      className="icon"
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={ICONS[name] || ICONS.grid} />
+    </svg>
+  )
+}
+
+const FAVORITES_KEY = 'miftah_favorites_v1'
+
+function loadFavorites() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(FAVORITES_KEY) || '[]')
+    return Array.isArray(parsed) ? parsed.map(String) : []
+  } catch {
+    return []
+  }
+}
+
+function saveFavorites(list) {
+  try {
+    window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(list))
+  } catch {
+    // нигоҳдорӣ дастрас нест — фаромӯш мекунем
+  }
+}
+
 const LEGACY_DEFAULT_SECTION_ORDER = [
   'quran', 'hadith', 'salihin', 'prophets', 'seerah',
   'companions', 'duas', 'adhkar', 'lessons', 'questions'
@@ -151,7 +224,7 @@ const LANG = {
     password: 'Парол',
     home: 'Саҳифаи асосӣ',
     search: 'Ҷустуҷӯ',
-    searchPlaceholder: 'Калима ё ибораро нависед...',
+    searchPlaceholder: 'Ҳадис, дуо ё матнро ҷустуҷӯ кунед...',
     daily: 'Ҳадиси рӯз',
     loading: 'Бор шуда истодааст...',
     noResults: 'Маълумот ёфт нашуд.',
@@ -224,15 +297,40 @@ const LANG = {
     browserNoAudio: 'Браузери шумо аудиоро дастгирӣ намекунад.',
     browserNoVideo: 'Браузери шумо видеоро дастгирӣ намекунад.',
     textMissing: 'Матн ворид нашудааст.',
-    bannerTranslation: 'Аз номи ман бирасонед, ҳарчанд як оят бошад.',
-    bannerSource: 'Саҳеҳи Бухорӣ · ҳадиси № 3461',
+    bannerTranslation: 'Аз номи ман бирасонед, ҳатто як оят бошад.',
+    bannerSource: 'Саҳеҳ ал-Бухорӣ · ҳадиси 3461',
     heroTitle: 'Мифтаҳул Ҳадис',
     heroDescription: 'Манбаи омӯзиш ва мутолиаи Қуръон, ҳадис ва дигар илмҳои исломӣ.',
     copyright: 'Ҳамаи ҳуқуқҳо ҳифз шудаанд.',
     adminDescription: 'Идоракунии пурраи Miftahulhadis',
     loginDescription: 'Барои идоракунии барнома ба ҳисоби мудир ворид шавед.',
     dailyExplanation: 'Шарҳи ҳадис:',
-    hadithLabel: 'Ҳадиси № '
+    hadithLabel: 'Ҳадиси № ',
+    headerSubtitle: 'Китобхонаи ҳадис ва зикр',
+    heroLabel: 'КИТОБХОНАИ ИСЛОМӢ',
+    heroTitle1: 'Илмро ҷустуҷӯ кун.',
+    heroTitle2: 'Ба он амал намо.',
+    heroTagline: 'Ҳадис, дуо ва азкор — дар як ҷо.',
+    searchHint: 'Аз рӯи калима, ибора ё матни ҳадис',
+    sectionsTitle: 'Бахшҳо',
+    allSections: 'Ҳамаи бахшҳо',
+    navHome: 'Асосӣ',
+    navSections: 'Бахшҳо',
+    favorite: 'Дӯстдошта',
+    copy: 'Нусхабардорӣ',
+    share: 'Мубодила',
+    favoritesTitle: 'Дӯстдоштаҳо',
+    favoritesEmpty: 'Ҳоло ҳадиси дӯстдошта нест. Тугмаи «Дӯстдошта»-ро дар зери ҳадис пахш кунед.',
+    settings: 'Танзимот',
+    language: 'Забон',
+    copied: 'Нусха шуд.',
+    copyFailed: 'Нусхабардорӣ муяссар нашуд.',
+    sunnahDailyTitle: 'Суннатҳои рӯз',
+    sunnahDailyDesc: 'Суннатҳоро бо матни арабӣ, тарҷума ва садо омӯзед.',
+    sunnahTags: 'Матни арабӣ · Тарҷума · Аудио',
+    sunnahMore: 'Суннатҳои дигар низ аз дохили бахш дастрас мешаванд.',
+    explanationShort: 'Шарҳ:',
+    hadithWord: 'ҳадиси'
   },
 
   ru: {
@@ -324,7 +422,32 @@ const LANG = {
     adminDescription: 'Полное управление Miftahulhadis',
     loginDescription: 'Войдите в учётную запись администратора для управления приложением.',
     dailyExplanation: 'Объяснение хадиса:',
-    hadithLabel: 'Хадис № '
+    hadithLabel: 'Хадис № ',
+    headerSubtitle: 'Библиотека хадисов и зикров',
+    heroLabel: 'ИСЛАМСКАЯ БИБЛИОТЕКА',
+    heroTitle1: 'Ищи знание.',
+    heroTitle2: 'И действуй по нему.',
+    heroTagline: 'Хадисы, дуа и азкары — в одном месте.',
+    searchHint: 'По слову, фразе или тексту хадиса',
+    sectionsTitle: 'Разделы',
+    allSections: 'Все разделы',
+    navHome: 'Главная',
+    navSections: 'Разделы',
+    favorite: 'Избранное',
+    copy: 'Копировать',
+    share: 'Поделиться',
+    favoritesTitle: 'Избранное',
+    favoritesEmpty: 'Избранных хадисов пока нет. Нажмите «Избранное» под хадисом.',
+    settings: 'Настройки',
+    language: 'Язык',
+    copied: 'Скопировано.',
+    copyFailed: 'Не удалось скопировать.',
+    sunnahDailyTitle: 'Сунны дня',
+    sunnahDailyDesc: 'Изучайте сунны с арабским текстом, переводом и аудио.',
+    sunnahTags: 'Арабский текст · Перевод · Аудио',
+    sunnahMore: 'Другие сунны доступны внутри раздела.',
+    explanationShort: 'Пояснение:',
+    hadithWord: 'хадис'
   },
 
   ar: {
@@ -416,7 +539,32 @@ const LANG = {
     adminDescription: 'الإدارة الكاملة لتطبيق Miftahulhadis',
     loginDescription: 'سجّل الدخول بحساب المسؤول لإدارة التطبيق.',
     dailyExplanation: 'شرح الحديث:',
-    hadithLabel: 'الحديث رقم '
+    hadithLabel: 'الحديث رقم ',
+    headerSubtitle: 'مكتبة الحديث والأذكار',
+    heroLabel: 'المكتبة الإسلامية',
+    heroTitle1: 'اطلب العلم.',
+    heroTitle2: 'واعمل به.',
+    heroTagline: 'الحديث والدعاء والأذكار — في مكان واحد.',
+    searchHint: 'بحث بكلمة أو عبارة أو نص الحديث',
+    sectionsTitle: 'الأقسام',
+    allSections: 'كل الأقسام',
+    navHome: 'الرئيسية',
+    navSections: 'الأقسام',
+    favorite: 'المفضلة',
+    copy: 'نسخ',
+    share: 'مشاركة',
+    favoritesTitle: 'المفضلة',
+    favoritesEmpty: 'لا توجد أحاديث مفضلة بعد. اضغط «المفضلة» أسفل الحديث.',
+    settings: 'الإعدادات',
+    language: 'اللغة',
+    copied: 'تم النسخ.',
+    copyFailed: 'تعذر النسخ.',
+    sunnahDailyTitle: 'سنن اليوم',
+    sunnahDailyDesc: 'تعلّم السنن بالنص العربي والترجمة والصوت.',
+    sunnahTags: 'النص العربي · الترجمة · الصوت',
+    sunnahMore: 'السنن الأخرى متاحة داخل القسم.',
+    explanationShort: 'الشرح:',
+    hadithWord: 'الحديث'
   }
 }
 
@@ -594,6 +742,9 @@ function App() {
   const [notice, setNotice] = useState('')
   const [noticeType, setNoticeType] = useState('success')
 
+  const [favorites, setFavorites] = useState(loadFavorites)
+  const [sunnahOpen, setSunnahOpen] = useState(false)
+
   const t = LANG[lang] || LANG.tg
   const direction = lang === 'ar' ? 'rtl' : 'ltr'
 
@@ -601,6 +752,13 @@ function App() {
     setNotice(message)
     setNoticeType(type)
   }, [])
+
+  // Паёми муваффақиятро пас аз чанд сония худкор пинҳон мекунем.
+  useEffect(() => {
+    if (!notice || noticeType === 'error') return
+    const timer = setTimeout(() => setNotice(''), 3500)
+    return () => clearTimeout(timer)
+  }, [notice, noticeType])
 
   const getBookName = useCallback(id => {
     const book = books.find(item => String(item.id) === String(id))
@@ -834,12 +992,16 @@ function App() {
     return () => clearInterval(timer)
   }, [hadithRows, refreshDaily])
 
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
+
   const openSection = section => {
     setSelectedSection(section)
     setSelectedBook(null)
     setPage('section')
     setSearch('')
     setSearchResults(null)
+    setSunnahOpen(false)
+    scrollToTop()
   }
 
   const openBook = book => {
@@ -856,6 +1018,80 @@ function App() {
     setSelectedBook(null)
     setSearch('')
     setSearchResults(null)
+    scrollToTop()
+  }
+
+  // «Бахшҳо» дар навигатсияи поён: ба рӯйхати плиткаҳо мебарад.
+  const goSections = () => {
+    if (page !== 'home') goHome()
+    setTimeout(() => {
+      document.getElementById('sections')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 60)
+  }
+
+  const openFavorites = () => {
+    setPage('favorites')
+    setSelectedSection(null)
+    setSelectedBook(null)
+    scrollToTop()
+  }
+
+  const openSettings = () => {
+    setPage('settings')
+    setSelectedSection(null)
+    setSelectedBook(null)
+    scrollToTop()
+  }
+
+  const toggleFavorite = item => {
+    const id = String(item.id)
+    setFavorites(current => {
+      const next = current.includes(id)
+        ? current.filter(value => value !== id)
+        : [...current, id]
+      saveFavorites(next)
+      return next
+    })
+  }
+
+  const translatedOf = item => {
+    const stored = parseStoredNote(item.source_note)
+    if (lang === 'ru') return stored.meta.russian_text || item.russian_text || item.tajik_text
+    if (lang === 'ar') return item.arabic_text || item.tajik_text
+    return item.tajik_text
+  }
+
+  const hadithSourceLine = item => {
+    const book = getBookName(item.book_id)
+    if (!book && !item.hadith_number) return ''
+    return `${book}${item.hadith_number ? ` — ${t.hadithWord} ${item.hadith_number}` : ''}`
+  }
+
+  const hadithPlain = item => [
+    item.arabic_text,
+    translatedOf(item),
+    hadithSourceLine(item)
+  ].filter(Boolean).join('\n\n')
+
+  const copyText = async text => {
+    try {
+      await navigator.clipboard.writeText(text)
+      notify(t.copied)
+    } catch {
+      notify(t.copyFailed, 'error')
+    }
+  }
+
+  const shareText = async text => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ text })
+      } catch {
+        // истифодабаранда мубодиларо бекор кард
+      }
+      return
+    }
+    copyText(text)
   }
 
   const performSearch = () => {
@@ -908,6 +1144,7 @@ function App() {
 
     setSearchResults([...hadithMatches, ...contentMatches])
     setPage('search')
+    scrollToTop()
   }
 
   const resetHadithForm = () => {
@@ -1480,6 +1717,11 @@ function App() {
     )[0] || null
   }, [contentRows])
 
+  const favoriteHadiths = useMemo(
+    () => hadithRows.filter(item => favorites.includes(String(item.id))),
+    [hadithRows, favorites]
+  )
+
   const renderMedia = item => {
     const stored = parseStoredNote(item.source_note)
     const audio = stored.meta.audio_url
@@ -1503,6 +1745,34 @@ function App() {
           </div>
         )}
       </>
+    )
+  }
+
+  const renderActions = item => {
+    const isFavorite = favorites.includes(String(item.id))
+
+    return (
+      <div className="card-actions">
+        <button className="action-button" type="button" onClick={() => copyText(hadithPlain(item))}>
+          <Icon name="copy" />
+          <span>{t.copy}</span>
+        </button>
+
+        <button
+          className={`action-button ${isFavorite ? 'is-on' : ''}`}
+          type="button"
+          onClick={() => toggleFavorite(item)}
+          aria-pressed={isFavorite}
+        >
+          <Icon name="heart" />
+          <span>{t.favorite}</span>
+        </button>
+
+        <button className="action-button" type="button" onClick={() => shareText(hadithPlain(item))}>
+          <Icon name="share" />
+          <span>{t.share}</span>
+        </button>
+      </div>
     )
   }
 
@@ -1555,6 +1825,8 @@ function App() {
             <HighlightText text={stored.source} query={query} />
           </div>
         )}
+
+        {renderActions(item)}
       </article>
     )
   }
@@ -1588,7 +1860,7 @@ function App() {
 
         {localizedExplanation && (
           <div className="explanation">
-            <strong>{lang === 'ru' ? 'Пояснение:' : lang === 'ar' ? 'الشرح:' : 'Шарҳ:'}</strong>
+            <strong>{t.explanationShort}</strong>
             <p><HighlightText text={localizedExplanation} query={query} /></p>
           </div>
         )}
@@ -1902,7 +2174,6 @@ function App() {
         {field(t.icon, sectionForm.icon,
           value => setSectionForm({ ...sectionForm, icon: value }), '📚')}
 
-        {/* Хатои синтаксис дар ҳамин қисми textarea ислоҳ шуд */}
         {textarea(
           t.description,
           sectionForm.description,
@@ -1963,12 +2234,25 @@ function App() {
     )
   }
 
+  const sunnahSection = sections.find(item => item.slug === 'sunnah')
+  const sunnahStored = dailySunnah ? parseStoredNote(dailySunnah.source_note) : null
+  const showSearch = page === 'home' || page === 'section' || page === 'search'
+  const navActive = {
+    home: page === 'home' || page === 'search',
+    sections: page === 'section',
+    favorites: page === 'favorites',
+    settings: page === 'settings'
+  }
+
   return (
     <div className="app theme-green" dir={direction}>
       <header className="header">
         <button className="brand-button" onClick={goHome}>
-          <span className="header-title">𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</span>
-          <span className="header-subtitle">Мифтаҳул Ҳадис</span>
+          <span className="brand-logo" aria-hidden="true">ه</span>
+          <span className="brand-text">
+            <span className="header-title">Miftahulhadis</span>
+            <span className="header-subtitle">{t.headerSubtitle}</span>
+          </span>
         </button>
 
         <div className="header-controls">
@@ -1976,28 +2260,12 @@ function App() {
             className="language-selector"
             value={lang}
             onChange={event => setLang(event.target.value)}
-            aria-label="Language"
+            aria-label={t.language}
           >
-            <option value="tg">Тоҷикӣ</option>
-            <option value="ru">Русский</option>
-            <option value="ar">العربية</option>
+            <option value="tg">TJ</option>
+            <option value="ru">RU</option>
+            <option value="ar">AR</option>
           </select>
-
-          {admin ? (
-            <>
-              <button className="header-action" onClick={() => setPage('admin')}>
-                {t.admin}
-              </button>
-
-              <button className="header-action" onClick={logout}>
-                {t.logout}
-              </button>
-            </>
-          ) : (
-            <button className="header-action" onClick={() => setLoginOpen(true)}>
-              {t.admin}
-            </button>
-          )}
         </div>
       </header>
 
@@ -2010,115 +2278,176 @@ function App() {
 
       {page !== 'admin' && (
         <main className="main-content">
-          {dailyHadith && (
-            <section className="daily-card">
-              <div className="daily-heading">
-                <span>🌙</span>
-                <h2>{t.daily}</h2>
-              </div>
+          {page === 'home' && (
+            <section className="miftah-banner">
+              <span className="miftah-banner-label">{t.heroLabel}</span>
+              <h1 className="miftah-banner-title">{t.heroTitle1}</h1>
+              <h2 className="miftah-banner-title2">{t.heroTitle2}</h2>
+              <p className="miftah-banner-tagline">{t.heroTagline}</p>
 
-              {dailyHadith.arabic_text && (
-                <p className="arabic-text">{dailyHadith.arabic_text}</p>
-              )}
-
-              <p>{lang === 'ru'
-                ? (parseStoredNote(dailyHadith.source_note).meta.russian_text || dailyHadith.tajik_text)
-                : (lang === 'ar' ? (dailyHadith.arabic_text || dailyHadith.tajik_text) : dailyHadith.tajik_text)}</p>
-
-              {(dailyHadith.commentary || parseStoredNote(dailyHadith.source_note).meta.explanation_tg) && (
-                <div className="explanation">
-                  <strong>{t.dailyExplanation}</strong>
-                  <p>
-                    {dailyHadith.commentary ||
-                      parseStoredNote(dailyHadith.source_note).meta.explanation_tg}
-                  </p>
-                </div>
-              )}
-
-              <div className="source-note">
-                {getBookName(dailyHadith.book_id)}
-                {dailyHadith.hadith_number
-                  ? ` · ${t.hadithLabel}${dailyHadith.hadith_number}`
-                  : ''}
+              <div className="miftah-banner-quote">
+                <p className="miftah-banner-arabic">بَلِّغُوا عَنِّي وَلَوْ آيَةً</p>
+                <p className="miftah-banner-translation">{t.bannerTranslation}</p>
+                <p className="miftah-banner-subtitle">{t.bannerSource}</p>
               </div>
             </section>
           )}
 
-          <section className="miftah-banner">
-            <h1 className="miftah-banner-title">𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</h1>
-            <p className="miftah-banner-arabic">بَلِّغُوا عَنِّي وَلَوْ آيَةً</p>
-            <p className="miftah-banner-translation">{t.bannerTranslation}</p>
-            <p className="miftah-banner-subtitle">{t.bannerSource}</p>
-          </section>
+          {showSearch && (
+            <div className="search-box">
+              <button
+                className="search-icon-button"
+                type="button"
+                onClick={performSearch}
+                aria-label={t.search}
+              >
+                <Icon name="search" />
+              </button>
 
-          <div className="search-box">
-            <input
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-              onKeyDown={event => {
-                if (event.key === 'Enter') performSearch()
-              }}
-              placeholder={t.searchPlaceholder}
-            />
-
-            <button className="primary-button" onClick={performSearch}>
-              <span>⌕</span> {t.search}
-            </button>
-          </div>
+              <div className="search-field">
+                <input
+                  value={search}
+                  onChange={event => setSearch(event.target.value)}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter') performSearch()
+                  }}
+                  placeholder={t.searchPlaceholder}
+                  enterKeyHint="search"
+                />
+                <span className="search-hint">{t.searchHint}</span>
+              </div>
+            </div>
+          )}
 
           {page === 'home' && (
             <>
-              <section className="hero">
-                <h2>{t.heroTitle}</h2>
-                <p>{t.heroDescription}</p>
+              <section className="sections-block" id="sections">
+                <div className="block-heading">
+                  <h2>{t.sectionsTitle}</h2>
+                  <button className="link-button" type="button" onClick={goSections}>
+                    {t.allSections}
+                  </button>
+                </div>
+
+                <div className="menu">
+                  <button className="menu-card is-active" type="button" onClick={goHome}>
+                    <span className="menu-card-icon"><Icon name="grid" /></span>
+                    <span className="menu-card-body"><h3>{t.sectionsTitle}</h3></span>
+                  </button>
+
+                  {sections.filter(section => section.is_active !== false).map(section => {
+                    const displaySection = localizeSection(section, lang)
+                    return (
+                      <button
+                        className="menu-card"
+                        key={section.slug}
+                        type="button"
+                        onClick={() => openSection(section)}
+                      >
+                        <span className="menu-card-icon">
+                          {ICONS[section.slug] ? <Icon name={section.slug} /> : section.icon}
+                        </span>
+
+                        <span className="menu-card-body">
+                          <h3>{tileTitle(displaySection.title, lang)}</h3>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
               </section>
 
-              <div className="menu">
-                {sections.filter(section => section.is_active !== false).map(section => {
-                  const displaySection = localizeSection(section, lang)
-                  return (
-                  <button
-                    className="menu-card"
-                    key={section.slug}
-                    onClick={() => openSection(section)}
-                  >
-                    <span className="menu-card-icon">{section.icon}</span>
-
-                    <span>
-                      <h3>{displaySection.title}</h3>
-                      <p>{displaySection.description}</p>
-                    </span>
-
-                    <span className="menu-arrow">‹</span>
-                  </button>
-                  )
-                })}
-              </div>
-
-              {dailySunnah && (
-                <section className="daily-card sunnah-daily-card">
+              {dailyHadith && (
+                <section className="daily-card">
                   <div className="daily-heading">
-                    <span>🌿</span>
-                    <h2>{lang === 'ru' ? 'Сунна дня' : lang === 'ar' ? 'سنة اليوم' : 'Суннати рӯз'}</h2>
+                    <h2>{t.daily}</h2>
+                    {dailyHadith.hadith_number && (
+                      <span className="daily-badge">№ {dailyHadith.hadith_number}</span>
+                    )}
                   </div>
-                  {dailySunnah.title && <h3>{dailySunnah.title}</h3>}
-                  {dailySunnah.arabic_text && <p className="arabic-text">{dailySunnah.arabic_text}</p>}
+
+                  {dailyHadith.arabic_text && (
+                    <p className="arabic-text">{dailyHadith.arabic_text}</p>
+                  )}
+
                   <p>{lang === 'ru'
-                    ? (parseStoredNote(dailySunnah.source_note).meta.russian_text || dailySunnah.tajik_text || dailySunnah.content_text)
-                    : (lang === 'ar'
-                      ? (dailySunnah.arabic_text || dailySunnah.tajik_text || dailySunnah.content_text)
-                      : (dailySunnah.tajik_text || dailySunnah.content_text))}</p>
-                  {parseStoredNote(dailySunnah.source_note).meta.explanation_tg && (
+                    ? (parseStoredNote(dailyHadith.source_note).meta.russian_text || dailyHadith.tajik_text)
+                    : (lang === 'ar' ? (dailyHadith.arabic_text || dailyHadith.tajik_text) : dailyHadith.tajik_text)}</p>
+
+                  {(dailyHadith.commentary || parseStoredNote(dailyHadith.source_note).meta.explanation_tg) && (
                     <div className="explanation">
-                      <strong>{lang === 'ru' ? 'Пояснение:' : lang === 'ar' ? 'الشرح:' : 'Шарҳ:'}</strong>
-                      <p>{lang === 'ru'
-                        ? (parseStoredNote(dailySunnah.source_note).meta.explanation_ru || parseStoredNote(dailySunnah.source_note).meta.explanation_tg)
-                        : parseStoredNote(dailySunnah.source_note).meta.explanation_tg}</p>
+                      <strong>{t.dailyExplanation}</strong>
+                      <p>
+                        {dailyHadith.commentary ||
+                          parseStoredNote(dailyHadith.source_note).meta.explanation_tg}
+                      </p>
                     </div>
                   )}
-                  {parseStoredNote(dailySunnah.source_note).source && (
-                    <div className="source-note">{parseStoredNote(dailySunnah.source_note).source}</div>
+
+                  <div className="source-note">{hadithSourceLine(dailyHadith)}</div>
+
+                  {renderActions(dailyHadith)}
+                </section>
+              )}
+
+              {(dailySunnah || sunnahSection) && (
+                <section className="daily-card sunnah-daily-card">
+                  <div className="daily-heading">
+                    <h2>{t.sunnahDailyTitle}</h2>
+                    <span className="daily-heading-icon"><Icon name="speaker" /></span>
+                  </div>
+
+                  <p className="daily-desc">{t.sunnahDailyDesc}</p>
+
+                  <button
+                    className="sunnah-row"
+                    type="button"
+                    onClick={() => dailySunnah
+                      ? setSunnahOpen(open => !open)
+                      : openSection(sunnahSection)}
+                  >
+                    <span className="sunnah-row-icon"><Icon name="utensils" /></span>
+
+                    <span className="sunnah-row-text">
+                      <strong>
+                        {dailySunnah
+                          ? (dailySunnah.title || clean(translatedOf(dailySunnah) || dailySunnah.content_text).slice(0, 40))
+                          : localizeSection(sunnahSection, lang).title}
+                      </strong>
+                      <span>{t.sunnahTags}</span>
+                    </span>
+
+                    <span className="sunnah-play"><Icon name="play" filled /></span>
+                  </button>
+
+                  {dailySunnah && sunnahOpen && (
+                    <div className="sunnah-details">
+                      {dailySunnah.arabic_text && <p className="arabic-text">{dailySunnah.arabic_text}</p>}
+
+                      <p>{lang === 'ru'
+                        ? (sunnahStored.meta.russian_text || dailySunnah.tajik_text || dailySunnah.content_text)
+                        : (lang === 'ar'
+                          ? (dailySunnah.arabic_text || dailySunnah.tajik_text || dailySunnah.content_text)
+                          : (dailySunnah.tajik_text || dailySunnah.content_text))}</p>
+
+                      {sunnahStored.meta.explanation_tg && (
+                        <div className="explanation">
+                          <strong>{t.explanationShort}</strong>
+                          <p>{lang === 'ru'
+                            ? (sunnahStored.meta.explanation_ru || sunnahStored.meta.explanation_tg)
+                            : sunnahStored.meta.explanation_tg}</p>
+                        </div>
+                      )}
+
+                      {renderMedia(dailySunnah)}
+
+                      {sunnahStored.source && (
+                        <div className="source-note">{sunnahStored.source}</div>
+                      )}
+                    </div>
                   )}
+
+                  <p className="daily-footnote">{t.sunnahMore}</p>
                 </section>
               )}
             </>
@@ -2136,7 +2465,7 @@ function App() {
               </div>
 
               {selectedSection.slug === 'hadith' && !selectedBook ? (
-                <div className="menu">
+                <div className="menu menu-list">
                   {books
                     .filter(book => book.is_active !== false)
                     .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
@@ -2146,9 +2475,9 @@ function App() {
                         key={book.id}
                         onClick={() => openBook(book)}
                       >
-                        <span className="menu-card-icon">📚</span>
+                        <span className="menu-card-icon"><Icon name="hadith" /></span>
 
-                        <span>
+                        <span className="menu-card-body">
                           <h3>{book.name}</h3>
                           <p>
                             {lang === 'ru'
@@ -2221,8 +2550,68 @@ function App() {
             </section>
           )}
 
+          {page === 'favorites' && (
+            <section className="content-page">
+              <div className="section-intro">
+                <h2>{t.favoritesTitle}</h2>
+              </div>
+
+              <div className="public-list">
+                {favoriteHadiths.length
+                  ? favoriteHadiths.map(item => renderHadithCard(item))
+                  : <div className="empty-state">{t.favoritesEmpty}</div>}
+              </div>
+            </section>
+          )}
+
+          {page === 'settings' && (
+            <section className="content-page">
+              <div className="section-intro">
+                <h2>{t.settings}</h2>
+              </div>
+
+              <div className="public-list">
+                <div className="settings-card">
+                  <h3>{t.language}</h3>
+                  <div className="lang-options">
+                    {[['tg', 'Тоҷикӣ'], ['ru', 'Русский'], ['ar', 'العربية']].map(([code, label]) => (
+                      <button
+                        key={code}
+                        type="button"
+                        className={`lang-option ${lang === code ? 'active' : ''}`}
+                        onClick={() => setLang(code)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="settings-card">
+                  <h3>{t.admin}</h3>
+                  <div className="settings-actions">
+                    {admin ? (
+                      <>
+                        <button className="primary-button" type="button" onClick={() => setPage('admin')}>
+                          {t.admin}
+                        </button>
+                        <button className="secondary-button" type="button" onClick={logout}>
+                          {t.logout}
+                        </button>
+                      </>
+                    ) : (
+                      <button className="primary-button" type="button" onClick={() => setLoginOpen(true)}>
+                        {t.login}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
           <footer className="footer">
-            <strong>𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔</strong>
+            <strong>Miftahulhadis</strong>
             <p>© {new Date().getFullYear()} · {t.copyright}</p>
           </footer>
         </main>
@@ -2271,6 +2660,28 @@ function App() {
           )}
         </main>
       )}
+
+      <nav className="bottom-nav" aria-label="Navigation">
+        <button className={`nav-item ${navActive.home ? 'active' : ''}`} type="button" onClick={goHome}>
+          <Icon name="home" />
+          <span>{t.navHome}</span>
+        </button>
+
+        <button className={`nav-item ${navActive.sections ? 'active' : ''}`} type="button" onClick={goSections}>
+          <Icon name="grid" />
+          <span>{t.navSections}</span>
+        </button>
+
+        <button className={`nav-item ${navActive.favorites ? 'active' : ''}`} type="button" onClick={openFavorites}>
+          <Icon name="heart" />
+          <span>{t.favorite}</span>
+        </button>
+
+        <button className={`nav-item ${navActive.settings ? 'active' : ''}`} type="button" onClick={openSettings}>
+          <Icon name="settings" />
+          <span>{t.settings}</span>
+        </button>
+      </nav>
 
       {loginOpen && (
         <div className="modal-overlay" onClick={() => setLoginOpen(false)}>
