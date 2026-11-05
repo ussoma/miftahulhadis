@@ -448,123 +448,6 @@ const LANG = {
     sunnahMore: 'Другие сунны доступны внутри раздела.',
     explanationShort: 'Пояснение:',
     hadithWord: 'хадис'
-  },
-
-  ar: {
-    admin: 'لوحة الإدارة',
-    login: 'دخول',
-    logout: 'خروج',
-    email: 'البريد الإلكتروني',
-    password: 'كلمة المرور',
-    home: 'الرئيسية',
-    search: 'بحث',
-    searchPlaceholder: 'اكتب كلمة أو عبارة...',
-    daily: 'حديث اليوم',
-    loading: 'جار التحميل...',
-    noResults: 'لم يتم العثور على نتائج.',
-    noHadiths: 'لم تتم إضافة أحاديث بعد.',
-    noContent: 'لا توجد مواد في هذا القسم.',
-    noBooks: 'لم تتم إضافة كتب الحديث بعد.',
-    chooseBook: 'اختر الكتاب',
-    back: 'رجوع',
-    save: 'حفظ',
-    cancel: 'إلغاء',
-    add: 'إضافة',
-    edit: 'تعديل',
-    delete: 'حذف',
-    hide: 'إخفاء',
-    show: 'إظهار',
-    number: 'رقم الحديث',
-    tajik: 'النص الطاجيكي',
-    arabic: 'النص العربي',
-    source: 'المصدر',
-    explanationTg: 'الشرح بالطاجيكية',
-    explanationAr: 'الشرح بالعربية',
-    audio: 'رابط الصوت',
-    video: 'رابط الفيديو',
-    title: 'العنوان',
-    section: 'القسم',
-    book: 'كتاب الحديث',
-    newHadith: 'إضافة حديث',
-    editHadith: 'تعديل الحديث',
-    newContent: 'إضافة مادة',
-    editContent: 'تعديل المادة',
-    newBook: 'إضافة كتاب',
-    newSection: 'إضافة قسم',
-    editSection: 'تعديل القسم',
-    description: 'وصف القسم',
-    icon: 'أيقونة القسم',
-    confirm: 'هل أنت متأكد؟',
-    saved: 'تم الحفظ.',
-    error: 'خطأ: ',
-    published: 'منشور',
-    hidden: 'مخفي',
-    books: 'الكتب',
-    hadiths: 'الأحاديث',
-    contents: 'المواد',
-    sections: 'الأقسام',
-    required: 'هذا الحقل مطلوب.',
-    adminOnly: 'متاح للمسؤول فقط.',
-    moveUp: 'للأعلى',
-    moveDown: 'للأسفل',
-    explanationHeading: 'شرح الحديث:',
-    selectBook: 'اختر الكتاب',
-    exampleNumber: 'مثال: 15',
-    hadithTranslationPlaceholder: 'ترجمة الحديث...',
-    sectionName: 'اسم القسم',
-    sectionSlug: 'رمز القسم',
-    sectionSlugExample: 'مثال: new-section',
-    bookExample: 'صحيح البخاري',
-    bookNameRequired: 'اكتب اسم الكتاب.',
-    sectionNameRequired: 'أدخل اسم القسم.',
-    hadithRequired: 'رقم الحديث والنص الطاجيكي مطلوبان.',
-    chooseHadithBook: 'يرجى اختيار كتاب الحديث.',
-    contentRequired: 'أدخل نصاً واحداً على الأقل أو رابطاً للصوت أو الفيديو.',
-    deleteSectionConfirm: 'هل تريد حذف القسم؟ لن يتم حذف المواد الموجودة بداخله.',
-    sectionNotSaved: 'هذا القسم غير محفوظ في جدول sections.',
-    activeColumnMissing: 'لم يتم العثور على عمود is_active أو is_visible في جدول sections.',
-    reorderNeedsSaved: 'يجب حفظ الأقسام في Supabase لتغيير ترتيبها.',
-    orderColumnMissing: 'لم يتم العثور على عمود sort_order.',
-    userNotFound: 'لم يتم العثور على المستخدم.',
-    notAdmin: 'هذا الحساب لا يملك صلاحيات المسؤول.',
-    supabaseMissing: 'لم يتم إعداد Supabase في Vercel.',
-    browserNoAudio: 'متصفحك لا يدعم الصوت.',
-    browserNoVideo: 'متصفحك لا يدعم الفيديو.',
-    textMissing: 'لم يتم إدخال النص.',
-    bannerTranslation: 'بلّغوا عني ولو آية.',
-    bannerSource: 'صحيح البخاري · الحديث رقم 3461',
-    heroTitle: 'مفتاح الحديث',
-    heroDescription: 'مصدر لتعلم القرآن والحديث والعلوم الإسلامية الأخرى.',
-    copyright: 'جميع الحقوق محفوظة.',
-    adminDescription: 'الإدارة الكاملة لتطبيق Miftahulhadis',
-    loginDescription: 'سجّل الدخول بحساب المسؤول لإدارة التطبيق.',
-    dailyExplanation: 'شرح الحديث:',
-    hadithLabel: 'الحديث رقم ',
-    headerSubtitle: 'مكتبة الحديث والأذكار',
-    heroLabel: 'المكتبة الإسلامية',
-    heroTitle1: 'اطلب العلم.',
-    heroTitle2: 'واعمل به.',
-    heroTagline: 'الحديث والدعاء والأذكار — في مكان واحد.',
-    searchHint: 'بحث بكلمة أو عبارة أو نص الحديث',
-    sectionsTitle: 'الأقسام',
-    allSections: 'كل الأقسام',
-    navHome: 'الرئيسية',
-    navSections: 'الأقسام',
-    favorite: 'المفضلة',
-    copy: 'نسخ',
-    share: 'مشاركة',
-    favoritesTitle: 'المفضلة',
-    favoritesEmpty: 'لا توجد أحاديث مفضلة بعد. اضغط «المفضلة» أسفل الحديث.',
-    settings: 'الإعدادات',
-    language: 'اللغة',
-    copied: 'تم النسخ.',
-    copyFailed: 'تعذر النسخ.',
-    sunnahDailyTitle: 'سنن اليوم',
-    sunnahDailyDesc: 'تعلّم السنن بالنص العربي والترجمة والصوت.',
-    sunnahTags: 'النص العربي · الترجمة · الصوت',
-    sunnahMore: 'السنن الأخرى متاحة داخل القسم.',
-    explanationShort: 'الشرح:',
-    hadithWord: 'الحديث'
   }
 }
 
@@ -585,6 +468,7 @@ const EMPTY_HADITH = {
 const EMPTY_CONTENT = {
   section_slug: 'salihin',
   title: '',
+  title_ru: '',
   tajik_text: '',
   arabic_text: '',
   explanation_tg: '',
@@ -744,6 +628,8 @@ function App() {
 
   const [favorites, setFavorites] = useState(loadFavorites)
   const [sunnahOpen, setSunnahOpen] = useState(false)
+  const [quranForm, setQuranForm] = useState({ surah: '', from: '', to: '' })
+  const [importing, setImporting] = useState(false)
 
   const t = LANG[lang] || LANG.tg
   const direction = lang === 'ar' ? 'rtl' : 'ltr'
@@ -1132,6 +1018,7 @@ function App() {
 
       return matches([
         item.title,
+        stored.meta.title_ru,
         item.arabic_text,
         item.tajik_text,
         item.russian_text,
@@ -1366,6 +1253,7 @@ function App() {
         : {}
       const meta = {
         ...previousMeta,
+        title_ru: clean(contentForm.title_ru),
         explanation_tg: clean(contentForm.explanation_tg),
         explanation_ar: clean(contentForm.explanation_ar),
         russian_text: clean(contentForm.russian_text),
@@ -1414,6 +1302,7 @@ function App() {
     setContentForm({
       section_slug: item.section_slug || 'salihin',
       title: item.title || '',
+      title_ru: stored.meta.title_ru || '',
       tajik_text: item.tajik_text || item.content_text || '',
       arabic_text: item.arabic_text || '',
       source_note: stored.source,
@@ -1701,9 +1590,17 @@ function App() {
         .map(item => ({ ...item, resultType: 'hadith' }))
     }
 
-    return contentRows
+    const rows = contentRows
       .filter(item => item.section_slug === selectedSection.slug)
       .map(item => ({ ...item, resultType: 'content' }))
+
+    // Қуръон: сураҳо аз рӯи рақам (1, 2, 3 ...) нишон дода мешаванд.
+    if (selectedSection.slug === 'quran') {
+      const suraOf = item => Number(parseStoredNote(item.source_note).meta.sura_number || 9999)
+      rows.sort((a, b) => suraOf(a) - suraOf(b))
+    }
+
+    return rows
   }, [selectedSection, selectedBook, hadithRows, contentRows])
 
   const dailySunnah = useMemo(() => {
@@ -1721,6 +1618,105 @@ function App() {
     () => hadithRows.filter(item => favorites.includes(String(item.id))),
     [hadithRows, favorites]
   )
+
+  // Воридоти худкори сураҳои Қуръон аз api.alquran.cloud (матни араб + русӣ + тоҷикӣ, агар дастрас бошад).
+  const importSurah = async () => {
+    if (!db || !admin || importing) return
+
+    const number = Number(quranForm.surah)
+    if (!Number.isInteger(number) || number < 1 || number > 114) {
+      notify('Рақами сураро аз 1 то 114 ворид кунед.', 'error')
+      return
+    }
+
+    const from = quranForm.from ? Number(quranForm.from) : null
+    const to = quranForm.to ? Number(quranForm.to) : null
+    const importKey = `${number}:${from || ''}-${to || ''}`
+
+    const duplicate = contentRows.some(row =>
+      row.section_slug === 'quran' &&
+      parseStoredNote(row.source_note).meta.import_key === importKey
+    )
+    if (duplicate) {
+      notify('Ин сура аллакай илова шудааст.', 'error')
+      return
+    }
+
+    setImporting(true)
+
+    try {
+      const api = 'https://api.alquran.cloud/v1'
+      const getData = async path => {
+        const response = await fetch(api + path)
+        if (!response.ok) throw new Error('API ' + response.status)
+        const json = await response.json()
+        return json.data
+      }
+
+      let tajikEdition = ''
+      try {
+        const editions = await getData('/edition?format=text&language=tg')
+        tajikEdition = editions?.[0]?.identifier || ''
+      } catch {
+        tajikEdition = ''
+      }
+
+      const [arabic, russian, tajik] = await Promise.all([
+        getData(`/surah/${number}/quran-uthmani`),
+        getData(`/surah/${number}/ru.kuliev`),
+        tajikEdition ? getData(`/surah/${number}/${tajikEdition}`) : Promise.resolve(null)
+      ])
+
+      const pick = data => (data?.ayahs || []).filter(ayah =>
+        (!from || ayah.numberInSurah >= from) && (!to || ayah.numberInSurah <= to)
+      )
+      const numbered = ayahs => ayahs.map(ayah => `${ayah.numberInSurah}. ${ayah.text}`).join('\n')
+
+      const arabicText = pick(arabic)
+        .map(ayah => `${ayah.text} ﴿${ayah.numberInSurah}﴾`).join('\n')
+      const tajikText = tajik ? numbered(pick(tajik)) : ''
+      const russianText = numbered(pick(russian))
+
+      if (!arabicText) throw new Error('Оятҳо ёфт нашуданд.')
+
+      const range = (from || to)
+        ? ` · оятҳои ${from || 1}–${to || arabic.numberOfAyahs}`
+        : ''
+      const name = arabic.englishName || `№ ${number}`
+
+      const meta = {
+        title_ru: `Сура ${name} (${number})${range.replace('оятҳои', 'аяты')}`,
+        russian_text: russianText,
+        sura_number: String(number),
+        import_key: importKey
+      }
+
+      const { error } = await db.from('content_items').insert({
+        section_slug: 'quran',
+        title: `Сураи ${name} (${number})${range}`,
+        tajik_text: tajikText || null,
+        arabic_text: arabicText,
+        content_text: tajikText || arabicText,
+        source_note: makeStoredNote(`Қуръони Карим · ${arabic.name} · api.alquran.cloud`, meta),
+        is_published: true,
+        updated_at: new Date().toISOString()
+      })
+
+      if (error) throw error
+
+      setQuranForm({ surah: '', from: '', to: '' })
+      await loadAdminData()
+      await loadPublicData()
+      notify(tajikText
+        ? t.saved
+        : 'Сура илова шуд, аммо тарҷумаи тоҷикӣ дар API ёфт нашуд — онро дастӣ дар «Таҳрир» илова кунед.')
+    } catch (error) {
+      console.error(error)
+      notify(t.error + error.message, 'error')
+    } finally {
+      setImporting(false)
+    }
+  }
 
   const renderMedia = item => {
     const stored = parseStoredNote(item.source_note)
@@ -1844,8 +1840,13 @@ function App() {
 
     return (
       <article className="public-item" key={`content-${item.id}`}>
-        {item.title && (
-          <h3><HighlightText text={item.title} query={query} /></h3>
+        {(lang === 'ru' ? (stored.meta.title_ru || item.title) : item.title) && (
+          <h3>
+            <HighlightText
+              text={lang === 'ru' ? (stored.meta.title_ru || item.title) : item.title}
+              query={query}
+            />
+          </h3>
         )}
 
         {item.arabic_text && (
@@ -2071,8 +2072,41 @@ function App() {
           </select>
         </div>
 
+        {contentForm.section_slug === 'quran' && !editingContent && (
+          <div className="import-panel">
+            <strong>Воридоти худкори Қуръон</strong>
+            <p>Рақами сураро нависед — матни арабӣ, тарҷумаи русӣ ва (агар бошад) тоҷикӣ худкор илова мешавад. Оятҳо ихтиёрӣ.</p>
+            <div className="import-row">
+              <input
+                type="number" min="1" max="114" inputMode="numeric"
+                placeholder="Сура (1–114)"
+                value={quranForm.surah}
+                onChange={event => setQuranForm({ ...quranForm, surah: event.target.value })}
+              />
+              <input
+                type="number" min="1" inputMode="numeric"
+                placeholder="Аз ояти"
+                value={quranForm.from}
+                onChange={event => setQuranForm({ ...quranForm, from: event.target.value })}
+              />
+              <input
+                type="number" min="1" inputMode="numeric"
+                placeholder="То ояти"
+                value={quranForm.to}
+                onChange={event => setQuranForm({ ...quranForm, to: event.target.value })}
+              />
+            </div>
+            <button className="primary-button" type="button" onClick={importSurah} disabled={importing}>
+              {importing ? t.loading : 'Сураро ворид кардан'}
+            </button>
+          </div>
+        )}
+
         {field(t.title, contentForm.title,
           value => setContentForm({ ...contentForm, title: value }))}
+
+        {field('Сарлавҳаи русӣ / Название на русском', contentForm.title_ru,
+          value => setContentForm({ ...contentForm, title_ru: value }))}
 
         {textarea(t.tajik, contentForm.tajik_text,
           value => setContentForm({ ...contentForm, tajik_text: value }))}
@@ -2264,7 +2298,6 @@ function App() {
           >
             <option value="tg">TJ</option>
             <option value="ru">RU</option>
-            <option value="ar">AR</option>
           </select>
         </div>
       </header>
@@ -2411,7 +2444,7 @@ function App() {
                     <span className="sunnah-row-text">
                       <strong>
                         {dailySunnah
-                          ? (dailySunnah.title || clean(translatedOf(dailySunnah) || dailySunnah.content_text).slice(0, 40))
+                          ? ((lang === 'ru' && sunnahStored?.meta.title_ru) || dailySunnah.title || clean(translatedOf(dailySunnah) || dailySunnah.content_text).slice(0, 40))
                           : localizeSection(sunnahSection, lang).title}
                       </strong>
                       <span>{t.sunnahTags}</span>
@@ -2574,7 +2607,7 @@ function App() {
                 <div className="settings-card">
                   <h3>{t.language}</h3>
                   <div className="lang-options">
-                    {[['tg', 'Тоҷикӣ'], ['ru', 'Русский'], ['ar', 'العربية']].map(([code, label]) => (
+                    {[['tg', 'Тоҷикӣ'], ['ru', 'Русский']].map(([code, label]) => (
                       <button
                         key={code}
                         type="button"
