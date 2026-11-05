@@ -104,7 +104,7 @@ select:focus-visible {
   color: var(--text-dark);
   border-radius: 16px;
   font-family: 'Noto Naskh Arabic', serif;
-  font-size: 30px;
+  font-size: 25px;
   font-weight: 700;
   line-height: 1;
 }
@@ -114,7 +114,7 @@ select:focus-visible {
 .header-title {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
-  font-size: 29px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text);
   line-height: 1.05;
@@ -122,7 +122,7 @@ select:focus-visible {
 }
 
 .header-subtitle {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 3px;
   white-space: nowrap;
@@ -141,7 +141,7 @@ select:focus-visible {
   border: 1.5px solid rgba(76, 194, 122, .6);
   border-radius: 999px;
   padding: 6px 13px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   text-align: center;
 }
@@ -180,7 +180,7 @@ select:focus-visible {
 }
 
 .miftah-banner-title {
-  font-size: clamp(30px, 8.5vw, 38px);
+  font-size: clamp(24px, 7vw, 31px);
   font-weight: 800;
   color: var(--text);
   margin: 0;
@@ -188,7 +188,7 @@ select:focus-visible {
 }
 
 .miftah-banner-title2 {
-  font-size: clamp(22px, 6vw, 27px);
+  font-size: clamp(19px, 5vw, 23px);
   font-weight: 800;
   color: var(--text);
   margin: 10px 0 0;
@@ -196,7 +196,7 @@ select:focus-visible {
 }
 
 .miftah-banner-tagline {
-  font-size: 18px;
+  font-size: 15px;
   color: var(--muted);
   margin: 14px 0 0;
   line-height: 1.5;
@@ -211,14 +211,14 @@ select:focus-visible {
 
 .miftah-banner-arabic {
   font-family: 'Noto Naskh Arabic', serif;
-  font-size: clamp(28px, 8vw, 36px);
+  font-size: clamp(24px, 6.5vw, 30px);
   color: var(--gold-soft);
   line-height: 1.9;
   margin: 8px 0 6px;
 }
 
 .miftah-banner-translation {
-  font-size: 18px;
+  font-size: 15px;
   line-height: 1.55;
   color: var(--text);
   margin: 0 0 12px;
@@ -226,7 +226,7 @@ select:focus-visible {
 
 .miftah-banner-subtitle {
   color: var(--muted);
-  font-size: 15px;
+  font-size: 13px;
   margin: 0;
 }
 
@@ -261,7 +261,7 @@ select:focus-visible {
   border-radius: 0;
   color: var(--text-dark);
   padding: 6px 0;
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 500;
   box-shadow: none;
 }
@@ -274,7 +274,7 @@ select:focus-visible {
 .search-hint {
   display: block;
   color: #7a8a80;
-  font-size: 15px;
+  font-size: 13px;
   margin-top: 6px;
 }
 
@@ -290,13 +290,13 @@ select:focus-visible {
   margin: 8px 2px 12px;
 }
 
-.block-heading h2 { margin: 0; font-size: 26px; font-weight: 700; color: var(--text); }
+.block-heading h2 { margin: 0; font-size: 22px; font-weight: 700; color: var(--text); }
 
 .link-button {
   border: 0;
   background: transparent;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 13px;
   padding: 0;
 }
 
@@ -337,7 +337,7 @@ select:focus-visible {
   display: grid;
   place-items: center;
   color: var(--cream);
-  font-size: 22px;
+  font-size: 18px;
 }
 
 .menu-card.is-active .menu-card-icon { color: var(--text-dark); }
@@ -348,7 +348,7 @@ select:focus-visible {
 
 .menu-card h3 {
   margin: 0;
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1.25;
   color: inherit;
   font-weight: 600;
@@ -357,7 +357,7 @@ select:focus-visible {
 
 .menu-card p {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
   line-height: 1.5;
 }
@@ -365,14 +365,14 @@ select:focus-visible {
 .menu-arrow {
   margin-inline-start: auto;
   color: var(--gold);
-  font-size: 24px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 
 /* Мундариҷаи рӯйхати китобҳо (як сутун) */
 .menu.menu-list { grid-template-columns: 1fr; }
 .menu.menu-list .menu-card { min-height: 78px; }
-.menu.menu-list .menu-card h3 { font-size: 18px; }
+.menu.menu-list .menu-card h3 { font-size: 15px; }
 
 /* DAILY CARDS */
 
@@ -392,7 +392,7 @@ select:focus-visible {
 }
 
 .daily-heading h2 {
-  font-size: 27px;
+  font-size: 23px;
   color: var(--text);
   margin: 0;
   font-weight: 700;
@@ -403,7 +403,7 @@ select:focus-visible {
   background: rgba(76, 194, 122, .12);
   border-radius: 9px;
   padding: 6px 11px;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -415,7 +415,7 @@ select:focus-visible {
   line-height: 1.6;
   white-space: pre-wrap;
   color: var(--text);
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 500;
   margin: 8px 0;
 }
@@ -428,11 +428,11 @@ select:focus-visible {
   border-top: 0;
   padding-top: 0;
   margin-top: 10px;
-  font-size: 16px;
+  font-size: 13px;
   color: var(--muted);
 }
 
-.daily-desc { color: var(--muted); font-size: 19px; line-height: 1.55; margin: 0 0 14px; }
+.daily-desc { color: var(--muted); font-size: 16px; line-height: 1.55; margin: 0 0 14px; }
 
 .sunnah-row {
   width: 100%;
@@ -461,8 +461,8 @@ select:focus-visible {
 .sunnah-row-icon .icon { width: 28px; height: 28px; }
 
 .sunnah-row-text { flex: 1; min-width: 0; }
-.sunnah-row-text strong { display: block; font-size: 22px; line-height: 1.25; font-weight: 700; overflow-wrap: anywhere; }
-.sunnah-row-text span { display: block; color: var(--muted); font-size: 15px; margin-top: 4px; }
+.sunnah-row-text strong { display: block; font-size: 18px; line-height: 1.25; font-weight: 700; overflow-wrap: anywhere; }
+.sunnah-row-text span { display: block; color: var(--muted); font-size: 13px; margin-top: 4px; }
 
 .sunnah-play {
   width: 40px;
@@ -478,10 +478,10 @@ select:focus-visible {
 .sunnah-play .icon { width: 18px; height: 18px; }
 
 .sunnah-details { margin-top: 14px; }
-.sunnah-details p { font-size: 18px; line-height: 1.7; white-space: pre-wrap; margin: 8px 0; }
-.sunnah-details h3 { margin: 0 0 6px; font-size: 20px; }
+.sunnah-details p { font-size: 15px; line-height: 1.7; white-space: pre-wrap; margin: 8px 0; }
+.sunnah-details h3 { margin: 0 0 6px; font-size: 17px; }
 
-.daily-footnote { color: var(--muted); font-size: 17px; line-height: 1.5; margin: 14px 0 0; }
+.daily-footnote { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 14px 0 0; }
 
 /* ACTION BUTTONS */
 
@@ -505,7 +505,7 @@ select:focus-visible {
   background: transparent;
   border: 0;
   color: var(--text);
-  font-size: 16px;
+  font-size: 13px;
   padding: 8px 4px;
   white-space: nowrap;
 }
@@ -541,7 +541,7 @@ select:focus-visible {
   background: transparent;
   border: 0;
   color: var(--text);
-  font-size: 15px;
+  font-size: 13px;
   min-width: 0;
 }
 
@@ -558,7 +558,7 @@ select:focus-visible {
   padding: 18px;
 }
 
-.settings-card h3 { margin: 0 0 12px; font-size: 20px; }
+.settings-card h3 { margin: 0 0 12px; font-size: 17px; }
 
 .lang-options { display: flex; gap: 10px; flex-wrap: wrap; }
 
@@ -624,7 +624,7 @@ input[type='checkbox'] {
   gap: 10px;
   margin: 0 !important;
   color: var(--text) !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
   line-height: 1.7;
   cursor: pointer;
 }
@@ -638,7 +638,7 @@ input[type='checkbox'] {
   padding: 11px 16px;
   border: 1px solid transparent;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
   transition: background .2s, border-color .2s;
 }
 
@@ -674,9 +674,9 @@ input[type='checkbox'] {
 
 .section-intro { padding: 10px 0; }
 
-.section-intro h2 { color: var(--text); font-size: 25px; line-height: 1.4; margin: 0 0 6px; }
+.section-intro h2 { color: var(--text); font-size: 21px; line-height: 1.4; margin: 0 0 6px; }
 .section-intro h3 { color: var(--text); }
-.section-intro p { color: var(--muted); font-size: 15px; line-height: 1.7; margin: 0; }
+.section-intro p { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 0; }
 
 .public-list { display: flex; flex-direction: column; gap: 14px; }
 
@@ -688,10 +688,10 @@ input[type='checkbox'] {
   overflow-wrap: anywhere;
 }
 
-.public-item h3 { color: var(--text); font-size: 19px; line-height: 1.6; margin: 0 0 6px; }
+.public-item h3 { color: var(--text); font-size: 16px; line-height: 1.6; margin: 0 0 6px; }
 
 .public-item p {
-  font-size: 17px;
+  font-size: 14px;
   line-height: 1.8;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -705,14 +705,14 @@ input[type='checkbox'] {
   background: rgba(76, 194, 122, .12);
   border-radius: 9px;
   padding: 6px 11px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   margin-bottom: 10px;
 }
 
 .arabic-text {
   font-family: 'Noto Naskh Arabic', serif;
-  font-size: 27px !important;
+  font-size: 23px !important;
   line-height: 2.1 !important;
   text-align: right;
   color: var(--gold-soft) !important;
@@ -724,7 +724,7 @@ input[type='checkbox'] {
   border-top: 1px solid var(--border);
   padding-top: 12px;
   margin-top: 14px;
-  font-size: 14px;
+  font-size: 12px;
   color: var(--muted);
   line-height: 1.7;
 }
@@ -737,8 +737,8 @@ input[type='checkbox'] {
   margin-top: 14px;
 }
 
-.explanation strong { color: var(--gold); font-size: 14px; }
-.explanation p { margin-bottom: 0; font-size: 16px; }
+.explanation strong { color: var(--gold); font-size: 12px; }
+.explanation p { margin-bottom: 0; font-size: 13px; }
 
 .highlight {
   background: #ffe45c;
@@ -765,14 +765,14 @@ input[type='checkbox'] {
   padding: 22px 5px 4px;
   text-align: center;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .footer strong {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   color: var(--gold-soft);
-  font-size: 27px;
+  font-size: 23px;
 }
 
 /* ADMIN PANEL */
@@ -788,7 +788,7 @@ input[type='checkbox'] {
 }
 
 .admin-header h2 { color: var(--text); margin: 0 0 4px; }
-.admin-header p { font-size: 13px; color: var(--muted); margin: 0; }
+.admin-header p { font-size: 12px; color: var(--muted); margin: 0; }
 
 .admin-tabs {
   display: flex;
@@ -806,7 +806,7 @@ input[type='checkbox'] {
   color: var(--text);
   border-radius: 12px;
   padding: 11px 15px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -827,7 +827,7 @@ input[type='checkbox'] {
 .form-group label {
   display: block;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   margin-bottom: 7px;
 }
@@ -848,7 +848,7 @@ input[type='checkbox'] {
 
 .admin-item p {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.7;
   white-space: pre-wrap;
   margin: 0;
@@ -868,7 +868,7 @@ input[type='checkbox'] {
   border-radius: 16px;
   padding: 26px 16px;
   text-align: center;
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.7;
 }
 
@@ -883,7 +883,7 @@ input[type='checkbox'] {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .notice.error {
@@ -892,7 +892,7 @@ input[type='checkbox'] {
   color: var(--danger);
 }
 
-.notice-close { background: transparent; border: 0; color: inherit; font-size: 22px; }
+.notice-close { background: transparent; border: 0; color: inherit; font-size: 18px; }
 
 /* LOGIN MODAL */
 
@@ -920,7 +920,7 @@ input[type='checkbox'] {
 }
 
 .login-card h2 { color: var(--text); margin-top: 0; }
-.login-card p { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 22px; }
+.login-card p { color: var(--muted); font-size: 12px; line-height: 1.7; margin-bottom: 22px; }
 .login-card .primary-button { width: 100%; }
 
 .modal-close {
@@ -930,7 +930,7 @@ input[type='checkbox'] {
   border: 0;
   background: transparent;
   color: var(--text);
-  font-size: 27px;
+  font-size: 23px;
 }
 
 /* LOADING */
@@ -940,7 +940,7 @@ input[type='checkbox'] {
   display: grid;
   place-items: center;
   color: var(--gold);
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -954,17 +954,17 @@ input[type='checkbox'] {
 /* SMALL PHONES */
 
 @media (max-width: 380px) {
-  .brand-logo { width: 46px; height: 46px; font-size: 26px; }
-  .header-title { font-size: 25px; }
+  .brand-logo { width: 46px; height: 46px; font-size: 22px; }
+  .header-title { font-size: 21px; }
   .header-subtitle { font-size: 12px; }
   .menu-card { padding: 12px; gap: 10px; }
-  .menu-card h3 { font-size: 17px; }
-  .daily-heading h2 { font-size: 23px; }
-  .daily-card > p { font-size: 18px; }
-  .action-button { font-size: 14px; gap: 5px; }
-  .nav-item { font-size: 13px; }
+  .menu-card h3 { font-size: 14px; }
+  .daily-heading h2 { font-size: 19px; }
+  .daily-card > p { font-size: 15px; }
+  .action-button { font-size: 12px; gap: 5px; }
+  .nav-item { font-size: 12px; }
   .miftah-banner-translation,
-  .miftah-banner-tagline { font-size: 16px; }
+  .miftah-banner-tagline { font-size: 13px; }
 }
 
 @media (min-width: 561px) {
