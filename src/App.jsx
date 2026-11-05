@@ -379,6 +379,165 @@ const DEFAULT_BOOKS = [
   { name: 'Риёзус-Солиҳин', slug: 'riyad-as-salihin', sort_order: 8 }
 ]
 
+// Номи китобҳои «Саҳеҳи Бухорӣ» (97 китоб, тартиб мувофиқи sunnah.com).
+const BUKHARI_CHAPTERS = [
+  'Оғози ваҳй',
+  'Имон',
+  'Илм',
+  'Тахорат (вузӯъ)',
+  'Ғусл',
+  'Ҳайз',
+  'Таяммум',
+  'Намоз',
+  'Вақтҳои намоз',
+  'Азон',
+  'Намози ҷумъа',
+  'Намози хавф',
+  'Ду ид',
+  'Намози витр',
+  'Намози истисқо (талаби борон)',
+  'Гирифтани офтоб ва моҳ',
+  'Саҷдаҳои тиловати Қуръон',
+  'Қасри намоз (кӯтоҳ кардани намоз)',
+  'Намози шаб (таҳаҷҷуд)',
+  'Фазилати намоз дар масҷиди Макка ва Мадина',
+  'Корҳо дар намоз',
+  'Саҳв дар намоз',
+  'Ҷаноза',
+  'Закот',
+  'Ҳаҷ',
+  'Умра',
+  'Муҳсар (бозмондан аз анҷоми ҳаҷ)',
+  'Ҷазои шикор дар эҳром',
+  'Фазилатҳои Мадина',
+  'Рӯза',
+  'Намози тароветҳ',
+  'Фазилати шаби қадр',
+  'Эътикоф',
+  'Савдо ва тиҷорат',
+  'Салам (савдои пешакӣ)',
+  'Шуфъа',
+  'Иҷора',
+  'Ҳавола (гузаронидани қарз)',
+  'Кафолат',
+  'Ваколат',
+  'Кишоварзӣ',
+  'Тақсими об',
+  'Қарз, пардохти қарз ва маҳҷур',
+  'Хусумот',
+  'Луқата (чизи ёфтшуда)',
+  'Мазолим (ситамҳо)',
+  'Шарикӣ',
+  'Раҳн (гарав)',
+  'Озод кардани ғуломон',
+  'Мукотаб',
+  'Ҳадя',
+  'Шаҳодатҳо (гувоҳӣ)',
+  'Сулҳ',
+  'Шартҳо',
+  'Васиятҳо',
+  'Ҷиҳод ва сиёр',
+  'Хумс (панҷяки ғанимат)',
+  'Ҷизя ва муовада',
+  'Оғози офариниш',
+  'Ҳадисҳои паёмбарон',
+  'Фазилатҳо ва манокиби Паёмбар ﷺ',
+  'Фазилатҳои асҳоби Паёмбар ﷺ',
+  'Манокиби ансор',
+  'Ғазавот (ҷангҳои Паёмбар ﷺ)',
+  'Тафсири Қуръон',
+  'Фазилатҳои Қуръон',
+  'Никоҳ',
+  'Талоқ',
+  'Нафақа',
+  'Хӯрокҳо',
+  'Ақиқа',
+  'Забҳ ва шикор',
+  'Қурбонӣ',
+  'Нӯшокиҳо',
+  'Беморон',
+  'Тиб (табобат)',
+  'Либос',
+  'Одоб',
+  'Иҷозат пурсидан',
+  'Дуоҳо',
+  'Рақоиқ (нарм кардани дил)',
+  'Тақдир',
+  'Қасамҳо ва назрҳо',
+  'Каффороти қасамҳо',
+  'Фароиз (мерос)',
+  'Ҳудуд',
+  'Диёт (хунбаҳо)',
+  'Иститоба (тавбаи муртаддон)',
+  'Икроҳ (маҷбурӣ)',
+  'Ҳилаҳо',
+  'Таъбири хоб',
+  'Фитнаҳо ва аломатҳои охири замон',
+  'Аҳком (ҳукмҳо)',
+  'Орзуҳо',
+  'Қабули хабари шахси ростгӯ',
+  'Чанг задан ба Китоб ва Суннат',
+  'Тавҳид'
+]
+
+// Китобҳои такрорӣ (бо номҳои гуногун) ба як гурӯҳ муттаҳид мешаванд.
+const BOOK_KEYWORDS = [
+  ['sahih-al-bukhari', ['бухор', 'бухар', 'bukhar']],
+  ['sahih-muslim', ['муслим', 'muslim']],
+  ['sunan-abi-dawud', ['довуд', 'дауд', 'давуд', 'dawud', 'daud']],
+  ['jami-at-tirmidhi', ['тирмиз', 'tirmi']],
+  ['sunan-an-nasai', ['насоӣ', 'насои', 'насаи', 'насаий', 'nasai', 'nasa']],
+  ['sunan-ibn-majah', ['моҷа', 'моча', 'маджа', 'мажа', 'majah', 'моҷ']],
+  ['muwatta-imam-malik', ['молик', 'малик', 'муватт', 'malik', 'muwatta']],
+  ['riyad-as-salihin', ['риёз', 'рияд', 'riyad']]
+]
+
+function bookKey(book) {
+  const slug = String(book?.slug ?? '').trim().toLowerCase()
+  if (BOOK_KEYWORDS.some(([key]) => key === slug)) return slug
+  const name = String(book?.name ?? '').trim().toLowerCase()
+  const found = BOOK_KEYWORDS.find(([, words]) => words.some(word => name.includes(word)))
+  return found ? found[0] : `id-${book?.id}`
+}
+
+function numericValue(value) {
+  const number = parseFloat(String(value ?? '').replace(/[^0-9.]/g, ''))
+  return Number.isFinite(number) ? number : Number.MAX_SAFE_INTEGER
+}
+
+// Тарҷумаи автоматии тоҷикӣ → русӣ (хидмати ройгони Google); матн қисм-қисм фиристода мешавад.
+async function translateTgRu(text) {
+  const source = String(text || '').trim()
+  if (!source) return ''
+
+  const parts = source.match(/[^.!?\n]+[.!?\n]*\s*/g) || [source]
+  const chunks = []
+  let current = ''
+
+  for (const part of parts) {
+    if (current && (current + part).length > 900) {
+      chunks.push(current)
+      current = part
+    } else {
+      current += part
+    }
+  }
+  if (current) chunks.push(current)
+
+  const result = []
+  for (const chunk of chunks) {
+    const response = await fetch(
+      'https://translate.googleapis.com/translate_a/single?client=gtx&sl=tg&tl=ru&dt=t&q=' +
+      encodeURIComponent(chunk.trim())
+    )
+    if (!response.ok) throw new Error('translate ' + response.status)
+    const json = await response.json()
+    result.push((json?.[0] || []).map(item => item?.[0] || '').join(''))
+  }
+
+  return result.join(' ').trim()
+}
+
 const LANG = {
   tg: {
     admin: 'Панели идоракунӣ',
@@ -512,7 +671,11 @@ const LANG = {
     retry: 'Дубора кӯшиш кардан',
     quranSource: 'Матн ва аудио: api.alquran.cloud · Тарҷумаи тоҷикӣ: Абдулмуҳаммад Оятӣ · Русӣ: Э. Кулиев',
     extraMaterials: 'Маводҳои иловагӣ',
-    audioUnavailable: 'Аудио барои ин оят дастрас нест.'
+    audioUnavailable: 'Аудио барои ин оят дастрас нест.',
+    noChapter: 'Бе боб',
+    repeatAyah: 'Такрор',
+    translationLabel: 'Тарҷума',
+    playAllFailed: 'Файли яклухти сура ёфт нашуд — оятҳо пай дар пай мехонанд.'
   },
 
   ru: {
@@ -647,12 +810,17 @@ const LANG = {
     retry: 'Повторить',
     quranSource: 'Текст и аудио: api.alquran.cloud · Перевод: Э. Кулиев · Таджикский: Абдулмухаммад Айати',
     extraMaterials: 'Дополнительные материалы',
-    audioUnavailable: 'Аудио для этого аята недоступно.'
+    audioUnavailable: 'Аудио для этого аята недоступно.',
+    noChapter: 'Без раздела',
+    repeatAyah: 'Повтор',
+    translationLabel: 'Перевод',
+    playAllFailed: 'Файл целой суры не найден — аяты читаются по очереди.'
   }
 }
 
 const EMPTY_HADITH = {
   book_id: '',
+  chapter_id: '',
   hadith_number: '',
   tajik_text: '',
   arabic_text: '',
@@ -669,6 +837,7 @@ const EMPTY_CONTENT = {
   section_slug: 'salihin',
   title: '',
   title_ru: '',
+  chapter_id: '',
   tajik_text: '',
   arabic_text: '',
   explanation_tg: '',
@@ -842,6 +1011,21 @@ function App() {
   const [playing, setPlaying] = useState({ index: -1, mode: 'idle' })
   const [quranFavs, setQuranFavs] = useState(loadQuranFavorites)
   const audioRef = useRef(null)
+  const cancelRef = useRef(false)
+  const [chapterRows, setChapterRows] = useState([])
+  const [selectedChapter, setSelectedChapter] = useState(null)
+  const [chapterForm, setChapterForm] = useState({ parent: '', title: '', title_ru: '', order: '' })
+  const [editingChapter, setEditingChapter] = useState(null)
+  const [bulkText, setBulkText] = useState('')
+  const [translation, setTranslation] = useState({ running: false, done: 0, total: 0, message: '' })
+  const [arabicSize, setArabicSize] = useState(() => {
+    try {
+      return Number(window.localStorage.getItem('miftah_arabic_size') || 26) || 26
+    } catch {
+      return 26
+    }
+  })
+  const [showTranslation, setShowTranslation] = useState(true)
   const quranCache = useRef({})
 
   const t = LANG[lang] || LANG.tg
@@ -859,18 +1043,77 @@ function App() {
     return () => clearTimeout(timer)
   }, [notice, noticeType])
 
-  const getBookName = useCallback(id => {
-    const book = books.find(item => String(item.id) === String(id))
-    if (!book) return ''
-    const translated = BOOK_TRANSLATIONS[book.slug]
-    if (lang === 'ru' && translated) return translated[0]
-    if (lang === 'ar' && translated) return translated[1]
-    return book.name || ''
-  }, [books, lang])
+  // Китобҳои такрорӣ (ном/slug-и гуногун) дар намоиш як китоб мешаванд.
+  const bookGroups = useMemo(() => {
+    const map = new Map()
 
+    books.forEach(book => {
+      const key = bookKey(book)
+      if (!map.has(key)) map.set(key, { key, items: [] })
+      map.get(key).items.push(book)
+    })
+
+    return [...map.values()].map(group => {
+      const sorted = [...group.items].sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+      const primary = group.items.find(book => String(book.slug || '').toLowerCase() === group.key) || sorted[0]
+      const defaultBook = DEFAULT_BOOKS.find(item => item.slug === group.key)
+
+      return {
+        key: group.key,
+        id: primary.id,
+        ids: group.items.map(book => String(book.id)),
+        items: group.items,
+        slug: primary.slug,
+        name: defaultBook ? defaultBook.name : primary.name,
+        sort_order: Number(sorted[0]?.sort_order || 0) || 999,
+        is_active: group.items.some(book => book.is_active !== false)
+      }
+    }).sort((a, b) => a.sort_order - b.sort_order)
+  }, [books])
+
+  const groupOfBook = useCallback(
+    id => bookGroups.find(group => group.ids.includes(String(id))),
+    [bookGroups]
+  )
+
+  const bookLabel = useCallback(group => {
+    if (!group) return ''
+    const translated = BOOK_TRANSLATIONS[group.key]
+    return lang === 'ru' && translated ? translated[0] : group.name
+  }, [lang])
+
+  const getBookName = useCallback(id => bookLabel(groupOfBook(id)), [bookLabel, groupOfBook])
+
+  // Бобҳо (китобҳои дохили коллексияҳо) дар ҷадвали content_items бо section_slug='__chapter' нигоҳ дошта мешаванд.
+  const chapters = useMemo(() => chapterRows.map(row => {
+    const meta = parseStoredNote(row.source_note).meta
+    return {
+      id: String(row.id),
+      raw: row,
+      title: row.title || '',
+      titleRu: meta.title_ru || '',
+      parentKind: meta.parent_kind || '',
+      parent: meta.parent || '',
+      order: Number(meta.order || 0),
+      hidden: row.is_published === false
+    }
+  }).sort((a, b) => a.order - b.order || a.title.localeCompare(b.title)), [chapterRows])
+
+  const chapterLabel = useCallback(
+    chapter => (lang === 'ru' ? (chapter.titleRu || chapter.title) : chapter.title),
+    [lang]
+  )
+
+  const applyContent = useCallback(rows => {
+    setContentRows(rows.filter(item => item.section_slug !== '__chapter'))
+    setChapterRows(rows.filter(item => item.section_slug === '__chapter'))
+  }, [])
+
+  // Маводи сабтшуда аз қадим ба нав: рақами 1 дар боло, навтарин дар поён.
   const sortByDate = rows => [...rows].sort((a, b) => {
-    return new Date(b.created_at || 0).getTime() -
-      new Date(a.created_at || 0).getTime()
+    return new Date(a.created_at || 0).getTime() -
+      new Date(b.created_at || 0).getTime() ||
+      String(a.id).localeCompare(String(b.id), undefined, { numeric: true })
   })
 
   // Ҳар рӯзи UTC як ҳадиси нашршуда интихоб мешавад.
@@ -897,7 +1140,7 @@ function App() {
 
     for (const defaultBook of DEFAULT_BOOKS) {
       const exists = result.some(book =>
-        clean(book.slug).toLowerCase() === defaultBook.slug.toLowerCase() ||
+        bookKey(book) === defaultBook.slug ||
         clean(book.name).toLowerCase() === defaultBook.name.toLowerCase()
       )
 
@@ -985,7 +1228,7 @@ function App() {
 
       setBooks(loadedBooks)
       setHadithRows(loadedHadith)
-      setContentRows(loadedContent)
+      applyContent(loadedContent)
       refreshDaily(loadedHadith)
 
       // Қаторҳои база танзимоти админро нигоҳ медоранд, аммо набудани
@@ -1004,7 +1247,7 @@ function App() {
     } finally {
       setLoading(false)
     }
-  }, [notify, refreshDaily, t.error, t.supabaseMissing])
+  }, [notify, refreshDaily, applyContent, t.error, t.supabaseMissing])
 
   const loadAdminData = useCallback(async () => {
     if (!db || !admin) return
@@ -1030,7 +1273,7 @@ function App() {
 
       setBooks(allBooks)
       setHadithRows(loadedHadith)
-      setContentRows(loadedContent)
+      applyContent(loadedContent)
       refreshDaily(loadedHadith)
 
       if (!sectionsRes.error) {
@@ -1044,7 +1287,7 @@ function App() {
       console.error('Admin data error:', error)
       notify(t.error + (error.message || 'Хатои боркунӣ'), 'error')
     }
-  }, [admin, notify, refreshDaily, t.error])
+  }, [admin, notify, refreshDaily, applyContent, t.error])
 
   useEffect(() => {
     loadPublicData()
@@ -1097,6 +1340,7 @@ function App() {
     setSelectedSection(section)
     setSelectedBook(null)
     setSelectedSurah(null)
+    setSelectedChapter(null)
     setPage('section')
     setSearch('')
     setSearchResults(null)
@@ -1106,16 +1350,19 @@ function App() {
 
   const openBook = book => {
     setSelectedBook(book)
+    setSelectedChapter(null)
   }
 
   const goBackToBooks = () => {
     setSelectedBook(null)
+    setSelectedChapter(null)
   }
 
   const goHome = () => {
     setPage('home')
     setSelectedSection(null)
     setSelectedBook(null)
+    setSelectedChapter(null)
     setSearch('')
     setSearchResults(null)
     scrollToTop()
@@ -1291,6 +1538,7 @@ function App() {
         : {}
       const meta = {
         ...previousMeta,
+        chapter_id: clean(hadithForm.chapter_id),
         explanation_tg: clean(hadithForm.explanation_tg),
         explanation_ar: clean(hadithForm.explanation_ar),
         russian_text: clean(hadithForm.russian_text),
@@ -1334,6 +1582,7 @@ function App() {
     setEditingHadith(item.id)
     setHadithForm({
       book_id: item.book_id || '',
+      chapter_id: stored.meta.chapter_id || '',
       hadith_number: item.hadith_number ?? '',
       tajik_text: item.tajik_text || '',
       arabic_text: item.arabic_text || '',
@@ -1424,22 +1673,301 @@ function App() {
     }
   }
 
-  const toggleBook = async book => {
+  const reloadAll = async () => {
+    await loadAdminData()
+    await loadPublicData()
+  }
+
+  // Ҳамаи сатрҳои як гурӯҳи китоб (аз ҷумла такрориҳо) якҷоя пинҳон/намоён мешаванд.
+  const toggleBook = async group => {
     if (!db || !admin) return
 
     try {
-      const { error } = await db.from('hadith_books')
-        .update({ is_active: book.is_active === false })
-        .eq('id', book.id)
+      const nextActive = !group.is_active
+      for (const book of group.items) {
+        const { error } = await db.from('hadith_books')
+          .update({ is_active: nextActive })
+          .eq('id', book.id)
+        if (error) throw error
+      }
 
-      if (error) throw error
-
-      await loadAdminData()
-      await loadPublicData()
+      await reloadAll()
       notify(t.saved)
     } catch (error) {
       notify(t.error + error.message, 'error')
     }
+  }
+
+  // Китобҳои такрориро якҷоя мекунад: ҳадисҳо ба китоби асосӣ мегузаранд, сатри такрорӣ нест мешавад.
+  const mergeDuplicateBooks = async group => {
+    if (!db || !admin || group.items.length < 2) return
+    if (!window.confirm('Китобҳои такрорӣ якҷоя шаванд? Ҳадисҳо нест намешаванд — ба китоби асосӣ мегузаранд.')) return
+
+    try {
+      const primaryId = group.id
+      const duplicates = group.items.filter(book => String(book.id) !== String(primaryId))
+
+      for (const book of duplicates) {
+        const moved = await db.from('hadiths').update({ book_id: primaryId }).eq('book_id', book.id)
+        if (moved.error) throw moved.error
+
+        const removed = await db.from('hadith_books').delete().eq('id', book.id)
+        if (removed.error) throw removed.error
+      }
+
+      await reloadAll()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  /* ---------- Бобҳо ---------- */
+
+  const parentOf = value => {
+    const [kind, ...rest] = String(value || '').split(':')
+    return { kind, key: rest.join(':') }
+  }
+
+  const chaptersOfParent = value => {
+    const { kind, key } = parentOf(value)
+    return chapters.filter(item => item.parentKind === kind && item.parent === key)
+  }
+
+  const nextChapterOrder = value =>
+    chaptersOfParent(value).reduce((max, item) => Math.max(max, item.order), 0) + 1
+
+  const chapterRow = (parent, title, titleRu, order) => {
+    const { kind, key } = parentOf(parent)
+    return {
+      section_slug: '__chapter',
+      title,
+      content_text: title,
+      source_note: makeStoredNote('', {
+        parent_kind: kind,
+        parent: key,
+        order: String(order),
+        title_ru: clean(titleRu)
+      }),
+      is_published: true,
+      updated_at: new Date().toISOString()
+    }
+  }
+
+  const resetChapterForm = () => {
+    setChapterForm(current => ({ parent: current.parent, title: '', title_ru: '', order: '' }))
+    setEditingChapter(null)
+  }
+
+  const saveChapter = async event => {
+    event.preventDefault()
+    if (!db || !admin || saving) return
+
+    if (!chapterForm.parent) {
+      notify('Аввал китоб ё бахшро интихоб кунед.', 'error')
+      return
+    }
+    if (!clean(chapterForm.title)) {
+      notify('Номи бобро ворид кунед.', 'error')
+      return
+    }
+
+    setSaving(true)
+
+    try {
+      const order = Number(chapterForm.order) || nextChapterOrder(chapterForm.parent)
+      const payload = chapterRow(chapterForm.parent, clean(chapterForm.title), chapterForm.title_ru, order)
+
+      const result = editingChapter
+        ? await db.from('content_items').update(payload).eq('id', editingChapter)
+        : await db.from('content_items').insert(payload)
+
+      if (result.error) throw result.error
+
+      resetChapterForm()
+      await reloadAll()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const startEditChapter = chapter => {
+    setEditingChapter(chapter.raw.id)
+    setChapterForm({
+      parent: `${chapter.parentKind}:${chapter.parent}`,
+      title: chapter.title,
+      title_ru: chapter.titleRu,
+      order: String(chapter.order || '')
+    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const deleteChapter = async chapter => {
+    if (!db || !admin) return
+    if (!window.confirm('Боб нест карда шавад? Ҳадис ва маводи дохили он нест намешавад — зери «Бе боб» мемонад.')) return
+
+    try {
+      const { error } = await db.from('content_items').delete().eq('id', chapter.raw.id)
+      if (error) throw error
+
+      await reloadAll()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const insertChapters = async (titles, parent) => {
+    const base = nextChapterOrder(parent)
+    const rows = titles.map((title, index) => chapterRow(parent, title, '', base + index))
+    const { error } = await db.from('content_items').insert(rows)
+    if (error) throw error
+  }
+
+  const addBulkChapters = async () => {
+    if (!db || !admin || saving) return
+
+    const titles = bulkText.split('\n').map(line => clean(line)).filter(Boolean)
+    if (!chapterForm.parent || !titles.length) {
+      notify('Китоб/бахшро интихоб кунед ва ҳадди ақал як сатр нависед.', 'error')
+      return
+    }
+
+    setSaving(true)
+    try {
+      await insertChapters(titles, chapterForm.parent)
+      setBulkText('')
+      await reloadAll()
+      notify(`${titles.length} боб илова шуд.`)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Бобҳои стандартии Саҳеҳи Бухорӣ; бобҳои мавҷуда такрор намешаванд.
+  const seedBukhariChapters = async () => {
+    if (!db || !admin || saving) return
+
+    const parent = 'book:sahih-al-bukhari'
+    const existing = new Set(chaptersOfParent(parent).map(item => item.order))
+    const rows = BUKHARI_CHAPTERS
+      .map((title, index) => ({ title, order: index + 1 }))
+      .filter(item => !existing.has(item.order))
+      .map(item => chapterRow(parent, item.title, '', item.order))
+
+    if (!rows.length) {
+      notify('Ҳамаи 97 боб аллакай илова шудааст.')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const { error } = await db.from('content_items').insert(rows)
+      if (error) throw error
+
+      await reloadAll()
+      notify(`${rows.length} боб илова шуд.`)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  /* ---------- Тарҷумаи русии маводи сабтшуда ---------- */
+
+  const collectTranslationJobs = () => {
+    const jobs = []
+
+    hadithRows.forEach(item => {
+      const stored = parseStoredNote(item.source_note)
+      const need = {}
+      if (clean(item.tajik_text) && !clean(stored.meta.russian_text || item.russian_text)) need.russian_text = item.tajik_text
+      const explanation = item.commentary || stored.meta.explanation_tg
+      if (clean(explanation) && !clean(stored.meta.explanation_ru)) need.explanation_ru = explanation
+      if (Object.keys(need).length) jobs.push({ table: 'hadiths', row: item, stored, need })
+    })
+
+    contentRows.forEach(item => {
+      const stored = parseStoredNote(item.source_note)
+      const need = {}
+      if (clean(item.title) && !clean(stored.meta.title_ru)) need.title_ru = item.title
+      const text = item.tajik_text || item.content_text
+      if (clean(text) && !clean(stored.meta.russian_text || item.russian_text)) need.russian_text = text
+      if (clean(stored.meta.explanation_tg) && !clean(stored.meta.explanation_ru)) need.explanation_ru = stored.meta.explanation_tg
+      if (Object.keys(need).length) jobs.push({ table: 'content_items', row: item, stored, need })
+    })
+
+    chapters.forEach(item => {
+      if (clean(item.title) && !clean(item.titleRu)) {
+        jobs.push({
+          table: 'content_items',
+          row: item.raw,
+          stored: parseStoredNote(item.raw.source_note),
+          need: { title_ru: item.title }
+        })
+      }
+    })
+
+    return jobs
+  }
+
+  const runTranslation = async () => {
+    if (!db || !admin || translation.running) return
+
+    const jobs = collectTranslationJobs()
+    if (!jobs.length) {
+      setTranslation({ running: false, done: 0, total: 0, message: 'Ҳамаи маълумот аллакай тарҷума шудааст.' })
+      return
+    }
+
+    if (!window.confirm(`${jobs.length} сатр тарҷума ва сабт карда мешавад. Давом диҳем?`)) return
+
+    cancelRef.current = false
+    setTranslation({ running: true, done: 0, total: jobs.length, message: '' })
+
+    let done = 0
+    try {
+      for (const job of jobs) {
+        if (cancelRef.current) break
+
+        const meta = { ...job.stored.meta }
+        for (const [field, text] of Object.entries(job.need)) {
+          meta[field] = await translateTgRu(text)
+        }
+
+        const { error } = await db.from(job.table)
+          .update({ source_note: makeStoredNote(job.stored.source, meta), updated_at: new Date().toISOString() })
+          .eq('id', job.row.id)
+        if (error) throw error
+
+        done += 1
+        setTranslation({ running: true, done, total: jobs.length, message: '' })
+        await new Promise(resolve => setTimeout(resolve, 250))
+      }
+
+      setTranslation({
+        running: false,
+        done,
+        total: jobs.length,
+        message: cancelRef.current ? 'Қатъ карда шуд.' : 'Тайёр! Тарҷума сабт шуд.'
+      })
+    } catch (error) {
+      console.error(error)
+      setTranslation({
+        running: false,
+        done,
+        total: jobs.length,
+        message: 'Хато: ' + (error.message || 'хидмати тарҷума дастрас нест') + '. Метавонед дубора кӯшиш кунед — сабтшудаҳо нигоҳ дошта мешаванд.'
+      })
+    }
+
+    await reloadAll()
   }
 
   const saveContent = async event => {
@@ -1467,6 +1995,7 @@ function App() {
         : {}
       const meta = {
         ...previousMeta,
+        chapter_id: clean(contentForm.chapter_id),
         title_ru: clean(contentForm.title_ru),
         explanation_tg: clean(contentForm.explanation_tg),
         explanation_ar: clean(contentForm.explanation_ar),
@@ -1517,6 +2046,7 @@ function App() {
       section_slug: item.section_slug || 'salihin',
       title: item.title || '',
       title_ru: stored.meta.title_ru || '',
+      chapter_id: stored.meta.chapter_id || '',
       tajik_text: item.tajik_text || item.content_text || '',
       arabic_text: item.arabic_text || '',
       source_note: stored.source,
@@ -1793,15 +2323,16 @@ function App() {
     notify(t.logout)
   }
 
-  const publicContent = useMemo(() => {
+  const contextRowsAll = useMemo(() => {
     if (!selectedSection) return []
 
     if (selectedSection.slug === 'hadith') {
       if (!selectedBook) return []
 
       return hadithRows
-        .filter(item => String(item.book_id) === String(selectedBook.id))
+        .filter(item => selectedBook.ids.includes(String(item.book_id)))
         .map(item => ({ ...item, resultType: 'hadith' }))
+        .sort((a, b) => numericValue(a.hadith_number) - numericValue(b.hadith_number))
     }
 
     const rows = contentRows
@@ -1817,6 +2348,18 @@ function App() {
     return rows
   }, [selectedSection, selectedBook, hadithRows, contentRows])
 
+  const contextChapters = useMemo(() => {
+    if (!selectedSection || selectedSection.slug === 'quran') return []
+
+    if (selectedSection.slug === 'hadith') {
+      return selectedBook
+        ? chapters.filter(item => item.parentKind === 'book' && item.parent === selectedBook.key && !item.hidden)
+        : []
+    }
+
+    return chapters.filter(item => item.parentKind === 'section' && item.parent === selectedSection.slug && !item.hidden)
+  }, [selectedSection, selectedBook, chapters])
+
   const dailySunnah = useMemo(() => {
     const candidates = contentRows.filter(item => {
       const meta = parseStoredNote(item.source_note).meta
@@ -1827,6 +2370,17 @@ function App() {
       new Date(a.updated_at || a.created_at || 0).getTime()
     )[0] || null
   }, [contentRows])
+
+  const chapterIdOf = item => String(parseStoredNote(item.source_note).meta.chapter_id || '')
+  const validChapterIds = new Set(contextChapters.map(item => item.id))
+  const uncategorizedRows = contextRowsAll.filter(item => !validChapterIds.has(chapterIdOf(item)))
+
+  let publicContent = contextRowsAll
+  if (contextChapters.length) {
+    if (selectedChapter === null) publicContent = []
+    else if (selectedChapter === '__none') publicContent = uncategorizedRows
+    else publicContent = contextRowsAll.filter(item => chapterIdOf(item) === selectedChapter)
+  }
 
   const favoriteHadiths = useMemo(
     () => hadithRows.filter(item => favorites.includes(String(item.id))),
@@ -1839,7 +2393,7 @@ function App() {
     const audio = audioRef.current
     if (audio) {
       audio.pause()
-      audio.removeAttribute('src')
+      audio.loop = false
     }
     setPlaying({ index: -1, mode: 'idle' })
   }, [])
@@ -1932,6 +2486,23 @@ function App() {
 
   useEffect(() => () => stopAudio(), [stopAudio])
 
+  // Сураи пурра: як файли яклухт, бе танаффус (CDN-и alquran.cloud; захира: cdn.islamic.app).
+  const surahSources = number => [
+    `https://cdn.islamic.network/quran/audio-surah/128/${reciter}/${number}.mp3`,
+    `https://cdn.islamic.app/quran/audio-surah/${reciter}/${number}.mp3`
+  ]
+
+  const playSurah = () => {
+    const audio = audioRef.current
+    if (!audio || !selectedSurah) return
+
+    audio.loop = false
+    audio.src = surahSources(selectedSurah)[0]
+    audio.play().catch(() => {})
+    setPlaying({ index: -1, mode: 'surah', file: 0 })
+  }
+
+  // mode: 'one' — як маротиба, 'loop' — такроран то бас кардан, 'chain' — захира: оят ба оят.
   const playAyah = (index, mode) => {
     const ayah = surahData?.ayahs?.[index]
     const audio = audioRef.current
@@ -1942,24 +2513,56 @@ function App() {
       return
     }
 
+    audio.loop = mode === 'loop'
     audio.src = ayah.audio
     audio.play().catch(() => notify(t.audioUnavailable, 'error'))
     setPlaying({ index, mode })
 
-    if (mode === 'all') {
-      setTimeout(() => {
-        document.getElementById(`ayah-${index}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }, 80)
-    }
+    setTimeout(() => {
+      document.getElementById(`ayah-${index}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 80)
   }
 
   const handleAudioEnded = () => {
     const total = surahData?.ayahs?.length || 0
-    if (playing.mode === 'all' && playing.index < total - 1) {
-      playAyah(playing.index + 1, 'all')
-    } else {
+    if (playing.mode === 'chain' && playing.index < total - 1) {
+      playAyah(playing.index + 1, 'chain')
+    } else if (playing.mode !== 'loop') {
       setPlaying({ index: -1, mode: 'idle' })
     }
+  }
+
+  const handleAudioError = () => {
+    const audio = audioRef.current
+    if (!audio || playing.mode === 'idle') return
+
+    if (playing.mode === 'surah') {
+      const sources = surahSources(selectedSurah)
+      if (playing.file < sources.length - 1) {
+        audio.src = sources[playing.file + 1]
+        audio.play().catch(() => {})
+        setPlaying({ index: -1, mode: 'surah', file: playing.file + 1 })
+      } else {
+        notify(t.playAllFailed, 'error')
+        playAyah(0, 'chain')
+      }
+      return
+    }
+
+    notify(t.audioUnavailable, 'error')
+    setPlaying({ index: -1, mode: 'idle' })
+  }
+
+  const changeArabicSize = delta => {
+    setArabicSize(current => {
+      const next = Math.min(40, Math.max(20, current + delta))
+      try {
+        window.localStorage.setItem('miftah_arabic_size', String(next))
+      } catch {
+        // нигоҳдорӣ дастрас нест
+      }
+      return next
+    })
   }
 
   const changeReciter = id => {
@@ -1999,13 +2602,13 @@ function App() {
   const renderAyahCard = (item, index = -1, live = false) => {
     const key = `${item.surah}:${item.n}`
     const isFavorite = Boolean(quranFavs[key])
-    const translation = lang === 'ru'
+    const translationText = lang === 'ru'
       ? (item.russian || item.tajik)
       : (item.tajik || item.russian)
     const isCurrent = live && playing.index === index
     const plain = [
       item.arabic,
-      translation,
+      translationText,
       `${t.quranWord}, ${t.surahWord} ${item.surahName}, ${t.ayahWord} ${item.n}`
     ].filter(Boolean).join('\n\n')
 
@@ -2020,12 +2623,12 @@ function App() {
         </div>
 
         <p className="arabic-text">{item.arabic}</p>
-        {translation && <p>{translation}</p>}
+        {translationText && (showTranslation || !live) && <p className="ayah-translation">{translationText}</p>}
 
         {live && (
           <div className="ayah-audio">
             <button
-              className="play-chip"
+              className={`play-chip ${isCurrent && playing.mode === 'one' ? 'is-on' : ''}`}
               type="button"
               onClick={() => (isCurrent && playing.mode === 'one' ? stopAudio() : playAyah(index, 'one'))}
             >
@@ -2033,9 +2636,13 @@ function App() {
               <span>{isCurrent && playing.mode === 'one' ? t.stopAudio : t.playAyah}</span>
             </button>
 
-            <button className="play-chip" type="button" onClick={() => playAyah(index, 'all')}>
-              <Icon name="speaker" />
-              <span>{t.playFrom}</span>
+            <button
+              className={`play-chip ${isCurrent && playing.mode === 'loop' ? 'is-on' : ''}`}
+              type="button"
+              onClick={() => (isCurrent && playing.mode === 'loop' ? stopAudio() : playAyah(index, 'loop'))}
+            >
+              <span aria-hidden="true">↻</span>
+              <span>{isCurrent && playing.mode === 'loop' ? t.stopAudio : t.repeatAyah}</span>
             </button>
           </div>
         )}
@@ -2123,9 +2730,10 @@ function App() {
     const current = surahList.find(item => item.number === selectedSurah) || { number: selectedSurah, name: '' }
     const surahName = surahDisplayName(current)
     const ayahs = surahData?.number === selectedSurah ? surahData.ayahs : []
+    const fullPlaying = playing.mode === 'surah' || playing.mode === 'chain'
 
     return (
-      <>
+      <div className="quran-view" style={{ '--arabic-size': `${arabicSize}px` }}>
         <button className="secondary-button back-button" type="button" onClick={() => setSelectedSurah(null)}>
           ← {t.back}
         </button>
@@ -2154,11 +2762,31 @@ function App() {
           <button
             className="primary-button"
             type="button"
-            disabled={!ayahs.length}
-            onClick={() => (playing.mode === 'all' ? stopAudio() : playAyah(0, 'all'))}
+            onClick={() => (fullPlaying ? stopAudio() : playSurah())}
           >
-            {playing.mode === 'all' ? `■ ${t.stopAudio}` : `▶ ${t.playAll}`}
+            {fullPlaying ? `■ ${t.stopAudio}` : `▶ ${t.playAll}`}
           </button>
+
+          <audio
+            ref={audioRef}
+            className={`surah-audio ${playing.mode === 'surah' ? 'show' : ''}`}
+            controls
+            preload="none"
+            onEnded={handleAudioEnded}
+            onError={handleAudioError}
+          />
+
+          <div className="reader-tools">
+            <button className="play-chip" type="button" onClick={() => changeArabicSize(-2)}>A−</button>
+            <button className="play-chip" type="button" onClick={() => changeArabicSize(2)}>A+</button>
+            <button
+              className={`play-chip ${showTranslation ? 'is-on' : ''}`}
+              type="button"
+              onClick={() => setShowTranslation(value => !value)}
+            >
+              {t.translationLabel}
+            </button>
+          </div>
         </div>
 
         {surahLoading && !ayahs.length && <div className="empty-state">{t.surahLoading}</div>}
@@ -2188,7 +2816,7 @@ function App() {
         </div>
 
         {ayahs.length > 0 && <p className="quran-source">{t.quranSource}</p>}
-      </>
+      </div>
     )
   }
 
@@ -2392,16 +3020,39 @@ function App() {
         <div className="form-group">
           <label>{t.book} *</label>
           <select
-            value={hadithForm.book_id}
-            onChange={event => setHadithForm({ ...hadithForm, book_id: event.target.value })}
+            value={hadithForm.book_id ? String(groupOfBook(hadithForm.book_id)?.id ?? hadithForm.book_id) : ''}
+            onChange={event => setHadithForm({ ...hadithForm, book_id: event.target.value, chapter_id: '' })}
             required
           >
             <option value="">{t.selectBook}</option>
-            {books.map(book => (
-              <option value={book.id} key={book.id}>{book.name}</option>
+            {bookGroups.map(group => (
+              <option value={group.id} key={group.key}>{group.name}</option>
             ))}
           </select>
         </div>
+
+        {(() => {
+          const group = groupOfBook(hadithForm.book_id)
+          const options = group
+            ? chapters.filter(item => item.parentKind === 'book' && item.parent === group.key)
+            : []
+          if (!options.length) return null
+          return (
+            <div className="form-group">
+              <label>Боб (китоби дохилӣ){editingHadith ? '' : ' *'}</label>
+              <select
+                value={hadithForm.chapter_id}
+                onChange={event => setHadithForm({ ...hadithForm, chapter_id: event.target.value })}
+                required={!editingHadith}
+              >
+                <option value="">— {t.noChapter} —</option>
+                {options.map(item => (
+                  <option value={item.id} key={item.id}>{item.order ? `${item.order}. ` : ''}{item.title}</option>
+                ))}
+              </select>
+            </div>
+          )
+        })()}
 
         {field(t.number, hadithForm.hadith_number,
           value => setHadithForm({ ...hadithForm, hadith_number: value }),
@@ -2504,29 +3155,180 @@ function App() {
       </form>
 
       <div className="admin-list">
-        {books.map(book => (
-          <div className="admin-item" key={book.id}>
-            <h4>{book.name}</h4>
+        {bookGroups.map(group => (
+          <div className="admin-item" key={group.key}>
+            <h4>{group.name}</h4>
+
+            {group.items.length > 1 && (
+              <div className="admin-item-status">
+                Такрорӣ ёфт шуд: {group.items.length} сатр дар база. Дар барнома як китоб нишон дода мешавад.
+              </div>
+            )}
 
             <div className="admin-item-actions">
               <button className="secondary-button" onClick={() => {
-                setEditingBook(book.id)
-                setBookForm({ name: book.name || '' })
+                setEditingBook(group.id)
+                setBookForm({ name: group.name || '' })
               }}>
                 {t.edit}
               </button>
 
-              <button className="secondary-button" onClick={() => toggleBook(book)}>
-                {book.is_active === false ? t.show : t.hide}
+              <button className="secondary-button" onClick={() => toggleBook(group)}>
+                {group.is_active ? t.hide : t.show}
               </button>
+
+              {group.items.length > 1 && (
+                <button className="danger-button" onClick={() => mergeDuplicateBooks(group)}>
+                  Якҷоя кардани такрорӣ
+                </button>
+              )}
             </div>
           </div>
         ))}
 
-        {!books.length && <div className="empty-state">{t.noBooks}</div>}
+        {!bookGroups.length && <div className="empty-state">{t.noBooks}</div>}
       </div>
     </>
   )
+
+  const renderAdminChapters = () => {
+    const parentOptions = [
+      ...bookGroups.map(group => ({ value: `book:${group.key}`, label: `📚 ${group.name}` })),
+      ...sections
+        .filter(section => section.slug !== 'hadith' && section.slug !== 'quran')
+        .map(section => ({ value: `section:${section.slug}`, label: `${section.icon || '📁'} ${section.title}` }))
+    ]
+    const current = chaptersOfParent(chapterForm.parent)
+
+    return (
+      <>
+        <form className="admin-form" onSubmit={saveChapter}>
+          <h3>{editingChapter ? 'Таҳрири боб' : 'Иловаи боб'}</h3>
+
+          <div className="form-group">
+            <label>Ба кадом китоб ё бахш тааллуқ дорад *</label>
+            <select
+              value={chapterForm.parent}
+              onChange={event => {
+                setEditingChapter(null)
+                setChapterForm({ parent: event.target.value, title: '', title_ru: '', order: '' })
+              }}
+              required
+            >
+              <option value="">— интихоб кунед —</option>
+              {parentOptions.map(option => (
+                <option value={option.value} key={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {field('Номи боб (тоҷикӣ)', chapterForm.title,
+            value => setChapterForm({ ...chapterForm, title: value }), 'Масалан: Азкори саҳар', true)}
+
+          {field('Номи боб (русӣ, ихтиёрӣ)', chapterForm.title_ru,
+            value => setChapterForm({ ...chapterForm, title_ru: value }))}
+
+          {field('Рақами тартиб (ихтиёрӣ)', chapterForm.order,
+            value => setChapterForm({ ...chapterForm, order: value }), `Худкор: ${chapterForm.parent ? nextChapterOrder(chapterForm.parent) : 1}`)}
+
+          <div className="form-actions">
+            <button className="primary-button" type="submit" disabled={saving}>
+              {saving ? t.loading : t.save}
+            </button>
+
+            {editingChapter && (
+              <button className="secondary-button" type="button" onClick={resetChapterForm}>
+                {t.cancel}
+              </button>
+            )}
+          </div>
+        </form>
+
+        {chapterForm.parent && (
+          <div className="admin-form">
+            <h3>Якчанд бобро якбора илова кардан</h3>
+            <div className="form-group">
+              <label>Ҳар сатр — як боб</label>
+              <textarea
+                value={bulkText}
+                onChange={event => setBulkText(event.target.value)}
+                placeholder={'Азкори саҳар\nАзкори бегоҳ\nАзкори пеш аз хоб'}
+              />
+            </div>
+
+            <div className="form-actions">
+              <button className="primary-button" type="button" onClick={addBulkChapters} disabled={saving}>
+                Илова кардани рӯйхат
+              </button>
+
+              {chapterForm.parent === 'book:sahih-al-bukhari' && (
+                <button className="secondary-button" type="button" onClick={seedBukhariChapters} disabled={saving}>
+                  Ҳамаи 97 китоби Саҳеҳи Бухорӣ
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="admin-list">
+          {chapterForm.parent && current.map(item => (
+            <div className="admin-item" key={item.id}>
+              <h4>{item.order ? `${item.order}. ` : ''}{item.title}</h4>
+              {item.titleRu && <p>{item.titleRu}</p>}
+
+              <div className="admin-item-actions">
+                <button className="secondary-button" onClick={() => startEditChapter(item)}>
+                  {t.edit}
+                </button>
+
+                <button className="danger-button" onClick={() => deleteChapter(item)}>
+                  {t.delete}
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {chapterForm.parent && !current.length && (
+            <div className="empty-state">Ҳоло боб илова нашудааст.</div>
+          )}
+        </div>
+      </>
+    )
+  }
+
+  const renderAdminTranslate = () => {
+    const pending = collectTranslationJobs().length
+
+    return (
+      <div className="admin-form">
+        <h3>Тарҷумаи русӣ (худкор)</h3>
+        <p className="admin-note">
+          Ҳамаи ҳадисҳо, маводҳо, шарҳҳо ва номи бобҳоеро, ки матни русӣ надоранд, аз тоҷикӣ ба русӣ тарҷума карда
+          дар база сабт мекунад. Матни тоҷикии шумо тағйир намеёбад. Тарҷумаи мошинӣ ғалат шуда метавонад —
+          матнҳои муҳимро баъд аз санҷиш дастӣ дуруст кунед (дар «Таҳрир» майдони «Матни русӣ»).
+        </p>
+
+        <div className="admin-item-status">
+          Тарҷумаи интизор: {pending} сатр
+          {translation.total > 0 && ` · иҷро шуд: ${translation.done}/${translation.total}`}
+        </div>
+
+        {translation.message && <div className="admin-note">{translation.message}</div>}
+
+        <div className="form-actions">
+          <button className="primary-button" type="button" onClick={runTranslation} disabled={translation.running || !pending}>
+            {translation.running ? 'Тарҷума мешавад...' : 'Тарҷума ва сабт кардан'}
+          </button>
+
+          {translation.running && (
+            <button className="secondary-button" type="button" onClick={() => { cancelRef.current = true }}>
+              Қатъ кардан
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   const renderAdminContent = () => (
     <>
@@ -2537,7 +3339,7 @@ function App() {
           <label>{t.section} *</label>
           <select
             value={contentForm.section_slug}
-            onChange={event => setContentForm({ ...contentForm, section_slug: event.target.value })}
+            onChange={event => setContentForm({ ...contentForm, section_slug: event.target.value, chapter_id: '' })}
             required
           >
             {sections.filter(section => section.slug !== 'hadith').map(section => (
@@ -2545,6 +3347,25 @@ function App() {
             ))}
           </select>
         </div>
+
+        {(() => {
+          const options = chapters.filter(item => item.parentKind === 'section' && item.parent === contentForm.section_slug)
+          if (!options.length) return null
+          return (
+            <div className="form-group">
+              <label>Боб</label>
+              <select
+                value={contentForm.chapter_id}
+                onChange={event => setContentForm({ ...contentForm, chapter_id: event.target.value })}
+              >
+                <option value="">— {t.noChapter} —</option>
+                {options.map(item => (
+                  <option value={item.id} key={item.id}>{item.order ? `${item.order}. ` : ''}{item.title}</option>
+                ))}
+              </select>
+            </div>
+          )
+        })()}
 
 
         {field(t.title, contentForm.title,
@@ -2944,25 +3765,22 @@ function App() {
 
               {selectedSection.slug === 'quran' ? renderQuran() : selectedSection.slug === 'hadith' && !selectedBook ? (
                 <div className="menu menu-list">
-                  {books
+                  {bookGroups
                     .filter(book => book.is_active !== false)
-                    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
                     .map(book => (
                       <button
                         className="menu-card"
-                        key={book.id}
+                        key={book.key}
                         onClick={() => openBook(book)}
                       >
                         <span className="menu-card-icon"><Icon name="hadith" /></span>
 
                         <span className="menu-card-body">
-                          <h3>{book.name}</h3>
+                          <h3>{bookLabel(book)}</h3>
                           <p>
                             {lang === 'ru'
                               ? 'Открыть хадисы этого сборника'
-                              : lang === 'ar'
-                                ? 'عرض أحاديث هذا الكتاب'
-                                : 'Дидани ҳадисҳои ин китоб'}
+                              : 'Дидани ҳадисҳои ин китоб'}
                           </p>
                         </span>
 
@@ -2970,7 +3788,7 @@ function App() {
                       </button>
                     ))}
 
-                  {!books.some(book => book.is_active !== false) && (
+                  {!bookGroups.some(book => book.is_active !== false) && (
                     <div className="empty-state">{t.noBooks}</div>
                   )}
                 </div>
@@ -2981,23 +3799,71 @@ function App() {
                       <button className="secondary-button back-button" onClick={goBackToBooks}>
                         ← {t.back}
                       </button>
-                      <h3>📚 {selectedBook.name}</h3>
+                      <h3>📚 {bookLabel(selectedBook)}</h3>
                     </div>
                   )}
 
-                  <div className="public-list">
-                    {publicContent.length ? (
-                      publicContent.map(item =>
-                        item.resultType === 'hadith'
-                          ? renderHadithCard(item)
-                          : renderContentCard(item)
-                      )
-                    ) : (
-                      <div className="empty-state">
-                        {selectedSection.slug === 'hadith' ? t.noHadiths : t.noContent}
+                  {contextChapters.length > 0 && selectedChapter === null ? (
+                    <div className="menu menu-list">
+                      {contextChapters.map(chapter => (
+                        <button
+                          className="menu-card"
+                          key={chapter.id}
+                          type="button"
+                          onClick={() => setSelectedChapter(chapter.id)}
+                        >
+                          <span className="surah-number">{chapter.order || '•'}</span>
+
+                          <span className="menu-card-body">
+                            <h3>{chapterLabel(chapter)}</h3>
+                          </span>
+
+                          <span className="menu-arrow">‹</span>
+                        </button>
+                      ))}
+
+                      {uncategorizedRows.length > 0 && (
+                        <button className="menu-card" type="button" onClick={() => setSelectedChapter('__none')}>
+                          <span className="surah-number">•</span>
+
+                          <span className="menu-card-body">
+                            <h3>{t.noChapter}</h3>
+                          </span>
+
+                          <span className="menu-arrow">‹</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {contextChapters.length > 0 && (
+                        <div className="section-intro">
+                          <button className="secondary-button back-button" onClick={() => setSelectedChapter(null)}>
+                            ← {t.back}
+                          </button>
+                          <h3>
+                            {selectedChapter === '__none'
+                              ? t.noChapter
+                              : chapterLabel(contextChapters.find(item => item.id === selectedChapter) || { title: '', titleRu: '' })}
+                          </h3>
+                        </div>
+                      )}
+
+                      <div className="public-list">
+                        {publicContent.length ? (
+                          publicContent.map(item =>
+                            item.resultType === 'hadith'
+                              ? renderHadithCard(item)
+                              : renderContentCard(item)
+                          )
+                        ) : (
+                          <div className="empty-state">
+                            {selectedSection.slug === 'hadith' ? t.noHadiths : t.noContent}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </>
+                  )}
                 </>
               )}
             </section>
@@ -3130,18 +3996,26 @@ function App() {
                 <button className={adminTab === 'sections' ? 'active' : ''} onClick={() => setAdminTab('sections')}>
                   ⚙️ {t.sections}
                 </button>
+
+                <button className={adminTab === 'chapters' ? 'active' : ''} onClick={() => setAdminTab('chapters')}>
+                  📑 Бобҳо
+                </button>
+
+                <button className={adminTab === 'translate' ? 'active' : ''} onClick={() => setAdminTab('translate')}>
+                  🌐 Тарҷума
+                </button>
               </div>
 
               {adminTab === 'hadith' && renderAdminHadith()}
               {adminTab === 'books' && renderAdminBooks()}
               {adminTab === 'content' && renderAdminContent()}
               {adminTab === 'sections' && renderAdminSections()}
+              {adminTab === 'chapters' && renderAdminChapters()}
+              {adminTab === 'translate' && renderAdminTranslate()}
             </>
           )}
         </main>
       )}
-
-      <audio ref={audioRef} onEnded={handleAudioEnded} preload="none" />
 
       <nav className="bottom-nav" aria-label="Navigation">
         <button className={`nav-item ${navActive.home ? 'active' : ''}`} type="button" onClick={goHome}>
