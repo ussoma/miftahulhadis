@@ -990,3 +990,98 @@ input[type='checkbox'] {
 .import-panel p { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 6px 0 12px; }
 .import-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .import-row input { padding: 10px; font-size: 14px; }
+
+/* DAILY CARDS — шрифтҳои хурдтар */
+
+.daily-heading h2 { font-size: 19px; }
+.daily-badge { font-size: 12px; padding: 5px 9px; }
+.daily-card > p { font-size: 15px; line-height: 1.6; margin: 6px 0; }
+.daily-card .arabic-text { font-size: 20px !important; line-height: 2 !important; }
+.daily-card .source-note { font-size: 12px; }
+.daily-card .explanation p { font-size: 13px; }
+.daily-desc { font-size: 14px; margin-bottom: 12px; }
+.sunnah-row { padding: 11px; gap: 12px; }
+.sunnah-row-icon { width: 48px; height: 48px; }
+.sunnah-row-icon .icon { width: 24px; height: 24px; }
+.sunnah-row-text strong { font-size: 16px; }
+.sunnah-row-text span { font-size: 12px; }
+.sunnah-details p { font-size: 14px; }
+.daily-footnote { font-size: 12px; margin-top: 12px; }
+.daily-card .action-button { font-size: 13px; }
+.daily-card .action-button .icon { width: 20px; height: 20px; }
+
+/* QURAN */
+
+.surah-search { margin-bottom: 12px; }
+.surah-search input { background: var(--surface); font-size: 14px; }
+
+.surah-number {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(211, 185, 127, .15);
+  color: var(--gold);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.surah-arabic {
+  margin-inline-start: auto;
+  font-family: 'Noto Naskh Arabic', serif;
+  font-size: 19px;
+  color: var(--gold-soft);
+  white-space: nowrap;
+}
+
+.extras-title { margin: 22px 0 12px; font-size: 17px; color: var(--text); }
+
+.player-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.player-card label { color: var(--muted); font-size: 12px; font-weight: 700; }
+.player-card select { font-size: 14px; }
+
+.bismillah {
+  text-align: center !important;
+  margin: 0 0 14px;
+  font-size: 24px !important;
+}
+
+.ayah-card.is-playing {
+  border-color: var(--gold);
+  background: var(--surface-soft);
+}
+
+.ayah-card .arabic-text { font-size: 24px !important; }
+.ayah-card p { font-size: 15px; }
+
+.ayah-audio { display: flex; gap: 8px; margin-top: 6px; }
+
+.play-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.play-chip .icon { width: 16px; height: 16px; color: var(--gold); }
+.is-playing .play-chip { border-color: rgba(211, 185, 127, .5); }
+
+.quran-source { color: var(--muted); font-size: 12px; line-height: 1.6; text-align: center; margin: 16px 0 0; }
