@@ -319,6 +319,35 @@ function saveFavorites(list) {
   }
 }
 
+// Санаи имрӯз (вақти маҳаллии дастгоҳ) дар шакли ГГГГ-ММ-РР.
+function todayKey() {
+  return new Date().toLocaleDateString('en-CA')
+}
+
+const ASK_TOKEN_KEY = 'miftah_ask_token_v1'
+let memoryAskToken = ''
+
+// Шиносаи махфии дастгоҳ барои саволҳои шахсӣ: фақат худи корбар саволу ҷавобҳои худро мебинад.
+function getAskToken() {
+  try {
+    let token = window.localStorage.getItem(ASK_TOKEN_KEY)
+    if (!token || token.length < 20) {
+      token = makeToken()
+      window.localStorage.setItem(ASK_TOKEN_KEY, token)
+    }
+    return token
+  } catch {
+    if (!memoryAskToken) memoryAskToken = makeToken()
+    return memoryAskToken
+  }
+}
+
+function makeToken() {
+  const bytes = new Uint8Array(24)
+  window.crypto.getRandomValues(bytes)
+  return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
 const LEGACY_DEFAULT_SECTION_ORDER = [
   'quran', 'hadith', 'salihin', 'prophets', 'seerah',
   'companions', 'duas', 'adhkar', 'lessons', 'questions'
@@ -675,7 +704,21 @@ const LANG = {
     noChapter: 'Бе боб',
     repeatAyah: 'Такрор',
     translationLabel: 'Тарҷума',
-    playAllFailed: 'Файли яклухти сура ёфт нашуд — оятҳо пай дар пай мехонанд.'
+    playAllFailed: 'Файли яклухти сура ёфт нашуд — оятҳо пай дар пай мехонанд.',
+    askTitle: 'Саволи худро нависед',
+    askPrivacy: 'Савол ва пешниҳоди шумо танҳо барои мудир намоён аст. Ҷавоб ҳамин ҷо, дар «Саволҳои ман» меояд. Дигарон намебинанд.',
+    askNameLabel: 'Ном (ихтиёрӣ)',
+    askPlaceholder: 'Саволи худро нависед...',
+    askSend: 'Фиристодан',
+    askSent: 'Савол фиристода шуд. Ҷавобро дар поён мебинед.',
+    askEmpty: 'Саволро нависед (ҳадди ақал 3 ҳарф).',
+    myQuestions: 'Саволҳои ман',
+    askPending: 'Интизори ҷавоб',
+    askAnswerLabel: 'Ҷавоби мудир:',
+    askRefresh: 'Навсозӣ',
+    askNone: 'Шумо ҳоло савол надодаед.',
+    askUnavailable: 'Хидмати савол ҳанӯз танзим нашудааст. Баъдтар кӯшиш кунед.',
+    askOnThisDevice: 'Саволҳо дар ҳамин дастгоҳ нигоҳ дошта мешаванд.'
   },
 
   ru: {
@@ -814,13 +857,28 @@ const LANG = {
     noChapter: 'Без раздела',
     repeatAyah: 'Повтор',
     translationLabel: 'Перевод',
-    playAllFailed: 'Файл целой суры не найден — аяты читаются по очереди.'
+    playAllFailed: 'Файл целой суры не найден — аяты читаются по очереди.',
+    askTitle: 'Напишите свой вопрос',
+    askPrivacy: 'Ваш вопрос или предложение видит только администратор. Ответ придёт сюда, в «Мои вопросы». Другие пользователи его не видят.',
+    askNameLabel: 'Имя (необязательно)',
+    askPlaceholder: 'Напишите свой вопрос...',
+    askSend: 'Отправить',
+    askSent: 'Вопрос отправлен. Ответ появится ниже.',
+    askEmpty: 'Напишите вопрос (минимум 3 символа).',
+    myQuestions: 'Мои вопросы',
+    askPending: 'Ожидает ответа',
+    askAnswerLabel: 'Ответ администратора:',
+    askRefresh: 'Обновить',
+    askNone: 'Вы пока не задавали вопросов.',
+    askUnavailable: 'Сервис вопросов ещё не настроен. Попробуйте позже.',
+    askOnThisDevice: 'Вопросы хранятся на этом устройстве.'
   }
 }
 
 const EMPTY_HADITH = {
   book_id: '',
   chapter_id: '',
+  daily_date: '',
   hadith_number: '',
   tajik_text: '',
   arabic_text: '',
@@ -838,6 +896,7 @@ const EMPTY_CONTENT = {
   title: '',
   title_ru: '',
   chapter_id: '',
+  daily_date: '',
   tajik_text: '',
   arabic_text: '',
   explanation_tg: '',
@@ -1012,6 +1071,15 @@ function App() {
   const [quranFavs, setQuranFavs] = useState(loadQuranFavorites)
   const audioRef = useRef(null)
   const cancelRef = useRef(false)
+  const [today, setToday] = useState(todayKey)
+  const [uploading, setUploading] = useState({ audio: false, video: false })
+  const [askForm, setAskForm] = useState({ name: '', question: '' })
+  const [myQuestions, setMyQuestions] = useState([])
+  const [askBusy, setAskBusy] = useState(false)
+  const [askError, setAskError] = useState('')
+  const [adminQuestions, setAdminQuestions] = useState([])
+  const [questionsError, setQuestionsError] = useState('')
+  const [answerDrafts, setAnswerDrafts] = useState({})
   const [chapterRows, setChapterRows] = useState([])
   const [selectedChapter, setSelectedChapter] = useState(null)
   const [chapterForm, setChapterForm] = useState({ parent: '', title: '', title_ru: '', order: '' })
@@ -1124,6 +1192,16 @@ function App() {
 
     if (!published.length) {
       setDailyHadith(null)
+      return
+    }
+
+    // Агар админ барои имрӯз ҳадис интихоб карда бошад, ҳамон нишон дода мешавад (24 соат).
+    const pinned = published
+      .filter(item => parseStoredNote(item.source_note).meta.daily_date === todayKey())
+      .sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime())[0]
+
+    if (pinned) {
+      setDailyHadith(pinned)
       return
     }
 
@@ -1330,7 +1408,10 @@ function App() {
   }, [loadPublicData])
 
   useEffect(() => {
-    const timer = setInterval(() => refreshDaily(hadithRows), 60000)
+    const timer = setInterval(() => {
+      setToday(todayKey())
+      refreshDaily(hadithRows)
+    }, 60000)
     return () => clearInterval(timer)
   }, [hadithRows, refreshDaily])
 
@@ -1539,6 +1620,7 @@ function App() {
       const meta = {
         ...previousMeta,
         chapter_id: clean(hadithForm.chapter_id),
+        daily_date: clean(hadithForm.daily_date),
         explanation_tg: clean(hadithForm.explanation_tg),
         explanation_ar: clean(hadithForm.explanation_ar),
         russian_text: clean(hadithForm.russian_text),
@@ -1583,6 +1665,7 @@ function App() {
     setHadithForm({
       book_id: item.book_id || '',
       chapter_id: stored.meta.chapter_id || '',
+      daily_date: stored.meta.daily_date || '',
       hadith_number: item.hadith_number ?? '',
       tajik_text: item.tajik_text || '',
       arabic_text: item.arabic_text || '',
@@ -1996,6 +2079,7 @@ function App() {
       const meta = {
         ...previousMeta,
         chapter_id: clean(contentForm.chapter_id),
+        daily_date: contentForm.section_slug === 'sunnah' ? clean(contentForm.daily_date) : '',
         title_ru: clean(contentForm.title_ru),
         explanation_tg: clean(contentForm.explanation_tg),
         explanation_ar: clean(contentForm.explanation_ar),
@@ -2047,6 +2131,7 @@ function App() {
       title: item.title || '',
       title_ru: stored.meta.title_ru || '',
       chapter_id: stored.meta.chapter_id || '',
+      daily_date: stored.meta.daily_date || '',
       tajik_text: item.tajik_text || item.content_text || '',
       arabic_text: item.arabic_text || '',
       source_note: stored.source,
@@ -2361,15 +2446,22 @@ function App() {
   }, [selectedSection, selectedBook, chapters])
 
   const dailySunnah = useMemo(() => {
-    const candidates = contentRows.filter(item => {
-      const meta = parseStoredNote(item.source_note).meta
-      return item.section_slug === 'sunnah' && meta.is_daily_sunnah === true
-    })
-    return candidates.sort((a, b) =>
+    const latest = (a, b) =>
       new Date(b.updated_at || b.created_at || 0).getTime() -
       new Date(a.updated_at || a.created_at || 0).getTime()
-    )[0] || null
-  }, [contentRows])
+
+    const sunnahItems = contentRows.filter(item => item.section_slug === 'sunnah')
+
+    // Аввал: суннате, ки админ барои имрӯз интихоб кардааст; баъд: суннати бо аломат.
+    const pinned = sunnahItems
+      .filter(item => parseStoredNote(item.source_note).meta.daily_date === today)
+      .sort(latest)[0]
+    if (pinned) return pinned
+
+    return sunnahItems
+      .filter(item => parseStoredNote(item.source_note).meta.is_daily_sunnah === true)
+      .sort(latest)[0] || null
+  }, [contentRows, today])
 
   const chapterIdOf = item => String(parseStoredNote(item.source_note).meta.chapter_id || '')
   const validChapterIds = new Set(contextChapters.map(item => item.id))
@@ -2820,6 +2912,340 @@ function App() {
     )
   }
 
+  /* ---------- Ҳадис/суннати рӯз: интихоби админ ---------- */
+
+  const pinDaily = async (item, table) => {
+    if (!db || !admin) return
+
+    try {
+      const stored = parseStoredNote(item.source_note)
+      const isPinned = stored.meta.daily_date === todayKey()
+      const meta = { ...stored.meta, daily_date: isPinned ? '' : todayKey() }
+
+      const { error } = await db.from(table)
+        .update({ source_note: makeStoredNote(stored.source, meta), updated_at: new Date().toISOString() })
+        .eq('id', item.id)
+
+      if (error) throw error
+
+      await reloadAll()
+      notify(isPinned ? 'Аз «имрӯз» гирифта шуд.' : 'Барои имрӯз гузошта шуд (24 соат).')
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  /* ---------- Боргирии аудио/видео аз дастгоҳ (Supabase Storage, bucket «media») ---------- */
+
+  const uploadMedia = async (file, kind, onChange) => {
+    if (!db || !admin) return
+
+    if (!String(file.type).startsWith(`${kind}/`)) {
+      notify(kind === 'audio' ? 'Танҳо файли аудио интихоб кунед.' : 'Танҳо файли видео интихоб кунед.', 'error')
+      return
+    }
+
+    setUploading(current => ({ ...current, [kind]: true }))
+
+    try {
+      const ext = (file.name.split('.').pop() || kind).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || kind
+      const path = `${kind}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+      const { error } = await db.storage.from('media').upload(path, file, {
+        contentType: file.type,
+        cacheControl: '31536000',
+        upsert: false
+      })
+      if (error) throw error
+
+      const { data } = db.storage.from('media').getPublicUrl(path)
+      onChange(data.publicUrl)
+      notify('Файл бор шуд. Ҳоло «Сабт кардан»-ро пахш кунед.')
+    } catch (error) {
+      console.error(error)
+      notify(t.error + (error.message || 'боргирӣ нашуд') + ' — санҷед: bucket «media» сохта шудааст ва ҳаҷми файл аз ҳад зиёд нест?', 'error')
+    } finally {
+      setUploading(current => ({ ...current, [kind]: false }))
+    }
+  }
+
+  const mediaField = (kind, label, value, onChange) => (
+    <div className="form-group media-field">
+      <label>{label}</label>
+
+      {value ? (
+        <div className="media-current">
+          <span>{decodeURIComponent(String(value).split('/').pop() || '').slice(0, 48)}</span>
+          <button type="button" className="danger-button" onClick={() => onChange('')}>
+            Нест кардан
+          </button>
+        </div>
+      ) : (
+        <div className="media-empty">Файл интихоб нашудааст</div>
+      )}
+
+      <label className="upload-button">
+        {uploading[kind]
+          ? 'Бор шуда истодааст...'
+          : (value
+            ? 'Файли дигар интихоб кардан'
+            : (kind === 'audio' ? '🎧 Аудиоро аз телефон ё файл интихоб кунед' : '🎬 Видеоро аз галерея ё файл интихоб кунед'))}
+        <input
+          type="file"
+          accept={`${kind}/*`}
+          hidden
+          disabled={uploading[kind]}
+          onChange={event => {
+            const file = event.target.files?.[0]
+            event.target.value = ''
+            if (file) uploadMedia(file, kind, onChange)
+          }}
+        />
+      </label>
+    </div>
+  )
+
+  /* ---------- Саволу ҷавоби шахсӣ ---------- */
+
+  const loadMyQuestions = useCallback(async () => {
+    if (!db) return
+
+    const { data, error } = await db.rpc('my_questions', { p_token: getAskToken() })
+    if (error) {
+      console.warn('my_questions failed:', error)
+      setAskError(error.message || 'error')
+      return
+    }
+
+    setAskError('')
+    setMyQuestions(data || [])
+  }, [])
+
+  useEffect(() => {
+    if (page === 'section' && selectedSection?.slug === 'questions') loadMyQuestions()
+  }, [page, selectedSection, loadMyQuestions])
+
+  const sendQuestion = async () => {
+    if (!db || askBusy) return
+
+    if (clean(askForm.question).length < 3) {
+      notify(t.askEmpty, 'error')
+      return
+    }
+
+    setAskBusy(true)
+
+    try {
+      const { error } = await db.rpc('ask_question', {
+        p_token: getAskToken(),
+        p_name: clean(askForm.name),
+        p_question: clean(askForm.question)
+      })
+      if (error) throw error
+
+      setAskForm({ name: askForm.name, question: '' })
+      await loadMyQuestions()
+      notify(t.askSent)
+    } catch (error) {
+      console.error(error)
+      notify(t.askUnavailable, 'error')
+    } finally {
+      setAskBusy(false)
+    }
+  }
+
+  const loadAdminQuestions = useCallback(async () => {
+    if (!db) return
+
+    const { data, error } = await db.from('questions').select('*').order('created_at', { ascending: true })
+    if (error) {
+      setQuestionsError(error.message || 'error')
+      return
+    }
+
+    setQuestionsError('')
+    setAdminQuestions(data || [])
+  }, [])
+
+  useEffect(() => {
+    if (admin) loadAdminQuestions()
+  }, [admin, loadAdminQuestions])
+
+  const answerQuestion = async question => {
+    if (!db || !admin) return
+
+    const text = clean(answerDrafts[question.id] ?? question.answer ?? '')
+    if (!text) {
+      notify('Ҷавобро нависед.', 'error')
+      return
+    }
+
+    try {
+      const { error } = await db.from('questions')
+        .update({ answer: text, answered_at: new Date().toISOString() })
+        .eq('id', question.id)
+      if (error) throw error
+
+      setAnswerDrafts(current => {
+        const next = { ...current }
+        delete next[question.id]
+        return next
+      })
+      await loadAdminQuestions()
+      notify('Ҷавоб ба корбар фиристода шуд.')
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const deleteQuestion = async question => {
+    if (!db || !admin || !window.confirm(t.confirm)) return
+
+    try {
+      const { error } = await db.from('questions').delete().eq('id', question.id)
+      if (error) throw error
+
+      await loadAdminQuestions()
+      notify(t.saved)
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const pendingQuestions = adminQuestions.filter(item => !clean(item.answer)).length
+
+  const formatDate = value => {
+    try {
+      return new Date(value).toLocaleString(lang === 'ru' ? 'ru-RU' : 'tg-TJ', { dateStyle: 'medium', timeStyle: 'short' })
+    } catch {
+      return String(value || '')
+    }
+  }
+
+  const renderAsk = () => {
+    const extras = contentRows.filter(item => item.section_slug === 'questions')
+
+    return (
+      <>
+        <div className="settings-card ask-card">
+          <h3>{t.askTitle}</h3>
+          <p className="ask-note">{t.askPrivacy}</p>
+
+          <div className="form-group">
+            <label>{t.askNameLabel}</label>
+            <input
+              value={askForm.name}
+              onChange={event => setAskForm({ ...askForm, name: event.target.value })}
+              maxLength={60}
+            />
+          </div>
+
+          <div className="form-group">
+            <textarea
+              value={askForm.question}
+              onChange={event => setAskForm({ ...askForm, question: event.target.value })}
+              placeholder={t.askPlaceholder}
+              maxLength={2000}
+            />
+          </div>
+
+          <button className="primary-button" type="button" onClick={sendQuestion} disabled={askBusy}>
+            {askBusy ? t.loading : t.askSend}
+          </button>
+        </div>
+
+        <div className="block-heading">
+          <h3 className="extras-title">{t.myQuestions}</h3>
+          <button className="link-button" type="button" onClick={loadMyQuestions}>{t.askRefresh}</button>
+        </div>
+
+        {askError && <div className="empty-state">{t.askUnavailable}</div>}
+
+        {!askError && !myQuestions.length && <div className="empty-state">{t.askNone}</div>}
+
+        <div className="public-list">
+          {myQuestions.map(item => (
+            <article className="public-item" key={item.id}>
+              <div className="item-number">{formatDate(item.created_at)}</div>
+              <p>{item.question}</p>
+
+              {clean(item.answer) ? (
+                <div className="explanation">
+                  <strong>{t.askAnswerLabel}</strong>
+                  <p>{item.answer}</p>
+                </div>
+              ) : (
+                <div className="source-note">⏳ {t.askPending}</div>
+              )}
+            </article>
+          ))}
+        </div>
+
+        {myQuestions.length > 0 && <p className="quran-source">{t.askOnThisDevice}</p>}
+
+        {extras.length > 0 && (
+          <>
+            <h3 className="extras-title">{t.extraMaterials}</h3>
+            <div className="public-list">{extras.map(item => renderContentCard(item))}</div>
+          </>
+        )}
+      </>
+    )
+  }
+
+  const renderAdminQuestions = () => {
+    const ordered = [...adminQuestions].sort((a, b) =>
+      Number(Boolean(clean(a.answer))) - Number(Boolean(clean(b.answer))) ||
+      new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+    )
+
+    return (
+      <>
+        {questionsError && (
+          <div className="admin-form">
+            <p className="admin-note">
+              Ҷадвали «questions» ҳанӯз танзим нашудааст ({questionsError}). Файли supabase-setup.sql-ро
+              дар Supabase → SQL Editor иҷро кунед.
+            </p>
+          </div>
+        )}
+
+        <div className="admin-list">
+          {ordered.map(item => (
+            <div className="admin-item" key={item.id}>
+              <h4>{item.asker_name || 'Беном'} · {formatDate(item.created_at)}</h4>
+              <p>{item.question}</p>
+
+              <div className="admin-item-status">
+                {clean(item.answer) ? '✓ Ҷавоб дода шудааст' : '⏳ Интизори ҷавоб'}
+              </div>
+
+              <div className="form-group">
+                <textarea
+                  value={answerDrafts[item.id] ?? item.answer ?? ''}
+                  onChange={event => setAnswerDrafts({ ...answerDrafts, [item.id]: event.target.value })}
+                  placeholder="Ҷавоби худро нависед — он ба корбар аз номи барнома мерасад..."
+                />
+              </div>
+
+              <div className="admin-item-actions">
+                <button className="primary-button" onClick={() => answerQuestion(item)}>
+                  {clean(item.answer) ? 'Навсозии ҷавоб' : 'Ҷавоб фиристодан'}
+                </button>
+
+                <button className="danger-button" onClick={() => deleteQuestion(item)}>
+                  {t.delete}
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {!ordered.length && !questionsError && <div className="empty-state">Ҳоло савол нест.</div>}
+        </div>
+      </>
+    )
+  }
+
   const renderMedia = item => {
     const stored = parseStoredNote(item.source_note)
     const audio = stored.meta.audio_url
@@ -2984,6 +3410,38 @@ function App() {
             <HighlightText text={stored.source} query={query} />
           </div>
         )}
+
+        <div className="card-actions">
+          <button
+            className="action-button"
+            type="button"
+            onClick={() => copyText([
+              item.title,
+              item.arabic_text,
+              localizedText,
+              localizedExplanation,
+              stored.source
+            ].filter(Boolean).join('\n\n'))}
+          >
+            <Icon name="copy" />
+            <span>{t.copy}</span>
+          </button>
+
+          <button
+            className="action-button"
+            type="button"
+            onClick={() => shareText([
+              item.title,
+              item.arabic_text,
+              localizedText,
+              localizedExplanation,
+              stored.source
+            ].filter(Boolean).join('\n\n'))}
+          >
+            <Icon name="share" />
+            <span>{t.share}</span>
+          </button>
+        </div>
       </article>
     )
   }
@@ -3082,13 +3540,20 @@ function App() {
           value => setHadithForm({ ...hadithForm, explanation_ar: value }),
           '', true)}
 
-        {field(t.audio, hadithForm.audio_url,
-          value => setHadithForm({ ...hadithForm, audio_url: value }),
-          'https://...')}
+        {mediaField('audio', 'Аудио', hadithForm.audio_url,
+          value => setHadithForm(form => ({ ...form, audio_url: value })))}
 
-        {field(t.video, hadithForm.video_url,
-          value => setHadithForm({ ...hadithForm, video_url: value }),
-          'https://...')}
+        {mediaField('video', 'Видео', hadithForm.video_url,
+          value => setHadithForm(form => ({ ...form, video_url: value })))}
+
+        <div className="form-group">
+          <label>Ҳадиси рӯз барои сана (ихтиёрӣ)</label>
+          <input
+            type="date"
+            value={hadithForm.daily_date}
+            onChange={event => setHadithForm({ ...hadithForm, daily_date: event.target.value })}
+          />
+        </div>
 
         <div className="form-actions">
           <button className="primary-button" type="submit" disabled={saving}>
@@ -3120,6 +3585,10 @@ function App() {
 
               <button className="secondary-button" onClick={() => toggleHadith(item)}>
                 {item.is_published === false ? t.show : t.hide}
+              </button>
+
+              <button className="secondary-button" onClick={() => pinDaily(item, 'hadiths')}>
+                {parseStoredNote(item.source_note).meta.daily_date === todayKey() ? '✓ Ҳадиси имрӯз' : '📅 Ҳадиси имрӯз кардан'}
               </button>
 
               <button className="danger-button" onClick={() => deleteHadith(item)}>
@@ -3408,11 +3877,22 @@ function App() {
           </div>
         )}
 
-        {field(t.audio, contentForm.audio_url,
-          value => setContentForm({ ...contentForm, audio_url: value }), 'https://...')}
+        {contentForm.section_slug === 'sunnah' && (
+          <div className="form-group">
+            <label>Суннати рӯз барои сана (ихтиёрӣ) — дар он рӯз (24 соат) дар саҳифаи асосӣ нишон дода мешавад</label>
+            <input
+              type="date"
+              value={contentForm.daily_date}
+              onChange={event => setContentForm({ ...contentForm, daily_date: event.target.value })}
+            />
+          </div>
+        )}
 
-        {field(t.video, contentForm.video_url,
-          value => setContentForm({ ...contentForm, video_url: value }), 'https://...')}
+        {mediaField('audio', 'Аудио', contentForm.audio_url,
+          value => setContentForm(form => ({ ...form, audio_url: value })))}
+
+        {mediaField('video', 'Видео', contentForm.video_url,
+          value => setContentForm(form => ({ ...form, video_url: value })))}
 
         <div className="form-actions">
           <button className="primary-button" type="submit" disabled={saving}>
@@ -3445,6 +3925,12 @@ function App() {
               <button className="secondary-button" onClick={() => toggleContent(item)}>
                 {item.is_published === false ? t.show : t.hide}
               </button>
+
+              {item.section_slug === 'sunnah' && (
+                <button className="secondary-button" onClick={() => pinDaily(item, 'content_items')}>
+                  {parseStoredNote(item.source_note).meta.daily_date === todayKey() ? '✓ Суннати имрӯз' : '📅 Суннати имрӯз кардан'}
+                </button>
+              )}
 
               <button className="danger-button" onClick={() => deleteContent(item)}>
                 {t.delete}
@@ -3763,7 +4249,7 @@ function App() {
                 <p>{localizeSection(selectedSection, lang).description}</p>
               </div>
 
-              {selectedSection.slug === 'quran' ? renderQuran() : selectedSection.slug === 'hadith' && !selectedBook ? (
+              {selectedSection.slug === 'quran' ? renderQuran() : selectedSection.slug === 'questions' ? renderAsk() : selectedSection.slug === 'hadith' && !selectedBook ? (
                 <div className="menu menu-list">
                   {bookGroups
                     .filter(book => book.is_active !== false)
@@ -3997,6 +4483,10 @@ function App() {
                   ⚙️ {t.sections}
                 </button>
 
+                <button className={adminTab === 'questions' ? 'active' : ''} onClick={() => { setAdminTab('questions'); loadAdminQuestions() }}>
+                  ❓ Саволҳо{pendingQuestions ? ` (${pendingQuestions})` : ''}
+                </button>
+
                 <button className={adminTab === 'chapters' ? 'active' : ''} onClick={() => setAdminTab('chapters')}>
                   📑 Бобҳо
                 </button>
@@ -4010,6 +4500,7 @@ function App() {
               {adminTab === 'books' && renderAdminBooks()}
               {adminTab === 'content' && renderAdminContent()}
               {adminTab === 'sections' && renderAdminSections()}
+              {adminTab === 'questions' && renderAdminQuestions()}
               {adminTab === 'chapters' && renderAdminChapters()}
               {adminTab === 'translate' && renderAdminTranslate()}
             </>
