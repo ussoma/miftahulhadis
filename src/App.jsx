@@ -1080,6 +1080,8 @@ function App() {
   const [adminQuestions, setAdminQuestions] = useState([])
   const [questionsError, setQuestionsError] = useState('')
   const [answerDrafts, setAnswerDrafts] = useState({})
+  const [dailyDate, setDailyDate] = useState(todayKey)
+  const [dailyPick, setDailyPick] = useState({ hadith: '', sunnah: '' })
   const [chapterRows, setChapterRows] = useState([])
   const [selectedChapter, setSelectedChapter] = useState(null)
   const [chapterForm, setChapterForm] = useState({ parent: '', title: '', title_ru: '', order: '' })
@@ -3246,6 +3248,131 @@ function App() {
     )
   }
 
+  // Ҳадис/суннатро барои санаи дилхоҳ мегузорад (барои ҳамон сана танҳо як мавод: дигарон тоза мешаванд).
+  const assignDaily = async (item, table, rows, date) => {
+    if (!db || !admin || !item) return
+
+    try {
+      const writes = []
+
+      if (date) {
+        rows.forEach(row => {
+          if (String(row.id) !== String(item.id) && parseStoredNote(row.source_note).meta.daily_date === date) {
+            writes.push({ row, value: '' })
+          }
+        })
+      }
+      writes.push({ row: item, value: date })
+
+      for (const write of writes) {
+        const stored = parseStoredNote(write.row.source_note)
+        const { error } = await db.from(table)
+          .update({
+            source_note: makeStoredNote(stored.source, { ...stored.meta, daily_date: write.value }),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', write.row.id)
+        if (error) throw error
+      }
+
+      await reloadAll()
+      notify(date ? `Барои ${date} гузошта шуд.` : 'Аз рӯз гирифта шуд.')
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const renderAdminDaily = () => {
+    const sunnahRows = contentRows.filter(item => item.section_slug === 'sunnah')
+    const dateOf = item => parseStoredNote(item.source_note).meta.daily_date || ''
+    const upcoming = rows => rows.filter(item => dateOf(item) >= todayKey()).sort((a, b) => dateOf(a).localeCompare(dateOf(b)))
+
+    const hadithLabel = item =>
+      `${getBookName(item.book_id)} · № ${item.hadith_number} — ${clean(item.tajik_text || item.arabic_text).slice(0, 45)}`
+    const sunnahLabel = item =>
+      item.title || clean(item.tajik_text || item.content_text || item.arabic_text).slice(0, 50) || String(item.id)
+
+    const block = (title, kind, rows, table, label) => {
+      const selected = rows.find(item => String(item.id) === String(dailyPick[kind]))
+      const scheduled = upcoming(rows)
+
+      return (
+        <div className="admin-form">
+          <h3>{title}</h3>
+
+          <div className="form-group">
+            <label>Интихоб кунед</label>
+            <select
+              value={dailyPick[kind]}
+              onChange={event => setDailyPick({ ...dailyPick, [kind]: event.target.value })}
+            >
+              <option value="">— аз рӯйхат интихоб кунед —</option>
+              {rows.map(item => (
+                <option value={item.id} key={item.id}>{label(item)}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Дар кадом сана (24 соат)</label>
+            <input type="date" value={dailyDate} onChange={event => setDailyDate(event.target.value)} />
+          </div>
+
+          <div className="form-actions">
+            <button
+              className="primary-button"
+              type="button"
+              disabled={!selected || !dailyDate}
+              onClick={() => assignDaily(selected, table, rows, dailyDate)}
+            >
+              Гузоштан барои ин сана
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={!selected}
+              onClick={() => assignDaily(selected, table, rows, todayKey())}
+            >
+              Имрӯз гузоштан
+            </button>
+          </div>
+
+          {!rows.length && <p className="admin-note">Ҳоло мавод нест — аввал дар ҷадвали дахлдор илова кунед.</p>}
+
+          {scheduled.length > 0 && (
+            <div className="admin-list" style={{ marginTop: 16 }}>
+              {scheduled.map(item => (
+                <div className="admin-item" key={item.id}>
+                  <h4>📅 {dateOf(item)}{dateOf(item) === todayKey() ? ' (имрӯз)' : ''}</h4>
+                  <p>{label(item)}</p>
+
+                  <div className="admin-item-actions">
+                    <button className="danger-button" onClick={() => assignDaily(item, table, rows, '')}>
+                      Бекор кардан
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <>
+        <p className="admin-note">
+          Дар санаи интихобшуда (24 соат) ҳамон ҳадис ва суннат дар саҳифаи асосӣ нишон дода мешавад.
+          Агар барои имрӯз чизе гузошта нашавад, барнома худаш интихоб мекунад.
+        </p>
+
+        {block('Ҳадиси рӯз', 'hadith', hadithRows, 'hadiths', hadithLabel)}
+        {block('Суннати рӯз', 'sunnah', sunnahRows, 'content_items', sunnahLabel)}
+      </>
+    )
+  }
+
   const renderMedia = item => {
     const stored = parseStoredNote(item.source_note)
     const audio = stored.meta.audio_url
@@ -4483,6 +4610,10 @@ function App() {
                   ⚙️ {t.sections}
                 </button>
 
+                <button className={adminTab === 'daily' ? 'active' : ''} onClick={() => setAdminTab('daily')}>
+                  📅 Ҳадис ва суннати рӯз
+                </button>
+
                 <button className={adminTab === 'questions' ? 'active' : ''} onClick={() => { setAdminTab('questions'); loadAdminQuestions() }}>
                   ❓ Саволҳо{pendingQuestions ? ` (${pendingQuestions})` : ''}
                 </button>
@@ -4500,6 +4631,7 @@ function App() {
               {adminTab === 'books' && renderAdminBooks()}
               {adminTab === 'content' && renderAdminContent()}
               {adminTab === 'sections' && renderAdminSections()}
+              {adminTab === 'daily' && renderAdminDaily()}
               {adminTab === 'questions' && renderAdminQuestions()}
               {adminTab === 'chapters' && renderAdminChapters()}
               {adminTab === 'translate' && renderAdminTranslate()}
