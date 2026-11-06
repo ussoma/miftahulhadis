@@ -1122,3 +1122,43 @@ input[type='checkbox'] {
 .play-chip.is-on .icon { color: var(--text-dark); }
 
 .admin-note { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 0 0 12px; }
+
+/* MEDIA UPLOAD */
+
+.media-field .media-empty { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+
+.media-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface-deep);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.media-current button { padding: 6px 10px; font-size: 12px; flex-shrink: 0; }
+
+.form-group label.upload-button {
+  display: block;
+  text-align: center;
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px dashed rgba(211, 185, 127, .55);
+  border-radius: 12px;
+  padding: 13px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* PRIVATE QUESTIONS */
+
+.ask-card { margin-bottom: 14px; }
+.ask-note { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 0 0 14px; }
+.block-heading h3.extras-title { margin: 0; }
