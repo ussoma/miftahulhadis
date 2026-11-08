@@ -342,6 +342,26 @@ function getAskToken() {
   }
 }
 
+// Агар барнома дар Telegram кушода шавад, корбар аз рӯи Telegram ID шинохта мешавад.
+function getTelegramUser() {
+  try {
+    const user = window.Telegram?.WebApp?.initDataUnsafe?.user
+    if (!user?.id) return null
+    return {
+      id: String(user.id),
+      name: [user.first_name, user.last_name].filter(Boolean).join(' '),
+      username: user.username || ''
+    }
+  } catch {
+    return null
+  }
+}
+
+function currentUserKey() {
+  const telegramUser = getTelegramUser()
+  return telegramUser ? `tg:${telegramUser.id}` : `dev:${getAskToken()}`
+}
+
 function makeToken() {
   const bytes = new Uint8Array(24)
   window.crypto.getRandomValues(bytes)
@@ -1081,6 +1101,13 @@ function App() {
   const [questionsError, setQuestionsError] = useState('')
   const [answerDrafts, setAnswerDrafts] = useState({})
   const [dailyDate, setDailyDate] = useState(todayKey)
+  const [blocked, setBlocked] = useState(false)
+  const [adminUsers, setAdminUsers] = useState([])
+  const [userStats, setUserStats] = useState(null)
+  const [usersError, setUsersError] = useState('')
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [usersLimit, setUsersLimit] = useState(50)
+  const [userSearch, setUserSearch] = useState('')
   const [dailyPick, setDailyPick] = useState({ hadith: '', sunnah: '' })
   const [chapterRows, setChapterRows] = useState([])
   const [selectedChapter, setSelectedChapter] = useState(null)
@@ -3041,7 +3068,8 @@ function App() {
       const { error } = await db.rpc('ask_question', {
         p_token: getAskToken(),
         p_name: clean(askForm.name),
-        p_question: clean(askForm.question)
+        p_question: clean(askForm.question),
+        p_user_key: currentUserKey()
       })
       if (error) throw error
 
@@ -3369,6 +3397,181 @@ function App() {
 
         {block('Ҳадиси рӯз', 'hadith', hadithRows, 'hadiths', hadithLabel)}
         {block('Суннати рӯз', 'sunnah', sunnahRows, 'content_items', sunnahLabel)}
+      </>
+    )
+  }
+
+  /* ---------- Омори корбарон ва блок (танҳо барои мудир) ---------- */
+
+  // Ҳангоми кушодани барнома ташриф сабт мешавад ва маълум мешавад, ки корбар блок шудааст ё не.
+  useEffect(() => {
+    if (!db) return
+
+    const telegramUser = getTelegramUser()
+
+    db.rpc('register_visit', {
+      p_key: currentUserKey(),
+      p_name: telegramUser?.name || '',
+      p_username: telegramUser?.username || '',
+      p_lang: lang
+    }).then(({ data, error }) => {
+      if (!error && data === true) setBlocked(true)
+    })
+    // фақат як маротиба ҳангоми кушодани барнома
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const loadUsers = useCallback(async (limit = 50) => {
+    if (!db) return
+
+    setUsersLoading(true)
+
+    try {
+      const startOfDay = new Date()
+      startOfDay.setHours(0, 0, 0, 0)
+      const day = startOfDay.toISOString()
+      const week = new Date(Date.now() - 7 * 86400000).toISOString()
+      const online = new Date(Date.now() - 5 * 60000).toISOString()
+
+      const count = async build => {
+        const result = await build(db.from('app_users').select('id', { count: 'exact', head: true }))
+        if (result.error) throw result.error
+        return result.count || 0
+      }
+
+      const [total, blockedCount, activeToday, newToday, activeWeek, activeNow, list] = await Promise.all([
+        count(query => query),
+        count(query => query.eq('blocked', true)),
+        count(query => query.gte('last_seen', day)),
+        count(query => query.gte('first_seen', day)),
+        count(query => query.gte('last_seen', week)),
+        count(query => query.gte('last_seen', online)),
+        db.from('app_users').select('*').order('last_seen', { ascending: false }).limit(limit)
+      ])
+
+      if (list.error) throw list.error
+
+      setUserStats({ total, blocked: blockedCount, activeToday, newToday, activeWeek, activeNow })
+      setAdminUsers(list.data || [])
+      setUsersError('')
+    } catch (error) {
+      setUsersError(error.message || 'error')
+    } finally {
+      setUsersLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (admin && adminTab === 'users') loadUsers(usersLimit)
+  }, [admin, adminTab, usersLimit, loadUsers])
+
+  const toggleBlockUser = async user => {
+    if (!db || !admin) return
+
+    const willBlock = !user.blocked
+    const label = user.display_name || user.username || user.user_key
+    const question = willBlock
+      ? `«${label}» блок карда шавад? Ӯ дигар ба барнома дохил шуда наметавонад.`
+      : `«${label}» аз блок бароварда шавад?`
+    if (!window.confirm(question)) return
+
+    try {
+      const { error } = await db.from('app_users')
+        .update({ blocked: willBlock, blocked_at: willBlock ? new Date().toISOString() : null })
+        .eq('id', user.id)
+      if (error) throw error
+
+      await loadUsers(usersLimit)
+      notify(willBlock ? 'Корбар блок шуд.' : 'Блок бардошта шуд.')
+    } catch (error) {
+      notify(t.error + error.message, 'error')
+    }
+  }
+
+  const renderAdminUsers = () => {
+    const query = clean(userSearch).toLowerCase()
+    const shown = adminUsers.filter(user =>
+      !query ||
+      String(user.display_name || '').toLowerCase().includes(query) ||
+      String(user.username || '').toLowerCase().includes(query) ||
+      String(user.user_key || '').toLowerCase().includes(query)
+    )
+
+    const stats = userStats ? [
+      ['Ҳамагӣ корбар', userStats.total],
+      ['Ҳоло дар барнома (5 дақ.)', userStats.activeNow],
+      ['Имрӯз фаъол', userStats.activeToday],
+      ['Имрӯз нав', userStats.newToday],
+      ['7 рӯзи охир', userStats.activeWeek],
+      ['Блокшуда', userStats.blocked]
+    ] : []
+
+    return (
+      <>
+        {usersError && (
+          <div className="admin-form">
+            <p className="admin-note">
+              Ҷадвали корбарон ҳанӯз танзим нашудааст ({usersError}). Файли supabase-users.sql-ро
+              дар Supabase → SQL Editor иҷро кунед.
+            </p>
+          </div>
+        )}
+
+        {stats.length > 0 && (
+          <div className="stats-grid">
+            {stats.map(([label, value]) => (
+              <div className="stat-card" key={label}>
+                <strong>{value}</strong>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="form-group">
+          <input
+            value={userSearch}
+            onChange={event => setUserSearch(event.target.value)}
+            placeholder="Ҷустуҷӯ: ном, @username ё рамз..."
+          />
+        </div>
+
+        <div className="admin-list">
+          {shown.map(user => (
+            <div className="admin-item" key={user.id}>
+              <h4>
+                {user.blocked ? '🚫 ' : ''}
+                {user.display_name || 'Беном'}
+                {user.username ? ` · @${user.username}` : ''}
+              </h4>
+
+              <p>
+                {String(user.user_key).startsWith('tg:') ? 'Telegram' : 'Браузер/дастгоҳ'} · …{String(user.user_key).slice(-6)}
+                {'\n'}Аввалин ташриф: {formatDate(user.first_seen)}
+                {'\n'}Охирин ташриф: {formatDate(user.last_seen)} · ташрифҳо: {user.visits}
+              </p>
+
+              <div className="admin-item-actions">
+                <button
+                  className={user.blocked ? 'secondary-button' : 'danger-button'}
+                  onClick={() => toggleBlockUser(user)}
+                >
+                  {user.blocked ? 'Аз блок баровардан' : 'Блок кардан'}
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {!shown.length && !usersError && (
+            <div className="empty-state">{usersLoading ? t.loading : 'Корбар ёфт нашуд.'}</div>
+          )}
+
+          {adminUsers.length >= usersLimit && (
+            <button className="secondary-button" type="button" onClick={() => setUsersLimit(value => value + 100)}>
+              Бештар нишон додан
+            </button>
+          )}
+        </div>
       </>
     )
   }
@@ -4139,6 +4342,40 @@ function App() {
     </>
   )
 
+  if (blocked && !admin) {
+    return (
+      <div className="app theme-green" dir={direction}>
+        <div className="blocked-screen">
+          <h2>Дастрасӣ маҳдуд карда шудааст</h2>
+          <p>Ҳисоби шумо аз тарафи мудири барнома блок шудааст.</p>
+          <button className="link-button" type="button" onClick={() => setLoginOpen(true)}>
+            Воридшавии мудир
+          </button>
+        </div>
+
+        {loginOpen && (
+          <div className="modal-overlay" onClick={() => setLoginOpen(false)}>
+            <div className="login-page" onClick={event => event.stopPropagation()}>
+              <form className="login-card" onSubmit={login}>
+                <button type="button" className="modal-close" onClick={() => setLoginOpen(false)}>×</button>
+                <h2>{t.login}</h2>
+                <div className="form-group">
+                  <label>{t.email}</label>
+                  <input type="email" value={email} onChange={event => setEmail(event.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>{t.password}</label>
+                  <input type="password" value={password} onChange={event => setPassword(event.target.value)} required />
+                </div>
+                <button className="primary-button" type="submit">{t.login}</button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="app theme-green" dir={direction}>
@@ -4610,6 +4847,10 @@ function App() {
                   ⚙️ {t.sections}
                 </button>
 
+                <button className={adminTab === 'users' ? 'active' : ''} onClick={() => setAdminTab('users')}>
+                  👥 Корбарон
+                </button>
+
                 <button className={adminTab === 'daily' ? 'active' : ''} onClick={() => setAdminTab('daily')}>
                   📅 Ҳадис ва суннати рӯз
                 </button>
@@ -4631,6 +4872,7 @@ function App() {
               {adminTab === 'books' && renderAdminBooks()}
               {adminTab === 'content' && renderAdminContent()}
               {adminTab === 'sections' && renderAdminSections()}
+              {adminTab === 'users' && renderAdminUsers()}
               {adminTab === 'daily' && renderAdminDaily()}
               {adminTab === 'questions' && renderAdminQuestions()}
               {adminTab === 'chapters' && renderAdminChapters()}
