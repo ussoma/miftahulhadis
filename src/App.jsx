@@ -4385,6 +4385,56 @@ Object.assign(ARB_T.ru, {
   ishNote: 'От каждого глагола 12 производных: прошедшее, настоящее, причастие деятеля, страдательное причастие, джахд, нафй, повелительное, запрет, имя времени, имя места, имя орудия, элатив. Полные формы каждого — на своей вкладке.'
 })
 
+Object.assign(ARB_T.tg, {
+  copied: 'Нусхабардорӣ шуд', copyFail: 'Нусха нашуд', copy: 'Нусха', copyAll: 'Нусхаи ҳама', copyForm: 'Нусхаи феъл', copyTable: 'Нусхаи ҷадвал',
+  tabSent: '🧱 Ҷумла',
+  testNouns: 'Тести исмҳо', testVerbs: 'Тести феълҳо', testNahw: 'Тести наҳв', testAll: 'Тести умумӣ',
+  levelAll: 'Ҳама', levelEasy: 'Осон', levelMid: 'Миёна', levelHard: 'Душвор',
+  sentTask: 'Калимаҳоро бо тартиби дуруст гузоред', sentEmpty: 'Калимаҳоро пахш кунед', sentCheck: 'Санҷиш', sentReset: 'Аз нав',
+  sentTr: 'Тарҷума', sentGrammar: 'Шарҳи наҳвӣ',
+  sgPronoun: 'Замир', sgVerb: 'Феъл', sgPron: 'Талаффуз', sgMeaning: 'Маъно', sgTense: 'Замон / шакл', sgPerson: 'Шахс', sgNumber: 'Шумора',
+  sgGender: 'Ҷинс', sgState: 'Ҳолат', sgVoice: 'Навъ', sgSigha: 'Сиға', sgMasdar: 'Масдар', sgWazn: 'Вазн', sgBab: 'Боб',
+  sighaHint: 'Ба ҳар сатр пахш кунед — саҳифаи шарҳи сиға кушода мешавад.'
+})
+Object.assign(ARB_T.ru, {
+  copied: 'Скопировано', copyFail: 'Не удалось скопировать', copy: 'Копировать', copyAll: 'Копировать всё', copyForm: 'Копировать форму', copyTable: 'Копировать таблицу',
+  tabSent: '🧱 Предложение',
+  testNouns: 'Тест: имена', testVerbs: 'Тест: глаголы', testNahw: 'Тест: грамматика', testAll: 'Общий тест',
+  levelAll: 'Все', levelEasy: 'Лёгкий', levelMid: 'Средний', levelHard: 'Сложный',
+  sentTask: 'Расставьте слова в правильном порядке', sentEmpty: 'Нажимайте на слова', sentCheck: 'Проверить', sentReset: 'Сначала',
+  sentTr: 'Перевод', sentGrammar: 'Грамматический разбор',
+  sgPronoun: 'Местоимение', sgVerb: 'Глагол', sgPron: 'Произношение', sgMeaning: 'Значение', sgTense: 'Время / форма', sgPerson: 'Лицо', sgNumber: 'Число',
+  sgGender: 'Род', sgState: 'Состояние', sgVoice: 'Залог', sgSigha: 'Сыга', sgMasdar: 'Масдар', sgWazn: 'Вазн', sgBab: 'Порода',
+  sighaHint: 'Нажмите на строку — откроется страница разбора формы.'
+})
+
+/** Тавсифи сиға: шахс/шумора/ҷинс/ҳолат */
+function arbSighaParts(person, lang) {
+  const ru = lang === 'ru'
+  const p = person[0]
+  const num = p === '1' ? person[1] : person[2]
+  const gen = p === '1' ? '' : person[1]
+  const T = (a, b) => (ru ? b : a)
+  const personName = { 1: T('аввал', 'первое'), 2: T('дуввум', 'второе'), 3: T('сеюм', 'третье') }[p]
+  const state = { 1: T('мутакаллим', 'говорящий (мутакаллим)'), 2: T('мухотаб', 'собеседник (мухотаб)'), 3: T('ғоиб', 'отсутствующий (ғоиб)') }[p]
+  const number = { s: T('воҳид (танҳо)', 'единственное'), d: T('тасния (ду)', 'двойственное'), p: T('ҷамъ', 'множественное') }[num]
+  const gender = gen === 'm' ? T('музаккар', 'мужской') : gen === 'f' ? T('муаннас', 'женский') : T('музаккар ва муаннас', 'общий')
+  return { personName, state, number, gender, sigha: [number, gen ? gender : '', state].filter(Boolean).join(' · ') }
+}
+
+const ARB_KIND_NOTE = {
+  past: ['Мозӣ амали анҷомёфтаро мегӯяд. Дар охир ҳарфҳои замир меоянд (ـتُ، ـتَ، ـنَا ва ғ.).', 'Прошедшее — завершённое действие. В конце добавляются окончания лица (ـتُ، ـتَ، ـنَا и т.д.).'],
+  ind: ['Музореъ амали ҳозира ё оянда. Ҳарфи аввал (أ، ن، ي، ت) шахсро нишон медиҳад; ҳолати рафъ — замма.', 'Настоящее/будущее. Первая буква (أ، ن، ي، ت) указывает лицо; рафъ — замма.'],
+  sub: ['Музореъи мансуб (баъди أَنْ، لَنْ ва ғ.): охир бо фатҳа.', 'Мудари мансуб (после أَنْ، لَنْ и др.): конец с фатхой.'],
+  juss: ['Музореъи маҷзум (баъди لَمْ، лом-и амр, «لَا»-и наҳй): охир бо сукун ё ҳазфи нун.', 'Мудари маджзум (после لَمْ، лям приказа, «لَا» запрета): конец с сукуном или без нуна.'],
+  jahd: ['Ҷаҳд: لَمْ + музореъи маҷзум — инкори амали гузашта.', 'Джахд: لَمْ + маджзум — отрицание прошедшего действия.'],
+  nafy: ['Нафй: لَا + музореъи марфӯъ — инкори ҳозира/оянда; لَنْ + мансуб — инкори оянда.', 'Нафй: لَا + марфу — отрицание настоящего/будущего; لَنْ + мансуб — отрицание будущего.'],
+  lan: ['لَنْ + музореъи мансуб — инкори оянда.', 'لَنْ + мансуб — отрицание будущего.'],
+  nahy: ['Наҳй: لَا + музореъи маҷзум — манъ кардан.', 'Нахй: لَا + маджзум — запрет.'],
+  imp: ['Амр аз музореъи мухотаб: ҳарфи музореат меафтад, охир сокин; ҳамзаи васл агар лозим.', 'Повелительное от мудари 2-го лица: отбрасывается префикс, сукун на конце; хамзат аль-васль при необходимости.'],
+  amrg: ['Амри бо «лом»: لِ + музореъи маҷзум барои ғоиб ва мутакаллим.', 'Повелительное с «лям»: لِ + маджзум для 3-го и 1-го лица.']
+}
+
 const ARB_COMP = {
   nahy: { part: 'لَا ', src: 'juss', mood: 'juss', order: 'imp' },
   jahd: { part: 'لَمْ ', src: 'juss', mood: 'juss', order: 'all' },
@@ -4791,7 +4841,7 @@ function arbQuizPool() {
   return out
 }
 
-function arbMakeQuestion(lang) {
+function arbMakeQuestion(lang, mode = 'all', level = 'all') {
   const ru = lang === 'ru'
   const T = (tg, rus) => (ru ? rus : tg)
   const pool = arbQuizPool()
@@ -4864,58 +4914,348 @@ function arbMakeQuestion(lang) {
     }
   ]
 
-  const staticQ = () => {
-    const row = pick(ARB_STATIC_QA)
+  const staticQ = bank => () => {
+    const row = pick(bank)
     const q = ru ? row[3] : row[0]
     const a = ru ? row[4] : row[1]
     const w = ru ? row[5] : row[2]
     return { title: q, text: '', answer: a, options: arbShuffle([a, ...w]), arText: false, optRtl: false }
   }
-
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const roll = Math.random()
-    const made = roll < 0.22 ? staticQ() : (pick(gens)() || null)
+  const LV = ['e', 'e', 'e', 'm', 'm', 'm', 'm', 'm', 'm', 'h', 'h', 'h', 'h', 'h', 'h', 'm', 'h', 'm', 'h']
+  const byLevel = gens.filter((g, i) => level === 'all' || LV[i] === level)
+  const verbPool = byLevel.length ? byLevel : gens
+  const nounQ = () => arbNounQuestion(lang)
+  const nahwQ = staticQ(ARB_NAHW_QA)
+  const sarfQ = staticQ(ARB_STATIC_QA)
+  const sources = {
+    verbs: [...verbPool, sarfQ],
+    nouns: [nounQ],
+    nahw: [nahwQ],
+    all: [...verbPool, sarfQ, nounQ, nounQ, nahwQ, nahwQ]
+  }
+  const list = sources[mode] || sources.all
+  for (let attempt = 0; attempt < 14; attempt += 1) {
+    const made = pick(list)()
     if (made && made.options.length >= 3 && new Set(made.options).size === made.options.length) return made
   }
-  return staticQ()
+  return staticQ(mode === 'nahw' ? ARB_NAHW_QA : ARB_STATIC_QA)()
+}
+
+/* ---------- нусхабардорӣ (Clipboard API + fallback барои WebView) ---------- */
+async function arbCopyText(text) {
+  const value = String(text || '')
+  if (!value) return false
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value)
+      return true
+    }
+  } catch (error) { /* ба fallback мегузарем */ }
+  try {
+    const area = document.createElement('textarea')
+    area.value = value
+    area.setAttribute('readonly', '')
+    area.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0'
+    document.body.appendChild(area)
+    area.focus()
+    area.select()
+    area.setSelectionRange(0, value.length)
+    const ok = document.execCommand('copy')
+    document.body.removeChild(area)
+    return !!ok
+  } catch (error) {
+    return false
+  }
+}
+
+/* ---------- саволҳои наҳв ---------- */
+const ARB_NAHW_QA = [
+  ['Калима ба чанд қисм тақсим мешавад?', 'Се: исм, феъл, ҳарф', ['Ду: исм ва феъл', 'Чор: исм, феъл, ҳарф, ҳол', 'Панҷ'], 'На сколько частей делится слово?', 'Три: имя, глагол, частица', ['Две: имя и глагол', 'Четыре', 'Пять']],
+  ['Кадом яке аломати исм аст?', 'Танвин: كِتَابٌ', ['Таи сокин дар охир: ضَرَبَتْ', 'Нуни таъкид', 'Ҳарфи «سَ» дар аввал'], 'Что является признаком имени?', 'Танвин: كِتَابٌ', ['Сукунная «та» в конце: ضَرَبَتْ', 'Нун усиления', 'Буква «سَ» в начале']],
+  ['Мубтадо чист?', 'Исме, ки ҷумлаи исмияро оғоз мекунад ва марфӯъ аст', ['Феъли аввали ҷумла', 'Исми мансуб баъди феъл', 'Ҳарфи ҷарр'], 'Что такое мубтада?', 'Имя, с которого начинается именное предложение; оно в рафъ', ['Первый глагол предложения', 'Имя в насбе после глагола', 'Предлог']],
+  ['Дар ҷумлаи «اَلْبَيْتُ كَبِيرٌ» мубтадо кадом аст?', 'اَلْبَيْتُ', ['كَبِيرٌ', 'Ҳарду', 'Ҳеҷ кадом'], 'В предложении «اَلْبَيْتُ كَبِيرٌ» что мубтада?', 'اَلْبَيْتُ', ['كَبِيرٌ', 'Оба слова', 'Ни одно']],
+  ['Дар ҷумлаи «اَلْبَيْتُ كَبِيرٌ» хабар кадом аст?', 'كَبِيرٌ', ['اَلْبَيْتُ', 'Ҳарду', 'Ҳеҷ кадом'], 'В предложении «اَلْبَيْتُ كَبِيرٌ» что хабар?', 'كَبِيرٌ', ['اَلْبَيْتُ', 'Оба слова', 'Ни одно']],
+  ['Дар «كَتَبَ الطَّالِبُ الدَّرْسَ» фоил кадом аст?', 'اَلطَّالِبُ', ['اَلدَّرْسَ', 'كَتَبَ', 'Ҳеҷ кадом'], 'В «كَتَبَ الطَّالِبُ الدَّرْسَ» что фаъиль?', 'اَلطَّالِبُ', ['اَلدَّرْسَ', 'كَتَبَ', 'Ни одно']],
+  ['Дар «كَتَبَ الطَّالِبُ الدَّرْسَ» мафъул биҳ кадом аст?', 'اَلدَّرْسَ', ['اَلطَّالِبُ', 'كَتَبَ', 'Ҳеҷ кадом'], 'В «كَتَبَ الطَّالِبُ الدَّرْسَ» что мафъуль бихи?', 'اَلدَّرْسَ', ['اَلطَّالِبُ', 'كَتَبَ', 'Ни одно']],
+  ['Фоил дар кадом ҳолати иъробӣ меояд?', 'Марфӯъ (замма)', ['Мансуб (фатҳа)', 'Маҷрур (кася)', 'Маҷзум (сукун)'], 'В каком падеже стоит фаъиль?', 'Марфӯъ (замма)', ['Мансуб (фатха)', 'Маджрур (касра)', 'Маджзум (сукун)']],
+  ['Мафъул биҳ дар кадом ҳолат меояд?', 'Мансуб (фатҳа)', ['Марфӯъ (замма)', 'Маҷрур (кася)', 'Маҷзум (сукун)'], 'В каком падеже стоит мафъуль бихи?', 'Мансуб (фатха)', ['Марфӯъ (замма)', 'Маджрур (касра)', 'Маджзум (сукун)']],
+  ['Мудоф илайҳ дар кадом ҳолат меояд?', 'Маҷрур (кася)', ['Марфӯъ (замма)', 'Мансуб (фатҳа)', 'Маҷзум (сукун)'], 'В каком падеже стоит мудаф илейхи?', 'Маджрур (касра)', ['Марфӯъ (замма)', 'Мансуб (фатха)', 'Маджзум (сукун)']],
+  ['Кадом яке ҳарфи ҷарр нест?', 'هَلْ', ['مِنْ', 'فِي', 'عَلَى'], 'Что из перечисленного не предлог (харф джарр)?', 'هَلْ', ['مِنْ', 'فِي', 'عَلَى']],
+  ['«كَانَ» бо мубтадо ва хабар чӣ мекунад?', 'Мубтадоро марфӯъ ва хабарро мансуб мекунад', ['Мубтадоро мансуб ва хабарро марфӯъ мекунад', 'Ҳардуро маҷрур мекунад', 'Ҳардуро маҷзум мекунад'], 'Что делает «كَانَ» с мубтада и хабаром?', 'Мубтада в рафъе, хабар в насбе', ['Мубтада в насбе, хабар в рафъе', 'Оба в джарре', 'Оба в джазме']],
+  ['«إِنَّ» бо мубтадо ва хабар чӣ мекунад?', 'Исмро мансуб ва хабарро марфӯъ мекунад', ['Исмро марфӯъ ва хабарро мансуб мекунад', 'Ҳардуро маҷрур мекунад', 'Ҳеҷ кор намекунад'], 'Что делает «إِنَّ»?', 'Ставит исм в насб, а хабар в рафъ', ['Исм в рафъ, хабар в насб', 'Оба в джарр', 'Ничего не делает']],
+  ['Ҷумлаи «ذَهَبَ الْوَلَدُ» чӣ ҷумла аст?', 'Феълия (бо феъл оғоз шудааст)', ['Исмия', 'Шарт', 'Нидо'], 'Что за предложение «ذَهَبَ الْوَلَدُ»?', 'Глагольное (начинается с глагола)', ['Именное', 'Условное', 'Звательное']],
+  ['Ҷумлаи «اَلْوَلَدُ ذَاهِبٌ» чӣ ҷумла аст?', 'Исмия (бо исм оғоз шудааст)', ['Феълия', 'Шарт', 'Нидо'], 'Что за предложение «اَلْوَلَدُ ذَاهِبٌ»?', 'Именное (начинается с имени)', ['Глагольное', 'Условное', 'Звательное']],
+  ['Наът (сифат) бо мансуб дар чӣ мувофиқат мекунад?', 'Дар иъроб, ҷинс, шумора ва маърифа/накира', ['Танҳо дар ҷинс', 'Танҳо дар шумора', 'Ҳеҷ чиз'], 'В чём наът согласуется с определяемым?', 'В падеже, роде, числе и определённости', ['Только в роде', 'Только в числе', 'Ни в чём']],
+  ['Ҳол чист?', 'Исми мансуб, ки ҳолати соҳибро ҳангоми амал баён мекунад: جَاءَ زَيْدٌ رَاكِبًا', ['Исми марфӯъ, ки феълро оғоз мекунад', 'Ҳарфи ҷарр', 'Феъли амр'], 'Что такое халь?', 'Имя в насбе, описывающее состояние при действии: جَاءَ زَيْدٌ رَاكِبًا', ['Имя в рафъе, начинающее предложение', 'Предлог', 'Повелительный глагол']],
+  ['Тамйиз чист?', 'Исми мансуб, ки мубҳамиро равшан мекунад: عِشْرُونَ كِتَابًا', ['Исми марфӯъ, ки феълро оғоз мекунад', 'Ҳарфи ҷарр', 'Феъли амр'], 'Что такое тамйиз?', 'Имя в насбе, уточняющее неопределённое: عِشْرُونَ كِتَابًا', ['Имя в рафъе, начинающее предложение', 'Предлог', 'Повелительный глагол']],
+  ['Иъроб чист?', 'Тағйири охири калима бо тағйири омил', ['Ҳамеша собит будани охири калима', 'Навъи ҳарфи ҷарр', 'Ном барои феъл'], 'Что такое и\'раб?', 'Изменение конца слова в зависимости от омиля', ['Постоянство конца слова', 'Вид предлога', 'Название глагола']],
+  ['Бино чист?', 'Дар як ҳолат собит мондани охири калима', ['Тағйири охири калима', 'Навъи мубтадо', 'Ҳарфи нидо'], 'Что такое бина?', 'Постоянная форма конца слова', ['Изменение конца слова', 'Вид мубтада', 'Частица обращения']],
+  ['Нишони рафъ дар музореъ чист?', 'Замма', ['Фатҳа', 'Кася', 'Сукун'], 'Какой признак рафъ у мудари?', 'Замма', ['Фатха', 'Касра', 'Сукун']],
+  ['Нишони насб дар музореъ чист?', 'Фатҳа', ['Замма', 'Кася', 'Ҳазфи ҳарф дар ҳама ҳолат'], 'Какой признак насб у мудари?', 'Фатха', ['Замма', 'Касра', 'Опущение буквы всегда']],
+  ['Нишони ҷазм дар музореъи саҳеҳ чист?', 'Сукун', ['Замма', 'Фатҳа', 'Кася'], 'Какой признак джазм у правильного мудари?', 'Сукун', ['Замма', 'Фатха', 'Касра']],
+  ['Кадом яке марфӯъот аст?', 'Мубтадо, хабар, фоил', ['Мафъул биҳ, ҳол, тамйиз', 'Мудоф илайҳ, маҷрур бо ҳарфи ҷарр', 'Феъли музореъи маҷзум'], 'Что относится к марфуат?', 'Мубтада, хабар, фаъиль', ['Мафъуль бихи, халь, тамйиз', 'Мудаф илейхи, имя после предлога', 'Мажзум мудари']],
+  ['Кадом яке мансубот аст?', 'Мафъул биҳ, ҳол, тамйиз', ['Мубтадо, хабар, фоил', 'Мудоф илайҳ', 'Ҳарфи ҷарр'], 'Что относится к мансубат?', 'Мафъуль бихи, халь, тамйиз', ['Мубтада, хабар, фаъиль', 'Мудаф илейхи', 'Предлог']],
+  ['Кадом яке маҷрурот аст?', 'Исм баъди ҳарфи ҷарр ва мудоф илайҳ', ['Мубтадо ва хабар', 'Фоил ва мафъул', 'Ҳол ва тамйиз'], 'Что относится к маджрурат?', 'Имя после предлога и мудаф илейхи', ['Мубтада и хабар', 'Фаъиль и мафъуль', 'Халь и тамйиз']],
+  ['Кадом яке маҷзумот аст?', 'Музореъ баъди ҷозим: لَمْ يَكْتُبْ', ['Мубтадо', 'Мафъул биҳ', 'Мудоф илайҳ'], 'Что относится к маджзумат?', 'Мудари после джазима: لَمْ يَكْتُبْ', ['Мубтада', 'Мафъуль бихи', 'Мудаф илейхи']],
+  ['«لَيْسَ» бо хабар чӣ мекунад?', 'Хабарро мансуб мекунад: لَيْسَ الْبَابُ مَفْتُوحًا', ['Хабарро марфӯъ мекунад', 'Хабарро маҷрур мекунад', 'Хабарро ҳазф мекунад'], 'Что «لَيْسَ» делает с хабаром?', 'Ставит в насб: لَيْسَ الْبَابُ مَفْتُوحًا', ['Ставит в рафъ', 'Ставит в джарр', 'Опускает']],
+  ['Дар «اَلْمُعَلِّمُ فِي الْمَدْرَسَةِ» хабар кадом аст?', 'فِي الْمَدْرَسَةِ (шибҳи ҷумла: ҷор ва маҷрур)', ['اَلْمُعَلِّمُ', 'Ҳеҷ хабаре нест', 'Танҳо الْمَدْرَسَةِ'], 'В «اَلْمُعَلِّمُ فِي الْمَدْرَسَةِ» что хабар?', 'فِي الْمَدْرَسَةِ (шибх джумля: предлог с маджрур)', ['اَلْمُعَلِّمُ', 'Хабара нет', 'Только الْمَدْرَسَةِ']]
+]
+
+/* ---------- саволҳои исмҳо ва ҳарфҳо ---------- */
+function arbNounQuestion(lang) {
+  const ru = lang === 'ru'
+  const T = (tg, rus) => (ru ? rus : tg)
+  const pick = list => list[Math.floor(Math.random() * list.length)]
+  const meaningOf = (tg, rus) => String((ru ? (rus || tg) : (tg || rus)) || '').split(/\s[—–-]\s|[,;(]/)[0].trim()
+  const nouns = ARB_NOUNS.filter(n => n[3] && n[4])
+  const parts = ARB_PARTICLES.filter(p => p[2] && p[3])
+  const makers = [
+    () => {
+      const t = pick(nouns)
+      const answer = meaningOf(t[3], t[4])
+      const wrong = [...new Set(arbShuffle(nouns).map(n => meaningOf(n[3], n[4])).filter(m => m && m !== answer))].slice(0, 3)
+      return { title: T('Маънои ин исмро интихоб кунед', 'Выберите значение этого имени'), text: t[0], answer, options: arbShuffle([answer, ...wrong]), arText: true, optRtl: false }
+    },
+    () => {
+      const t = pick(nouns)
+      const wrong = arbShuffle(nouns.filter(n => n[0] !== t[0])).slice(0, 3).map(n => n[0])
+      return { title: T('Калимаи арабии ин маъноро интихоб кунед', 'Выберите арабское слово для значения'), text: meaningOf(t[3], t[4]), answer: t[0], options: arbShuffle([t[0], ...wrong]), arText: false, optRtl: true }
+    },
+    () => {
+      const list = nouns.filter(n => n[1])
+      const t = pick(list)
+      const wrong = arbShuffle(list.filter(n => n[1] !== t[1])).slice(0, 3).map(n => n[1])
+      return { title: T('Ҷамъи ин исмро интихоб кунед', 'Выберите множественное число'), text: t[0], answer: t[1], options: arbShuffle([t[1], ...wrong]), arText: true, optRtl: true }
+    },
+    () => {
+      const list = nouns.filter(n => n[1])
+      const t = pick(list)
+      const wrong = arbShuffle(list.filter(n => n[0] !== t[0])).slice(0, 3).map(n => n[0])
+      return { title: T('Танҳои ин ҷамъро интихоб кунед', 'Выберите единственное число'), text: t[1], answer: t[0], options: arbShuffle([t[0], ...wrong]), arText: true, optRtl: true }
+    },
+    () => {
+      const list = nouns.filter(n => n[5])
+      if (list.length < 4) return null
+      const t = pick(list)
+      const wrong = arbShuffle(list.filter(n => n[5] !== t[5])).slice(0, 3).map(n => n[5])
+      return { title: T('Тасниян ин исмро интихоб кунед', 'Выберите двойственное число'), text: t[0], answer: t[5], options: arbShuffle([t[5], ...wrong]), arText: true, optRtl: true }
+    },
+    () => {
+      const t = pick(parts)
+      const answer = meaningOf(t[2], t[3])
+      const wrong = [...new Set(arbShuffle(parts).map(p => meaningOf(p[2], p[3])).filter(m => m && m !== answer))].slice(0, 3)
+      return { title: T('Маънои ин ҳарфро интихоб кунед', 'Выберите значение этой частицы'), text: t[0], answer, options: arbShuffle([answer, ...wrong]), arText: true, optRtl: false }
+    }
+  ]
+  for (let i = 0; i < 10; i += 1) {
+    const made = pick(makers)()
+    if (made && made.options.length >= 4 && made.answer) return made
+  }
+  return null
+}
+
+const ARB_SENTENCES = [
+  ['ذَهَبَ الْوَلَدُ إِلَى الْمَدْرَسَةِ', 'Писар ба мактаб рафт.', 'Мальчик пошёл в школу.', 'e', 'Ҷумлаи феълия: феъл (ذَهَبَ) + фоил (الْوَلَدُ, марфӯъ) + ҷор ва маҷрур (إِلَى الْمَدْرَسَةِ).', 'Глагольное предложение: глагол (ذَهَبَ) + фаъиль (الْوَلَدُ, рафъ) + предлог с маджрур (إِلَى الْمَدْرَسَةِ).'],
+  ['كَتَبَ الطَّالِبُ الدَّرْسَ', 'Донишҷӯ дарсро навишт.', 'Ученик написал урок.', 'e', 'Феъл (كَتَبَ) + фоил (الطَّالِبُ, марфӯъ) + мафъул биҳ (الدَّرْسَ, мансуб).', 'Глагол (كَتَبَ) + фаъиль (الطَّالِبُ, рафъ) + мафъуль бихи (الدَّرْسَ, насб).'],
+  ['يَقْرَأُ الْوَلَدُ الْكِتَابَ', 'Писар китобро мехонад.', 'Мальчик читает книгу.', 'e', 'Феъли музореъи марфӯъ + фоил + мафъул биҳ (мансуб).', 'Мудари в рафъе + фаъиль + мафъуль бихи (насб).'],
+  ['فَتَحَ الرَّجُلُ الْبَابَ', 'Мард дарро кушод.', 'Мужчина открыл дверь.', 'e', 'Феъл + фоил (الرَّجُلُ) + мафъул биҳ (الْبَابَ).', 'Глагол + фаъиль (الرَّجُلُ) + мафъуль бихи (الْبَابَ).'],
+  ['الْبَيْتُ كَبِيرٌ', 'Хона калон аст.', 'Дом большой.', 'e', 'Ҷумлаи исмия: мубтадо (الْبَيْتُ) + хабар (كَبِيرٌ), ҳарду марфӯъ.', 'Именное предложение: мубтада (الْبَيْتُ) + хабар (كَبِيرٌ), оба в рафъе.'],
+  ['الْمُعَلِّمُ فِي الْمَدْرَسَةِ', 'Муаллим дар мактаб аст.', 'Учитель в школе.', 'e', 'Мубтадо (الْمُعَلِّمُ) + хабар шибҳи ҷумла (فِي الْمَدْرَسَةِ).', 'Мубтада (الْمُعَلِّمُ) + хабар — шибх джумля (فِي الْمَدْرَسَةِ).'],
+  ['هَذَا كِتَابٌ جَدِيدٌ', 'Ин китоби нав аст.', 'Это новая книга.', 'e', 'Мубтадо (هَذَا, исми ишора) + хабар (كِتَابٌ) + наът (جَدِيدٌ).', 'Мубтада (هَذَا, указательное) + хабар (كِتَابٌ) + наът (جَدِيدٌ).'],
+  ['شَرِبَ الطِّفْلُ الْمَاءَ', 'Кӯдак об нӯшид.', 'Ребёнок выпил воду.', 'e', 'Феъл + фоил (الطِّفْلُ) + мафъул биҳ (الْمَاءَ).', 'Глагол + фаъиль (الطِّفْلُ) + мафъуль бихи (الْمَاءَ).'],
+  ['سَمِعَ الطَّالِبُ الْخَبَرَ', 'Донишҷӯ хабарро шунид.', 'Ученик услышал новость.', 'e', 'Феъл + фоил + мафъул биҳ.', 'Глагол + фаъиль + мафъуль бихи.'],
+  ['خَرَجَ الْوَلَدُ مِنَ الْبَيْتِ', 'Писар аз хона берун шуд.', 'Мальчик вышел из дома.', 'e', 'Феъл + фоил + ҷор ва маҷрур (مِنَ الْبَيْتِ).', 'Глагол + фаъиль + предлог с маджрур (مِنَ الْبَيْتِ).'],
+  ['فِي الْبَيْتِ كِتَابٌ', 'Дар хона китобе ҳаст.', 'В доме есть книга.', 'm', 'Хабари муқаддам шибҳи ҷумла (فِي الْبَيْتِ) + мубтадои муаххар накира (كِتَابٌ).', 'Хабар впереди — шибх джумля (فِي الْبَيْتِ), мубтада позади — неопределённое (كِتَابٌ).'],
+  ['كَانَ الْجَوُّ جَمِيلًا', 'Ҳаво зебо буд.', 'Погода была прекрасной.', 'm', '«كَانَ»: исм марфӯъ (الْجَوُّ), хабар мансуб (جَمِيلًا).', '«كَانَ»: исм в рафъе (الْجَوُّ), хабар в насбе (جَمِيلًا).'],
+  ['إِنَّ الْعِلْمَ نُورٌ', 'Албатта илм нур аст.', 'Воистину знание — свет.', 'm', '«إِنَّ»: исм мансуб (الْعِلْمَ), хабар марфӯъ (نُورٌ).', '«إِنَّ»: исм в насбе (الْعِلْمَ), хабар в рафъе (نُورٌ).'],
+  ['الطَّالِبَةُ تَكْتُبُ الرِّسَالَةَ', 'Донишҷӯдухтар нома менависад.', 'Ученица пишет письмо.', 'm', 'Мубтадо (الطَّالِبَةُ) + хабар ҷумлаи феълия (تَكْتُبُ الرِّسَالَةَ).', 'Мубтада (الطَّالِبَةُ) + хабар — глагольное предложение (تَكْتُبُ الرِّسَالَةَ).'],
+  ['ذَهَبَ الرِّجَالُ إِلَى الْمَسْجِدِ', 'Мардон ба масҷид рафтанд.', 'Мужчины пошли в мечеть.', 'm', 'Фоили ҷамъи шикаста (الرِّجَالُ) — феъл бо шакли воҳид меояд.', 'Фаъиль — ломаное мн. число (الرِّجَالُ); глагол стоит в единственном числе.'],
+  ['هَلْ جَلَسَ الْمُعَلِّمُ عَلَى الْكُرْسِيِّ', 'Оё муаллим бар курсӣ нишаст?', 'Сел ли учитель на стул?', 'm', 'هَلْ — ҳарфи истифҳом; баъд ҷумлаи феълия.', 'هَلْ — вопросительная частица; далее глагольное предложение.'],
+  ['لَيْسَ الْبَابُ مَفْتُوحًا', 'Дар кушода нест.', 'Дверь не открыта.', 'h', '«لَيْسَ»: исм марфӯъ (الْبَابُ), хабар мансуб (مَفْتُوحًا).', '«لَيْسَ»: исм в рафъе (الْبَابُ), хабар в насбе (مَفْتُوحًا).'],
+  ['الْعِلْمُ نُورٌ وَالْجَهْلُ ظَلَامٌ', 'Илм нур аст ва ҷаҳл торикӣ.', 'Знание — свет, а невежество — тьма.', 'h', 'Ду ҷумлаи исмия бо «وَ» пайваст шудаанд.', 'Два именных предложения, соединённые «وَ».'],
+  ['نَصَرَ اللَّهُ الْمُؤْمِنِينَ', 'Аллоҳ мӯъминонро ёрӣ дод.', 'Аллах помог верующим.', 'h', 'Феъл + фоил (اللَّهُ) + мафъул биҳи мансуб бо «ـِينَ» (الْمُؤْمِنِينَ, ҷамъи музаккари солим).', 'Глагол + фаъиль (اللَّهُ) + мафъуль бихи в насбе с окончанием «ـِينَ» (الْمُؤْمِنِينَ).']
+]
+
+function ArbSentences({ tt, lang }) {
+  const ru = lang === 'ru'
+  const [level, setLevel] = useState('all')
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * ARB_SENTENCES.length))
+  const [shuffled, setShuffled] = useState(null)
+  const [chosen, setChosen] = useState([])
+  const [state, setState] = useState('')
+  const [score, setScore] = useState({ ok: 0, all: 0 })
+  const sentence = ARB_SENTENCES[index]
+  const words = useMemo(() => sentence[0].split(' '), [sentence])
+  useEffect(() => {
+    let order = arbShuffle(words.map((word, i) => ({ word, id: i })))
+    if (words.length > 1 && order.every((item, i) => item.id === i)) order = [...order].reverse()
+    setShuffled(order)
+    setChosen([])
+    setState('')
+  }, [words])
+  const nextSentence = () => {
+    const pool = ARB_SENTENCES.map((s, i) => ({ s, i })).filter(({ s, i }) => i !== index && (level === 'all' || s[3] === level))
+    const list = pool.length ? pool : ARB_SENTENCES.map((s, i) => ({ s, i }))
+    setIndex(list[Math.floor(Math.random() * list.length)].i)
+  }
+  const used = new Set(chosen.map(item => item.id))
+  const check = () => {
+    const ok = chosen.map(item => item.word).join(' ') === sentence[0]
+    setState(ok ? 'ok' : 'no')
+    setScore(v => ({ ok: v.ok + (ok ? 1 : 0), all: v.all + 1 }))
+  }
+  if (!shuffled) return null
+  return (
+    <div className="arb-drill">
+      <div className="arb-seg arb-seg-small">
+        {[['all', tt.levelAll], ['e', tt.levelEasy], ['m', tt.levelMid], ['h', tt.levelHard]].map(([id, label]) => (
+          <button key={id} type="button" className={level === id ? 'active' : ''} onClick={() => setLevel(id)}>{label}</button>
+        ))}
+      </div>
+      <p className="arb-note">{tt.drillScore}: {score.ok} / {score.all}</p>
+      <div className="arb-verb-card">
+        <h4 className="arb-group">{tt.sentTask}</h4>
+        <p className="arb-meaning">{ru ? sentence[2] : sentence[1]}</p>
+        <div className="arb-sent-answer" dir="rtl">
+          {chosen.length === 0 && <span className="arb-note">{tt.sentEmpty}</span>}
+          {chosen.map(item => (
+            <button key={item.id} type="button" className="arb-chip" disabled={!!state} onClick={() => setChosen(chosen.filter(c => c.id !== item.id))}>{item.word}</button>
+          ))}
+        </div>
+      </div>
+      <div className="arb-chips" dir="rtl">
+        {shuffled.map(item => (
+          <button key={item.id} type="button" className="arb-chip" disabled={used.has(item.id) || !!state} onClick={() => setChosen([...chosen, item])}>{item.word}</button>
+        ))}
+      </div>
+      {!state && (
+        <div className="arb-edit-actions">
+          <button type="button" className="primary-button" disabled={chosen.length !== words.length} onClick={check}>{tt.sentCheck}</button>
+          <button type="button" className="secondary-button" onClick={() => setChosen([])}>{tt.sentReset}</button>
+        </div>
+      )}
+      {state && (
+        <div className="arb-verb-card">
+          <p><b>{state === 'ok' ? tt.drillOk : tt.drillNo}</b></p>
+          <div className="arb-verb-main" dir="rtl"><span className="arb-verb-past">{sentence[0]}</span></div>
+          <div className="arb-verb-tr">{arbTranslit(sentence[0])}</div>
+          <p className="arb-meaning">{tt.sentTr}: {ru ? sentence[2] : sentence[1]}</p>
+          <p className="arb-note">{tt.sentGrammar}: {ru ? sentence[5] : sentence[4]}</p>
+          <div className="arb-edit-actions">
+            <button type="button" className="secondary-button" onClick={() => arbCopyText(sentence[0])}>📋 {tt.copy}</button>
+            <button type="button" className="primary-button" onClick={nextSentence}>{tt.drillNext}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ArbSighaSheet({ info, tt, lang, onClose, onCopy }) {
+  if (!info) return null
+  const ru = lang === 'ru'
+  const rows = [
+    [tt.sgPronoun, info.pronoun, true],
+    [tt.sgVerb, info.form, true],
+    [tt.sgPron, info.translit],
+    [tt.sgMeaning, info.meaning],
+    [tt.sgTense, info.tense],
+    [tt.sgPerson, info.person],
+    [tt.sgNumber, info.number],
+    [tt.sgGender, info.gender],
+    [tt.sgState, info.state],
+    [tt.sgVoice, info.voice],
+    [tt.sgSigha, info.sigha],
+    [tt.sgMasdar, info.masdar, true],
+    [tt.sgWazn, info.wazn, true],
+    [tt.sgBab, info.bab]
+  ].filter(row => row[1])
+  const text = rows.map(row => `${row[0]}: ${row[1]}`).join('\n') + (info.note ? `\n${info.note}` : '')
+  return (
+    <div className="arb-sheet-back" onClick={onClose}>
+      <div className="arb-sheet" onClick={event => event.stopPropagation()}>
+        <div className="arb-sheet-head">
+          <h3 dir="rtl">{info.pronoun} — {info.form}</h3>
+          <button type="button" className="secondary-button" onClick={onClose}>✕</button>
+        </div>
+        <div className="arb-sheet-body">
+          {rows.map(row => (
+            <div className="arb-sheet-row" key={row[0]}>
+              <span>{row[0]}</span>
+              <b dir={row[2] ? 'rtl' : 'auto'}>{row[1]}</b>
+            </div>
+          ))}
+          {info.note && <p className="arb-note">{info.note}</p>}
+        </div>
+        <div className="arb-edit-actions">
+          <button type="button" className="primary-button" onClick={() => onCopy(info.form)}>📋 {tt.copyForm}</button>
+          <button type="button" className="secondary-button" onClick={() => onCopy(text)}>📋 {tt.copyAll}</button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function ArbDrill({ tt, lang }) {
-  const [q, setQ] = useState(() => arbMakeQuestion(lang))
+  const [mode, setMode] = useState('all')
+  const [level, setLevel] = useState('all')
+  const [q, setQ] = useState(() => arbMakeQuestion(lang, 'all', 'all'))
   const [picked, setPicked] = useState('')
   const [score, setScore] = useState({ ok: 0, all: 0 })
-  if (!q) return <p className="arb-note">—</p>
+  const last = useRef('')
+  const make = (m, l) => {
+    let next = arbMakeQuestion(lang, m, l)
+    for (let i = 0; i < 6 && next && `${next.title}|${next.text}|${next.answer}` === last.current; i += 1) next = arbMakeQuestion(lang, m, l)
+    if (next) last.current = `${next.title}|${next.text}|${next.answer}`
+    return next
+  }
+  const restart = (m, l) => { setMode(m); setLevel(l); setQ(make(m, l)); setPicked(''); setScore({ ok: 0, all: 0 }) }
   const answer = option => {
     if (picked) return
     setPicked(option)
     setScore(v => ({ ok: v.ok + (option === q.answer ? 1 : 0), all: v.all + 1 }))
   }
-  const next = () => { setQ(arbMakeQuestion(lang)); setPicked('') }
-  const title = q.title
-  const text = q.text
+  const next = () => { setQ(make(mode, level)); setPicked('') }
+  const modes = [['nouns', tt.testNouns], ['verbs', tt.testVerbs], ['nahw', tt.testNahw], ['all', tt.testAll]]
+  const levels = [['all', tt.levelAll], ['e', tt.levelEasy], ['m', tt.levelMid], ['h', tt.levelHard]]
   return (
     <div className="arb-drill">
-      <p className="arb-note">{tt.drillScore}: {score.ok} / {score.all}</p>
-      <div className="arb-verb-card">
-        <h4 className="arb-group">{title}</h4>
-        {text && <div className="arb-verb-main" dir={q.arText ? 'rtl' : 'ltr'}><span className="arb-verb-past">{text}</span></div>}
-      </div>
-      <div className="arb-babs">
-        {q.options.map(option => (
-          <button
-            key={option}
-            type="button"
-            dir={q.optRtl ? 'rtl' : 'auto'}
-            className={`arb-bab${picked ? (option === q.answer ? ' is-right' : option === picked ? ' is-wrong' : '') : ''}`}
-            onClick={() => answer(option)}
-          >{option}</button>
+      <div className="arb-seg">
+        {modes.map(([id, label]) => (
+          <button key={id} type="button" className={mode === id ? 'active' : ''} onClick={() => restart(id, level)}>{label}</button>
         ))}
       </div>
-      {picked && (
-        <div className="arb-edit-actions">
-          <span>{picked === q.answer ? tt.drillOk : tt.drillNo}</span>
-          <button type="button" className="primary-button" onClick={next}>{tt.drillNext}</button>
-        </div>
+      <div className="arb-seg arb-seg-small">
+        {levels.map(([id, label]) => (
+          <button key={id} type="button" className={level === id ? 'active' : ''} onClick={() => restart(mode, id)}>{label}</button>
+        ))}
+      </div>
+      {!q && <p className="arb-note">—</p>}
+      {q && (
+        <>
+          <p className="arb-note">{tt.drillScore}: {score.ok} / {score.all}</p>
+          <div className="arb-verb-card">
+            <h4 className="arb-group">{q.title}</h4>
+            {q.text && <div className="arb-verb-main" dir={q.arText ? 'rtl' : 'ltr'}><span className="arb-verb-past">{q.text}</span></div>}
+          </div>
+          <div className="arb-babs">
+            {q.options.map(option => (
+              <button
+                key={option}
+                type="button"
+                dir={q.optRtl ? 'rtl' : 'auto'}
+                className={`arb-bab${picked ? (option === q.answer ? ' is-right' : option === picked ? ' is-wrong' : '') : ''}`}
+                onClick={() => answer(option)}
+              >{option}</button>
+            ))}
+          </div>
+          {picked && (
+            <div className="arb-edit-actions">
+              <span>{picked === q.answer ? tt.drillOk : `${tt.drillNo} — ${q.answer}`}</span>
+              <button type="button" className="primary-button" onClick={next}>{tt.drillNext}</button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -5056,6 +5396,8 @@ function ArbWordEditor({ cat, initial, tt, busy, onSave, onCancel, onReset }) {
 function ArabicSection({ rows, lang, admin, db, notify, reload, lessons }) {
   const tt = ARB_T[lang] || ARB_T.tg
   const [tab, setTab] = useState('sarf')
+  const [sighaView, setSighaView] = useState(null)
+  const tableRef = useRef(null)
   const [query, setQuery] = useState('')
   const [submitted, setSubmitted] = useState('')
   const [hits, setHits] = useState(null)
@@ -5285,6 +5627,53 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessons }) {
 
   /* ---- намоиши ҷадвал ---- */
 
+  const doCopy = async text => {
+    const ok = await arbCopyText(text)
+    notify(ok ? tt.copied : tt.copyFail, ok ? 'success' : 'error')
+  }
+
+  const copyTable = () => {
+    const root = tableRef.current
+    if (!root) return
+    const lines = []
+    root.querySelectorAll('.arb-row').forEach(row => {
+      const head = row.querySelector('.arb-person-ar, .arb-person > span, .arb-label')
+      const words = [...row.querySelectorAll('.arb-word')].map(node => node.textContent.trim()).filter(Boolean)
+      if (words.length) lines.push(`${head ? head.textContent.trim() : ''} — ${words.join(' / ')}`.replace(/^ — /, ''))
+    })
+    doCopy(lines.join('\n'))
+  }
+
+  const openSigha = (kind, person, moodName, form) => {
+    const parts = arbSighaParts(person, lang)
+    const info0 = ARB_PERSONS[person]
+    const kindKey = ARB_COMP[kind] ? kind : (kind === 'past' ? 'past' : (moodName || 'ind'))
+    const tenseName = {
+      past: tt.past || 'Мозӣ', ind: tt.present || 'Музореъ', sub: tt.subj || 'Музореъи мансуб', juss: tt.jussive || 'Музореъи маҷзум',
+      jahd: tt.jahd || 'Ҷаҳд', nafy: tt.nafy || 'Нафй', lan: 'لَنْ', nahy: tt.nahy || 'Наҳй', imp: tt.amr || 'Амр', amrg: tt.amrGhaib || 'Амри бо лом'
+    }[kindKey] || kindKey
+    const noteList = ARB_KIND_NOTE[kindKey] || ARB_KIND_NOTE.ind
+    const verbMeaning = (verbInfo && (lang === 'ru' ? verbInfo.ru : verbInfo.tg)) || ''
+    const vnRaw = (verbInfo && verbInfo.masdar) || arbFirst(conj, 'vn') || ''
+    setSighaView({
+      pronoun: info0.ar,
+      form,
+      translit: arbTranslit(form),
+      meaning: verbMeaning ? `${lang === 'ru' ? info0.ru : info0.tg} — ${verbMeaning}` : (lang === 'ru' ? info0.ru : info0.tg),
+      tense: tenseName,
+      person: parts.personName,
+      number: parts.number,
+      gender: parts.gender,
+      state: parts.state,
+      voice: voice === 'pas' ? (lang === 'ru' ? 'страдательный (маҷҳул)' : 'маҷҳул') : (lang === 'ru' ? 'действительный (маълум)' : 'маълум'),
+      sigha: parts.sigha,
+      masdar: vnRaw ? arbAddTanwin(vnRaw) : '',
+      wazn: arbWaznLabel(current.wazn),
+      bab: `${arbWaznFull(current.wazn).n || ''}`,
+      note: noteList[lang === 'ru' ? 1 : 0]
+    })
+  }
+
   const renderForm = (item, kind, person, moodName, slot, key) => {
     const isEditing = editing === slot && key === 0
     const plain = item.form
@@ -5338,7 +5727,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessons }) {
         type="button"
         key={key}
         className={`arb-cell${item.edited ? ' is-edited' : ''}${admin ? ' is-editable' : ''}`}
-        onClick={() => startEdit(slot, plain)}
+        onClick={() => (admin ? startEdit(slot, plain) : openSigha(kind, person, moodName, plain))}
       >
         <span className="arb-word" dir="rtl">{pieces}</span>
         <span className="arb-tr">{arbTranslit(plain)}</span>
@@ -5374,6 +5763,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessons }) {
               <div className="arb-person">
                 <span className="arb-person-ar" dir="rtl">{row.info.ar}</span>
                 <span className="arb-person-tr">{lang === 'ru' ? row.info.ru : row.info.tg}</span>
+                <button type="button" className="arb-info-btn" aria-label="info" onClick={() => openSigha(kind, row.person, moodName, row.list[0].form)}>ⓘ</button>
               </div>
               <div className="arb-forms">
                 {row.list.map((item, index) => renderForm(item, kind, row.person, moodName, row.slot, index))}
@@ -5835,7 +6225,13 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessons }) {
           {admin && <p className="arb-note">{tt.adminHint}</p>}
         </div>
 
-        {renderTable()}
+        <div className="arb-copybar">
+          <button type="button" className="secondary-button" onClick={copyTable}>📋 {tt.copyTable}</button>
+          <button type="button" className="secondary-button" onClick={() => doCopy([(formsOf('past_3ms')[0] || {}).form, (formsOf('ind_3ms')[0] || {}).form, (verbInfo && verbInfo.masdar) ? arbAddTanwin(verbInfo.masdar) : ''].filter(Boolean).join(' — '))}>📋 {tt.copy}</button>
+        </div>
+        {!admin && ARB_VOICE_TABS.includes(tense) && <p className="arb-note">{tt.sighaHint}</p>}
+        <div ref={tableRef}>{renderTable()}</div>
+        <ArbSighaSheet info={sighaView} tt={tt} lang={lang} onClose={() => setSighaView(null)} onCopy={doCopy} />
         <p className="arb-note">{tt.tr} {tt.footer}</p>
       </>
     )
@@ -6040,6 +6436,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessons }) {
                   <div className="arb-tr">{arbTranslit(w.ar)}</div>
                 </div>
                 <div className="arb-wc-tags">
+                  <button type="button" className="arb-info-btn" aria-label="copy" onClick={() => doCopy([w.ar, w.plural, meaning].filter(Boolean).join(' — '))}>📋</button>
                   {isNoun && w.gender && <span className="arb-tag">{w.gender === 'f' ? tt.female : tt.male}</span>}
                   {type && <span className="arb-tag">{type}</span>}
                   {w.hidden && <span className="arb-tag">{ARB_T[lang === 'ru' ? 'ru' : 'tg'].adm.hidden}</span>}
@@ -6139,11 +6536,13 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessons }) {
         <button type="button" className={tab === 'theory' ? 'active' : ''} onClick={() => setTab('theory')}>{tt.tabTheory}</button>
         <button type="button" className={tab === 'nahw' ? 'active' : ''} onClick={() => setTab('nahw')}>{tt.tabNahw}</button>
         <button type="button" className={tab === 'drill' ? 'active' : ''} onClick={() => setTab('drill')}>{tt.tabDrill}</button>
+        <button type="button" className={tab === 'sent' ? 'active' : ''} onClick={() => setTab('sent')}>{tt.tabSent}</button>
         <button type="button" className={tab === 'lessons' ? 'active' : ''} onClick={() => setTab('lessons')}>{tt.tabLessons}</button>
       </div>
       {tab === 'sarf' && renderSarf()}
       {tab === 'babs' && <ArbBabPages tt={tt} lang={lang} openVerb={(root, wazn) => { setTab('sarf'); openVerb(root, wazn) }} />}
       {tab === 'drill' && <ArbDrill tt={tt} lang={lang} />}
+      {tab === 'sent' && <ArbSentences tt={tt} lang={lang} />}
       {tab === 'nahw' && renderTheory('nahw')}
       {tab === 'theory' && renderTheory('theory')}
       {tab === 'lessons' && <div className="arb-lessons">{lessons}</div>}
