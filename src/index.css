@@ -1528,3 +1528,20 @@ input[type='checkbox'] {
 /* ---- иштиқоқ: нишони қоида ва варақаҳо ---- */
 .arb-rule { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 8px; font-size: 10px; background: rgba(120, 120, 120, 0.18); opacity: 0.85; }
 .arb-seg { flex-wrap: wrap; }
+
+/* ---- нусхабардорӣ ва интихоби матн ---- */
+[class^="arb-"], [class*=" arb-"], .arb-word, .arb-vb, .arb-fa, .arb-tr, .arb-meaning {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+.arb-copybar { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.arb-info-btn { background: transparent; border: 0; color: inherit; cursor: pointer; font-size: 16px; padding: 2px 6px; opacity: 0.8; }
+.arb-sheet-back { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 1000; display: flex; align-items: flex-end; justify-content: center; }
+.arb-sheet { width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; background: var(--card-bg, #12261d); color: inherit; border-radius: 16px 16px 0 0; padding: 16px; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5); }
+.arb-sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.arb-sheet-head h3 { margin: 0; font-size: 22px; }
+.arb-sheet-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.arb-sheet-row span { opacity: 0.75; }
+.arb-sheet-row b { text-align: right; }
+.arb-sent-answer { min-height: 48px; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border: 1px dashed rgba(255, 255, 255, 0.3); border-radius: 10px; }
