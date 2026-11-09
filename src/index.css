@@ -1524,3 +1524,7 @@ input[type='checkbox'] {
 .arb-qa b { display: block; margin-top: 8px; font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: 24px; font-weight: 500; line-height: 1.7; }
 .arb-tabs { overflow-x: auto; flex-wrap: nowrap; }
 .arb-tabs button { white-space: nowrap; }
+
+/* ---- иштиқоқ: нишони қоида ва варақаҳо ---- */
+.arb-rule { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 8px; font-size: 10px; background: rgba(120, 120, 120, 0.18); opacity: 0.85; }
+.arb-seg { flex-wrap: wrap; }
