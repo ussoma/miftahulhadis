@@ -26,10 +26,15 @@ const DEFAULT_SECTIONS = [
   { slug: 'seerah', title: 'Сирати Расулуллоҳ ﷺ', icon: '🌙', description: 'Зиндагии Расулуллоҳ ﷺ', sort_order: 8, is_active: true },
   { slug: 'companions', title: 'Сирати саҳоба رضي الله عنهم', icon: '⭐', description: 'Зиндагии саҳоба', sort_order: 9, is_active: true },
   { slug: 'lessons', title: 'Дарсҳои Исломӣ', icon: '🎓', description: 'Дарсҳои фоидабахши исломӣ', sort_order: 10, is_active: true },
-  { slug: 'questions', title: 'Саволҳои Исломӣ', icon: '❔', description: 'Саволу ҷавобҳои исломӣ', sort_order: 11, is_active: true }
+  { slug: 'questions', title: 'Саволҳои Исломӣ', icon: '❔', description: 'Саволу ҷавобҳои исломӣ', sort_order: 11, is_active: true },
+  { slug: 'arabic', title: 'Забони арабӣ', icon: 'ع', description: 'Сарф: тасрифи феъл ва грамматикаи арабӣ', sort_order: 12, is_active: true }
 ]
 
 const SECTION_TRANSLATIONS = {
+  arabic: {
+    ru: ['Арабский язык', 'Сарф: спряжение глаголов и грамматика арабского'],
+    ar: ['اللغة العربية', 'الصرف: تصريف الأفعال وقواعد اللغة']
+  },
   quran: {
     ru: ['Священный Коран', 'Суры и аяты Священного Корана'],
     ar: ['القرآن الكريم', 'سور وآيات القرآن الكريم']
@@ -1032,6 +1037,1856 @@ function normalizeSection(row, index) {
   }
 }
 
+/* ===== Арабӣ: сарф (тасрифи феъл) — ҳосилкунандаи қоидавӣ ===== */
+
+const A_ = 'َ', U_ = 'ُ', I_ = 'ِ', O_ = 'ْ', SH_ = 'ّ'
+const TU_ = 'ٌ', TI_ = 'ٍ', TA_ = 'ً'
+const VMARK = { a: A_, u: U_, i: I_ }
+const MARK_SET = new Set([A_, U_, I_, O_, SH_, TU_, TI_, TA_])
+const AR_WEAK = ch => ch === 'و' || ch === 'ي'
+
+/* ---------- воҳидҳо: ҳарф + ҳаракатҳо ---------- */
+
+function toUnits(str) {
+  const units = []
+  for (const ch of String(str)) {
+    if (MARK_SET.has(ch)) {
+      const u = units[units.length - 1]
+      if (!u) continue
+      if (ch === SH_) u.sh = true
+      else if (ch === A_) u.v = 'a'
+      else if (ch === U_) u.v = 'u'
+      else if (ch === I_) u.v = 'i'
+      else if (ch === O_) u.v = '0'
+      else if (ch === TU_) u.tan = 'u'
+      else if (ch === TI_) u.tan = 'i'
+      else if (ch === TA_) u.tan = 'a'
+    } else {
+      units.push({ c: ch, v: '', sh: false, tan: '', h: ch === 'ء' })
+    }
+  }
+  return units
+}
+
+function fromUnits(units) {
+  return units.map(u =>
+    u.c +
+    (u.sh ? SH_ : '') +
+    (u.v ? (u.v === '0' ? O_ : VMARK[u.v]) : '') +
+    (u.tan ? { u: TU_, i: TI_, a: TA_ }[u.tan] : '')
+  ).join('')
+}
+
+function prevKind(units, k) {
+  const p = units[k - 1]
+  const pp = units[k - 2]
+  if (!p) return 'start'
+  if (p.c === 'ا' && !p.v) return 'ā'
+  if (p.c === 'ي' && !p.v && pp && pp.v === 'i') return 'ī'
+  if (p.c === 'و' && !p.v && pp && pp.v === 'u') return 'ū'
+  if (p.c === 'ي' && p.v === '0') return 'y0'
+  if (p.c === 'و' && p.v === '0') return 'w0'
+  if (p.v === 'a' || p.v === 'i' || p.v === 'u') return p.v
+  return '0'
+}
+
+const RANK = { i: 3, u: 2, a: 1, '0': 0, '': 0 }
+
+function hamzaSeat(kind, hv, isFinal) {
+  if (kind === 'start') return hv === 'i' ? 'إ' : 'أ'
+
+  if (isFinal) {
+    if (kind === 'a') return 'أ'
+    if (kind === 'u') return 'ؤ'
+    if (kind === 'i') return 'ئ'
+    return 'ء'
+  }
+
+  if (kind === 'ā' || kind === 'ū' || kind === 'w0') {
+    return hv === 'u' ? 'ؤ' : hv === 'i' ? 'ئ' : 'ء'
+  }
+  if (kind === 'ī' || kind === 'y0') return 'ئ'
+  if (kind === '0') return hv === 'u' ? 'ؤ' : hv === 'i' ? 'ئ' : 'أ'
+
+  const strongest = Math.max(RANK[kind], RANK[hv])
+  return strongest === 3 ? 'ئ' : strongest === 2 ? 'ؤ' : 'أ'
+}
+
+/** Ҳамаи ислоҳҳои имлоӣ: ҳамза, мадда, воу/йо-и дароз, идғом. */
+function fixWord(str) {
+  let units = toUnits(str)
+
+  // ҳамзаи аввал + ҳамзаи соқин: آ / أُو / إِي
+  if (units.length > 1 && units[0].c === 'ء' && units[1].c === 'ء' && units[1].v === '0') {
+    if (units[0].v === 'a') {
+      units[0] = { c: 'آ', v: '', sh: false, tan: '', h: false }
+      units.splice(1, 1)
+    } else if (units[0].v === 'u') {
+      units[0].c = 'أ'; units[0].h = false
+      units[1] = { c: 'و', v: '', sh: false, tan: '', h: false }
+    } else if (units[0].v === 'i') {
+      units[0].c = 'إ'; units[0].h = false
+      units[1] = { c: 'ي', v: '', sh: false, tan: '', h: false }
+    }
+  }
+
+  // курсии ҳамза
+  for (let k = 0; k < units.length; k += 1) {
+    if (units[k].c !== 'ء') continue
+    const seat = hamzaSeat(prevKind(units, k), units[k].v, k === units.length - 1)
+    units[k].c = seat
+    units[k].h = true
+  }
+
+  // أَ + ا  →  آ
+  for (let k = 0; k < units.length - 1; k += 1) {
+    const u = units[k]
+    const n = units[k + 1]
+    if (u.h && u.c === 'أ' && u.v === 'a' && !u.sh && n.c === 'ا' && !n.v) {
+      u.c = 'آ'; u.v = ''; u.h = false
+      units.splice(k + 1, 1)
+    }
+  }
+
+  // воу/йо-и дароз ва алифи соқин
+  for (let k = 1; k < units.length; k += 1) {
+    const u = units[k]
+    const p = units[k - 1]
+    if (u.c === 'و' && u.v === '0' && p.v === 'u') u.v = ''
+    else if (u.c === 'ي' && u.v === '0' && p.v === 'i') u.v = ''
+    else if (u.c === 'و' && u.v === '0' && p.v === 'i') { u.c = 'ي'; u.v = '' }
+    else if (u.c === 'ي' && u.v === '0' && p.v === 'u') { u.c = 'و'; u.v = '' }
+    if (u.c === 'ا' && u.v === '0') u.v = ''
+  }
+
+  // идғом: تْت → تّ ва نْن → نّ
+  for (let k = 0; k < units.length - 1; k += 1) {
+    const u = units[k]
+    const n = units[k + 1]
+    if ((u.c === 'ت' || u.c === 'ن') && u.v === '0' && !u.sh && n.c === u.c && !n.sh) {
+      n.sh = true
+      units.splice(k, 1)
+      k -= 1
+    }
+  }
+
+  return fromUnits(units)
+}
+
+function withTanwin(str, kind = 'u') {
+  const units = toUnits(fixWord(str))
+  const last = units[units.length - 1]
+  if (!last) return str
+  last.v = ''
+  last.tan = kind
+  return fromUnits(units)
+}
+
+/* ---------- ҷадвалҳои пасванд ---------- */
+
+const PRE_LETTERS = ['ي', 'ي', 'ي', 'ت', 'ت', 'ي', 'ت', 'ت', 'ت', 'ت', 'ت', 'ت', 'ء', 'ن']
+const prefixes = vowel => PRE_LETTERS.map(letter => letter + vowel)
+
+const AAN = A_ + 'ا' + 'ن' + I_
+const UUN = U_ + 'و' + 'ن' + A_
+const IIN = I_ + 'ي' + 'ن' + A_
+const NA = O_ + 'ن' + A_
+
+const SFX = {
+  rafi: [U_, AAN, UUN, U_, AAN, NA, U_, AAN, UUN, IIN, AAN, NA, U_, U_],
+  nasb: [A_, A_ + 'ا', U_ + 'وا', A_, A_ + 'ا', NA, A_, A_ + 'ا', U_ + 'وا', I_ + 'ي', A_ + 'ا', NA, A_, A_],
+  jazm: [O_, A_ + 'ا', U_ + 'وا', O_, A_ + 'ا', NA, O_, A_ + 'ا', U_ + 'وا', I_ + 'ي', A_ + 'ا', NA, O_, O_]
+}
+
+const PAST_SFX = [
+  A_,
+  A_ + 'ا',
+  U_ + 'وا',
+  A_ + 'ت' + O_,
+  A_ + 'ت' + A_ + 'ا',
+  O_ + 'ن' + A_,
+  O_ + 'ت' + A_,
+  O_ + 'ت' + U_ + 'م' + A_ + 'ا',
+  O_ + 'ت' + U_ + 'م' + O_,
+  O_ + 'ت' + I_,
+  O_ + 'ت' + U_ + 'م' + A_ + 'ا',
+  O_ + 'ت' + U_ + 'ن' + SH_ + A_,
+  O_ + 'ت' + U_,
+  O_ + 'ن' + A_ + 'ا'
+]
+
+const MOODS = ['rafi', 'nasb', 'jazm']
+const SHORT_PERSONS = {
+  rafi: new Set([5, 11]),
+  nasb: new Set([5, 11]),
+  jazm: new Set([0, 3, 5, 6, 11, 12, 13])
+}
+
+const range = n => Array.from({ length: n }, (_, k) => k)
+
+/* ---------- тасниф ва тасҳеҳи реша ---------- */
+
+function normalizeLetters(text) {
+  return String(text || '')
+    .replace(/[ً-ٰٟـ]/g, '')
+    .replace(/[أإآؤئ]/g, 'ء')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ة')
+    .replace(/\s+/g, '')
+}
+
+function classifyRoot(r) {
+  const weak = r.map(AR_WEAK)
+  const hamza = r.map(ch => ch === 'ء')
+  if (weak[0] && weak[2]) return 'lafifMafruq'
+  if (weak[1] && weak[2]) return 'lafifMaqrun'
+  if (weak[2]) return 'naqis'
+  if (weak[1]) return 'ajwaf'
+  if (weak[0] && r[0] === 'و') return 'mithal'
+  if (r[1] === r[2] && !hamza[1]) return 'mudaaf'
+  if (hamza.some(Boolean)) return 'mahmuz'
+  return 'sahih'
+}
+
+/* ---------- сохтани феъли сулосии муҷарад (шакли I) ---------- */
+
+function pastSound(stemV, stemC) {
+  return range(14).map(j => fixWord((j < 5 ? stemV : stemC) + PAST_SFX[j]))
+}
+
+function presentSound(pre, coreLong, coreShort, shortSet, jazmOverride) {
+  const out = {}
+  MOODS.forEach(mood => {
+    out[mood] = range(14).map(j => {
+      const useShort = coreShort && shortSet[mood].has(j)
+      let sfx = SFX[mood][j]
+      if (mood === 'jazm' && jazmOverride && jazmOverride.has(j)) sfx = A_
+      return fixWord(pre[j] + (useShort ? coreShort : coreLong) + sfx)
+    })
+  })
+  return out
+}
+
+/** Феъли нақис: ҷадвали пурра. */
+function naqisPast(R, kind) {
+  // R = ҳарфҳои аввал бо ҳаракат (масалан 'رَمَ'); kind: 'aY' | 'aW' | 'i'
+  const y = 'ي'
+  const w = 'و'
+  if (kind === 'aY') {
+    return [R + 'ى', R + y + A_ + 'ا', R + w + O_ + 'ا', R + 'ت' + O_, R + 'ت' + A_ + 'ا', R + y + O_ + 'ن' + A_,
+      R + y + O_ + 'ت' + A_, R + y + O_ + 'ت' + U_ + 'م' + A_ + 'ا', R + y + O_ + 'ت' + U_ + 'م' + O_, R + y + O_ + 'ت' + I_,
+      R + y + O_ + 'ت' + U_ + 'م' + A_ + 'ا', R + y + O_ + 'ت' + U_ + 'ن' + SH_ + A_, R + y + O_ + 'ت' + U_, R + y + O_ + 'ن' + A_ + 'ا']
+  }
+  if (kind === 'aW') {
+    return [R + 'ا', R + w + A_ + 'ا', R + w + O_ + 'ا', R + 'ت' + O_, R + 'ت' + A_ + 'ا', R + w + O_ + 'ن' + A_,
+      R + w + O_ + 'ت' + A_, R + w + O_ + 'ت' + U_ + 'م' + A_ + 'ا', R + w + O_ + 'ت' + U_ + 'م' + O_, R + w + O_ + 'ت' + I_,
+      R + w + O_ + 'ت' + U_ + 'م' + A_ + 'ا', R + w + O_ + 'ت' + U_ + 'ن' + SH_ + A_, R + w + O_ + 'ت' + U_, R + w + O_ + 'ن' + A_ + 'ا']
+  }
+  // 'i': رَضِيَ — R бо касра тамом мешавад
+  const Rd = R.slice(0, -1) + U_
+  return [R + y + A_, R + y + A_ + 'ا', Rd + 'وا', R + y + A_ + 'ت' + O_, R + y + A_ + 'ت' + A_ + 'ا', R + y + 'ن' + A_,
+    R + y + 'ت' + A_, R + y + 'ت' + U_ + 'م' + A_ + 'ا', R + y + 'ت' + U_ + 'م' + O_, R + y + 'ت' + I_,
+    R + y + 'ت' + U_ + 'م' + A_ + 'ا', R + y + 'ت' + U_ + 'ن' + SH_ + A_, R + y + 'ت' + U_, R + y + 'ن' + A_ + 'ا'].map(s => s)
+}
+
+function naqisPresent(pre, S, family) {
+  // S = асос бо ҳаракати охир (кастра/замма/фатҳа); family: 'I' | 'U' | 'A'
+  const Sd = S.slice(0, -1) // бе ҳаракати охир
+  const out = { rafi: [], nasb: [], jazm: [] }
+  const dual = (mood) => (family === 'U' ? S + 'و' : family === 'I' ? S + 'ي' : S + 'ي')
+  for (let j = 0; j < 14; j += 1) {
+    const p = pre[j]
+    const kindOfPerson = j === 1 || j === 4 || j === 7 || j === 10 ? 'dual'
+      : j === 2 || j === 8 ? 'mp'
+        : j === 5 || j === 11 ? 'fp'
+          : j === 9 ? 'fs' : 'one'
+    let rafi, nasb, jazm
+    if (family === 'I') {
+      if (kindOfPerson === 'one') { rafi = S + 'ي'; nasb = S + 'ي' + A_; jazm = S }
+      else if (kindOfPerson === 'dual') { rafi = S + 'ي' + A_ + 'ا' + 'ن' + I_; nasb = S + 'ي' + A_ + 'ا'; jazm = nasb }
+      else if (kindOfPerson === 'mp') { rafi = Sd + U_ + 'و' + 'ن' + A_; nasb = Sd + U_ + 'وا'; jazm = nasb }
+      else if (kindOfPerson === 'fp') { rafi = S + 'ي' + 'ن' + A_; nasb = rafi; jazm = rafi }
+      else { rafi = S + 'ي' + 'ن' + A_; nasb = S + 'ي'; jazm = nasb }
+    } else if (family === 'U') {
+      if (kindOfPerson === 'one') { rafi = S + 'و'; nasb = S + 'و' + A_; jazm = S }
+      else if (kindOfPerson === 'dual') { rafi = S + 'و' + A_ + 'ا' + 'ن' + I_; nasb = S + 'و' + A_ + 'ا'; jazm = nasb }
+      else if (kindOfPerson === 'mp') { rafi = S + 'و' + 'ن' + A_; nasb = S + 'وا'; jazm = nasb }
+      else if (kindOfPerson === 'fp') { rafi = S + 'و' + 'ن' + A_; nasb = rafi; jazm = rafi }
+      else { rafi = Sd + I_ + 'ي' + 'ن' + A_; nasb = Sd + I_ + 'ي'; jazm = nasb }
+    } else {
+      if (kindOfPerson === 'one') { rafi = S + 'ى'; nasb = S + 'ى'; jazm = S }
+      else if (kindOfPerson === 'dual') { rafi = S + 'ي' + A_ + 'ا' + 'ن' + I_; nasb = S + 'ي' + A_ + 'ا'; jazm = nasb }
+      else if (kindOfPerson === 'mp') { rafi = S + 'و' + O_ + 'ن' + A_; nasb = S + 'و' + O_ + 'ا'; jazm = nasb }
+      else if (kindOfPerson === 'fp') { rafi = S + 'ي' + O_ + 'ن' + A_; nasb = rafi; jazm = rafi }
+      else { rafi = S + 'ي' + O_ + 'ن' + A_; nasb = S + 'ي' + O_; jazm = nasb }
+    }
+    out.rafi.push(fixWord(p + rafi))
+    out.nasb.push(fixWord(p + nasb))
+    out.jazm.push(fixWord(p + jazm))
+  }
+  return out
+}
+
+const IRREGULAR_AMR = new Set(['ءكل', 'ءخذ', 'ءمر'])
+
+/** Амр аз шаклҳои ҷазми шахси дуюм. */
+function buildAmr(jazm2, waslKind, root, formI) {
+  if (formI && IRREGULAR_AMR.has(root.join(''))) {
+    const [, r2, r3] = root
+    const core = r2 + U_ + r3
+    const sfx = [O_, A_ + 'ا', U_ + 'وا', I_ + 'ي', A_ + 'ا', O_ + 'ن' + A_]
+    return sfx.map(s => fixWord(core + s))
+  }
+
+  return jazm2.map(word => {
+    const units = toUnits(word)
+    units.shift() // префикси تَ / تُ
+    if (!units.length) return word
+    if (units[0].v === '0') {
+      const wasl = waslKind === 'qat'
+        ? { c: 'ء', v: 'a', sh: false, tan: '', h: true }
+        : { c: 'ا', v: waslKind, sh: false, tan: '', h: false }
+      units.unshift(wasl)
+    }
+    return fixWord(fromUnits(units))
+  })
+}
+
+function formI(r, pv, mv) {
+  const [r1, r2, r3] = r
+  const cls = classifyRoot(r)
+  const pvm = VMARK[pv]
+  const mvv = mv === 'd' ? 'a' : mv
+  const mvm = VMARK[mvv]
+  const dropWaw = r1 === 'و' && (mv === 'i' || mv === 'd')
+  const preA = prefixes(A_)
+  const preU = prefixes(U_)
+  const result = { cls, past: {}, pres: {}, amr: [], nahy: [] }
+
+  if (cls === 'naqis' || cls === 'lafifMafruq' || cls === 'lafifMaqrun') {
+    const family = r3 === 'و' && mvv === 'u' ? 'U' : mvv === 'a' ? 'A' : 'I'
+    const pastKind = pv === 'i' ? 'i' : (r3 === 'و' ? 'aW' : 'aY')
+    const dropFirst = cls === 'lafifMafruq' && dropWaw
+    const isRaa = r.join('') === 'رءي'
+    const stemAct = isRaa ? r1 + A_ : (dropFirst ? r2 : r1 + O_ + r2) + mvm
+    const stemPas = isRaa ? r1 + A_ : r1 + O_ + r2 + A_
+
+    result.past.act = naqisPast(r1 + A_ + r2 + (pastKind === 'i' ? I_ : A_), pastKind).map(fixWord)
+    result.past.pas = naqisPast(r1 + U_ + r2 + I_, 'i').map(fixWord)
+    result.pres.act = naqisPresent(preA, stemAct, family)
+    result.pres.pas = naqisPresent(preU, stemPas, 'A')
+    result.fail = withTanwin(r1 + A_ + 'ا' + r2, 'i')
+    result.mafool = r3 === 'و'
+      ? fixWord('م' + A_ + r1 + O_ + r2 + U_ + 'و' + SH_ + TU_)
+      : fixWord('م' + A_ + r1 + O_ + r2 + I_ + 'ي' + SH_ + TU_)
+    result.waslKind = mvv === 'u' ? 'u' : 'i'
+  } else if (cls === 'ajwaf') {
+    const longV = { u: U_ + 'و', i: I_ + 'ي', a: A_ + 'ا' }[mvv]
+    const pastShort = pv === 'a' ? (r2 === 'و' ? U_ : I_) : (pv === 'i' ? I_ : U_)
+    const stemV = r1 + A_ + 'ا' + r3
+    const stemC = r1 + pastShort + r3
+    result.past.act = pastSound(stemV, stemC)
+    result.past.pas = pastSound(r1 + I_ + 'ي' + r3, r1 + I_ + r3)
+    result.pres.act = presentSound(preA, r1 + longV + r3, r1 + mvm + r3, SHORT_PERSONS)
+    result.pres.pas = presentSound(preU, r1 + A_ + 'ا' + r3, r1 + A_ + r3, SHORT_PERSONS)
+    result.fail = r3 === 'ء'
+      ? withTanwin(r1 + A_ + 'ا' + 'ء', 'i')
+      : withTanwin(r1 + A_ + 'ا' + 'ء' + I_ + r3)
+    result.mafool = r2 === 'و'
+      ? withTanwin('م' + A_ + r1 + U_ + 'و' + r3)
+      : withTanwin('م' + A_ + r1 + I_ + 'ي' + r3)
+    result.waslKind = 'i'
+  } else if (cls === 'mudaaf') {
+    const stemV = r1 + A_ + r2 + SH_
+    const stemC = r1 + A_ + r2 + pvm + r3
+    result.past.act = pastSound(stemV, stemC)
+    result.past.pas = pastSound(r1 + U_ + r2 + SH_, r1 + U_ + r2 + I_ + r3)
+    const gem = new Set([0, 3, 6, 12, 13])
+    result.pres.act = presentSound(preA, r1 + mvm + r2 + SH_, r1 + O_ + r2 + mvm + r3, SHORT_PERSONS_ALL_MOODS, gem)
+    result.pres.pas = presentSound(preU, r1 + A_ + r2 + SH_, r1 + O_ + r2 + A_ + r3, SHORT_PERSONS_ALL_MOODS, gem)
+    result.fail = withTanwin(r1 + A_ + 'ا' + r2 + SH_)
+    result.mafool = withTanwin('م' + A_ + r1 + O_ + r2 + U_ + 'و' + r3)
+    result.waslKind = mvv === 'u' ? 'u' : 'i'
+  } else {
+    // саҳеҳ, мисол, маҳмуз
+    const stem = r1 + A_ + r2 + pvm + r3
+    const core = dropWaw ? r2 + (mv === 'd' ? A_ : mvm) + r3 : r1 + O_ + r2 + mvm + r3
+    result.past.act = pastSound(stem, stem)
+    result.past.pas = pastSound(r1 + U_ + r2 + I_ + r3, r1 + U_ + r2 + I_ + r3)
+    result.pres.act = presentSound(preA, core, null, SHORT_PERSONS)
+    result.pres.pas = presentSound(preU, r1 + O_ + r2 + A_ + r3, null, SHORT_PERSONS)
+    result.fail = withTanwin(r1 + A_ + 'ا' + r2 + I_ + r3)
+    result.mafool = withTanwin('م' + A_ + r1 + O_ + r2 + U_ + 'و' + r3)
+    result.waslKind = mvv === 'u' ? 'u' : 'i'
+  }
+
+  return result
+}
+
+const SHORT_PERSONS_ALL_MOODS = {
+  rafi: new Set([5, 11]),
+  nasb: new Set([5, 11]),
+  jazm: new Set([5, 11])
+}
+
+/* ---------- феълҳои мазид (II–X), танҳо барои решаи саҳеҳ ---------- */
+
+const DERIVED = {
+  2: { past: 'فَعَّل', pastP: 'فُعِّل', pre: U_, core: 'فَعِّل', coreP: 'فَعَّل', fa: 'مُفَعِّل', ma: 'مُفَعَّل', ms: 'تَفْعِيل' },
+  3: { past: 'فَاعَل', pastP: 'فُوعِل', pre: U_, core: 'فَاعِل', coreP: 'فَاعَل', fa: 'مُفَاعِل', ma: 'مُفَاعَل', ms: 'مُفَاعَلَة' },
+  4: { past: 'أَفْعَل', pastP: 'أُفْعِل', pre: U_, core: 'فْعِل', coreP: 'فْعَل', fa: 'مُفْعِل', ma: 'مُفْعَل', ms: 'إِفْعَال', wasl: 'qat' },
+  5: { past: 'تَفَعَّل', pastP: 'تُفُعِّل', pre: A_, core: 'تَفَعَّل', coreP: 'تَفَعَّل', fa: 'مُتَفَعِّل', ma: 'مُتَفَعَّل', ms: 'تَفَعُّل' },
+  6: { past: 'تَفَاعَل', pastP: 'تُفُوعِل', pre: A_, core: 'تَفَاعَل', coreP: 'تَفَاعَل', fa: 'مُتَفَاعِل', ma: 'مُتَفَاعَل', ms: 'تَفَاعُل' },
+  7: { past: 'اِنْفَعَل', pastP: 'اُنْفُعِل', pre: A_, core: 'نْفَعِل', coreP: 'نْفَعَل', fa: 'مُنْفَعِل', ma: 'مُنْفَعَل', ms: 'اِنْفِعَال', wasl: 'i' },
+  8: { past: 'اِفْتَعَل', pastP: 'اُفْتُعِل', pre: A_, core: 'فْتَعِل', coreP: 'فْتَعَل', fa: 'مُفْتَعِل', ma: 'مُفْتَعَل', ms: 'اِفْتِعَال', wasl: 'i' },
+  10: { past: 'اِسْتَفْعَل', pastP: 'اُسْتُفْعِل', pre: A_, core: 'سْتَفْعِل', coreP: 'سْتَفْعَل', fa: 'مُسْتَفْعِل', ma: 'مُسْتَفْعَل', ms: 'اِسْتِفْعَال', wasl: 'i' }
+}
+
+function fill(template, r) {
+  return template.replace(/[فعل]/g, ch => ({ 'ف': r[0], 'ع': r[1], 'ل': r[2] }[ch]))
+}
+
+function derived(r, form) {
+  const [r1, r2, r3] = r
+  const result = { cls: classifyRoot(r), past: {}, pres: {}, amr: [], nahy: [] }
+
+  if (form === 9) {
+    const preA = prefixes(A_)
+    const stemV = 'اِ' + r1 + O_ + r2 + A_ + r3 + SH_
+    const stemC = 'اِ' + r1 + O_ + r2 + A_ + r3 + A_ + r3
+    result.past.act = pastSound(stemV, stemC)
+    result.past.pas = null
+    result.pres.act = presentSound(preA, r1 + O_ + r2 + A_ + r3 + SH_, r1 + O_ + r2 + A_ + r3 + I_ + r3,
+      SHORT_PERSONS_ALL_MOODS, new Set([0, 3, 6, 12, 13]))
+    result.pres.pas = null
+    result.fail = withTanwin('مُ' + r1 + O_ + r2 + A_ + r3 + SH_)
+    result.mafool = ''
+    result.masdar = withTanwin('اِ' + r1 + O_ + r2 + I_ + r3 + A_ + 'ا' + r3)
+    result.waslKind = 'i'
+    return result
+  }
+
+  const d = DERIVED[form]
+  const stem = fill(d.past, r)
+  const stemP = fill(d.pastP, r)
+  result.past.act = pastSound(stem, stem)
+  result.past.pas = pastSound(stemP, stemP)
+  result.pres.act = presentSound(prefixes(d.pre), fill(d.core, r), null, SHORT_PERSONS)
+  result.pres.pas = presentSound(prefixes(U_), fill(d.coreP, r), null, SHORT_PERSONS)
+  result.fail = withTanwin(fill(d.fa, r))
+  result.mafool = withTanwin(fill(d.ma, r))
+  result.masdar = withTanwin(fill(d.ms, r))
+  result.waslKind = d.wasl || 'i'
+  return result
+}
+
+/* ---------- API-и асосӣ ---------- */
+
+const FORM_NAMES = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X' }
+
+function canConjugate(root, form) {
+  const r = normalizeLetters(root).split('')
+  if (r.length !== 3) return false
+  if (form === 1) return true
+  if (!DERIVED[form] && form !== 9) return false
+  const cls = classifyRoot(r)
+  return cls === 'sahih' || (cls === 'mahmuz' && r[0] !== 'ء')
+}
+
+function conjugate({ root, form = 1, pv = 'a', mv = 'u', masdar = '' }) {
+  const r = normalizeLetters(root).split('')
+  if (r.length !== 3 || !canConjugate(root, form)) return null
+
+  const base = form === 1 ? formI(r, pv, mv) : derived(r, form)
+  const act = base.pres.act
+  const amrSource = act.jazm.slice(6, 12)
+
+  const wasl = form === 1 ? base.waslKind : (base.waslKind || 'i')
+  const amr = buildAmr(amrSource, wasl, r, form === 1)
+  const nahy = amrSource.map(word => fixWord('لَا ' + word.replace(/\s+/g, '')))
+
+  const hasTan = /[\u064B-\u064D]/.test(masdar || '')
+  const masdarText = masdar ? (hasTan ? fixWord(masdar) : withTanwin(masdar)) : (base.masdar || '')
+
+  return {
+    root: r.join(''),
+    form,
+    cls: base.cls,
+    past: base.past,
+    pres: base.pres,
+    amr,
+    nahy,
+    fail: base.fail || '',
+    mafool: base.mafool || '',
+    masdar: masdarText
+  }
+}
+
+function fixText(text) {
+  return fixWord(text)
+}
+
+/* ===== Арабӣ: луғати феълҳо, назария ва интерфейс ===== */
+
+const ARB_BABS = [
+  { id: 'a-u', pv: 'a', mv: 'u', label: 'فَعَلَ – يَفْعُلُ' },
+  { id: 'a-i', pv: 'a', mv: 'i', label: 'فَعَلَ – يَفْعِلُ' },
+  { id: 'a-a', pv: 'a', mv: 'a', label: 'فَعَلَ – يَفْعَلُ' },
+  { id: 'i-a', pv: 'i', mv: 'a', label: 'فَعِلَ – يَفْعَلُ' },
+  { id: 'u-u', pv: 'u', mv: 'u', label: 'فَعُلَ – يَفْعُلُ' },
+  { id: 'i-i', pv: 'i', mv: 'i', label: 'فَعِلَ – يَفْعِلُ' },
+  { id: 'a-d', pv: 'a', mv: 'd', label: 'فَعَلَ – يَفْعَلُ (وَعَدَ ↔ وَضَعَ)' }
+]
+
+const ARB_FORMS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+/* [реша, шакл, боб, масдар, тоҷикӣ, русӣ] */
+const ARB_SEED = [
+  ['كتب', 1, 'a-u', 'كِتَابَة', 'навиштан', 'писать'],
+  ['ضرب', 1, 'a-i', 'ضَرْب', 'задан', 'бить'],
+  ['فتح', 1, 'a-a', 'فَتْح', 'кушодан', 'открывать'],
+  ['نصر', 1, 'a-u', 'نَصْر', 'ёрӣ додан', 'помогать'],
+  ['علم', 1, 'i-a', 'عِلْم', 'донистан', 'знать'],
+  ['سمع', 1, 'i-a', 'سَمْع', 'шунидан', 'слышать'],
+  ['شرب', 1, 'i-a', 'شُرْب', 'нӯшидан', 'пить'],
+  ['ذهب', 1, 'a-a', 'ذَهَاب', 'рафтан', 'идти, уходить'],
+  ['خرج', 1, 'a-u', 'خُرُوج', 'баромадан', 'выходить'],
+  ['دخل', 1, 'a-u', 'دُخُول', 'даромадан', 'входить'],
+  ['جلس', 1, 'a-i', 'جُلُوس', 'нишастан', 'сидеть'],
+  ['قعد', 1, 'a-u', 'قُعُود', 'нишастан', 'сидеть'],
+  ['فهم', 1, 'i-a', 'فَهْم', 'фаҳмидан', 'понимать'],
+  ['حمل', 1, 'a-i', 'حَمْل', 'бардоштан', 'нести'],
+  ['قتل', 1, 'a-u', 'قَتْل', 'куштан', 'убивать'],
+  ['أكل', 1, 'a-u', 'أَكْل', 'хӯрдан', 'есть'],
+  ['أخذ', 1, 'a-u', 'أَخْذ', 'гирифтан', 'брать'],
+  ['أمر', 1, 'a-u', 'أَمْر', 'фармудан', 'приказывать'],
+  ['سأل', 1, 'a-a', 'سُؤَال', 'пурсидан', 'спрашивать'],
+  ['قرأ', 1, 'a-a', 'قِرَاءَة', 'хондан', 'читать'],
+  ['بدأ', 1, 'a-a', 'بَدْء', 'оғоз кардан', 'начинать'],
+  ['وصل', 1, 'a-i', 'وُصُول', 'расидан', 'прибывать, достигать'],
+  ['وعد', 1, 'a-i', 'وَعْد', 'ваъда додан', 'обещать'],
+  ['وجد', 1, 'a-i', 'وُجُود', 'ёфтан', 'находить'],
+  ['وقف', 1, 'a-i', 'وُقُوف', 'истодан', 'стоять, останавливаться'],
+  ['ولد', 1, 'a-i', 'وِلَادَة', 'зоидан', 'рождать'],
+  ['وزن', 1, 'a-i', 'وَزْن', 'вазн кардан', 'взвешивать'],
+  ['وضع', 1, 'a-d', 'وَضْع', 'гузоштан', 'класть'],
+  ['وقع', 1, 'a-d', 'وُقُوع', 'афтодан, воқеъ шудан', 'падать, происходить'],
+  ['وهب', 1, 'a-d', 'هِبَة', 'бахшидан', 'дарить'],
+  ['وسع', 1, 'i-d', 'سَعَة', 'васеъ будан', 'вмещать, быть просторным'],
+  ['قول', 1, 'a-u', 'قَوْل', 'гуфтан', 'говорить'],
+  ['بيع', 1, 'a-i', 'بَيْع', 'фурӯхтан', 'продавать'],
+  ['نوم', 1, 'i-a', 'نَوْم', 'хуфтан', 'спать'],
+  ['خوف', 1, 'i-a', 'خَوْف', 'тарсидан', 'бояться'],
+  ['كون', 1, 'a-u', 'كَوْن', 'будан', 'быть'],
+  ['زور', 1, 'a-u', 'زِيَارَة', 'зиёрат кардан', 'посещать'],
+  ['عود', 1, 'a-u', 'عَوْدَة', 'баргаштан', 'возвращаться'],
+  ['قوم', 1, 'a-u', 'قِيَام', 'бархостан', 'вставать'],
+  ['سير', 1, 'a-i', 'سَيْر', 'роҳ рафтан', 'идти, ехать'],
+  ['جيء', 1, 'a-i', 'مَجِيء', 'омадан', 'приходить'],
+  ['شيء', 1, 'a-i', 'مَشِيئَة', 'хостан', 'желать'],
+  ['نيل', 1, 'i-a', 'نَيْل', 'ба даст овардан', 'достигать'],
+  ['موت', 1, 'i-u', 'مَوْت', 'мурдан', 'умирать'],
+  ['طوف', 1, 'a-u', 'طَوَاف', 'давр задан', 'обходить'],
+  ['صوم', 1, 'a-u', 'صَوْم', 'рӯза доштан', 'поститься'],
+  ['دعو', 1, 'a-u', 'دُعَاء', 'даъват кардан', 'звать, молиться'],
+  ['غزو', 1, 'a-u', 'غَزْو', 'ғазо кардан', 'воевать'],
+  ['تلو', 1, 'a-u', 'تِلَاوَة', 'тиловат кардан', 'читать (Коран)'],
+  ['عفو', 1, 'a-u', 'عَفْو', 'бахшидан', 'прощать'],
+  ['رمي', 1, 'a-i', 'رَمْي', 'партофтан', 'бросать'],
+  ['بكي', 1, 'a-i', 'بُكَاء', 'гиристан', 'плакать'],
+  ['مشي', 1, 'a-i', 'مَشْي', 'пиёда рафтан', 'ходить пешком'],
+  ['بني', 1, 'a-i', 'بِنَاء', 'сохтан', 'строить'],
+  ['هدي', 1, 'a-i', 'هِدَايَة', 'ҳидоят кардан', 'вести прямым путём'],
+  ['نسي', 1, 'i-a', 'نِسْيَان', 'фаромӯш кардан', 'забывать'],
+  ['رضي', 1, 'i-a', 'رِضًى', 'розӣ шудан', 'быть довольным'],
+  ['بقي', 1, 'i-a', 'بَقَاء', 'мондан', 'оставаться'],
+  ['سعي', 1, 'a-a', 'سَعْي', 'кӯшиш кардан', 'стараться'],
+  ['رأي', 1, 'a-a', 'رُؤْيَة', 'дидан', 'видеть'],
+  ['أتي', 1, 'a-i', 'إِتْيَان', 'омадан', 'приходить'],
+  ['جري', 1, 'a-i', 'جَرْي', 'равон шудан', 'течь, бежать'],
+  ['شكر', 1, 'a-u', 'شُكْر', 'ташаккур гуфтан', 'благодарить'],
+  ['صبر', 1, 'a-i', 'صَبْر', 'сабр кардан', 'терпеть'],
+  ['رزق', 1, 'a-i', 'رِزْق', 'рӯзӣ додан', 'наделять уделом'],
+  ['خلق', 1, 'a-u', 'خَلْق', 'офаридан', 'создавать'],
+  ['غفر', 1, 'a-i', 'مَغْفِرَة', 'омурзидан', 'прощать'],
+  ['رحم', 1, 'i-a', 'رَحْمَة', 'марҳамат кардан', 'миловать'],
+  ['حفظ', 1, 'i-a', 'حِفْظ', 'ҳифз кардан', 'хранить, заучивать'],
+  ['حكم', 1, 'a-u', 'حُكْم', 'ҳукм кардан', 'судить, управлять'],
+  ['عبد', 1, 'a-u', 'عِبَادَة', 'ибодат кардан', 'поклоняться'],
+  ['سجد', 1, 'a-u', 'سُجُود', 'саҷда кардан', 'совершать земной поклон'],
+  ['ركع', 1, 'a-a', 'رُكُوع', 'рукӯъ кардан', 'совершать поясной поклон'],
+  ['ظلم', 1, 'a-i', 'ظُلْم', 'ситам кардан', 'притеснять'],
+  ['جمع', 1, 'a-a', 'جَمْع', 'ҷамъ кардан', 'собирать'],
+  ['منع', 1, 'a-a', 'مَنْع', 'манъ кардан', 'запрещать'],
+  ['رفع', 1, 'a-a', 'رَفْع', 'боло бардоштан', 'поднимать'],
+  ['نفع', 1, 'a-a', 'نَفْع', 'фоида расондан', 'приносить пользу'],
+  ['قطع', 1, 'a-a', 'قَطْع', 'буридан', 'резать, прерывать'],
+  ['بحث', 1, 'a-a', 'بَحْث', 'ҷустуҷӯ кардан', 'искать, исследовать'],
+  ['زرع', 1, 'a-a', 'زَرْع', 'киштан', 'сеять'],
+  ['لعب', 1, 'i-a', 'لَعِب', 'бозӣ кардан', 'играть'],
+  ['عمل', 1, 'i-a', 'عَمَل', 'кор кардан', 'работать, делать'],
+  ['حزن', 1, 'i-a', 'حُزْن', 'ғамгин шудан', 'печалиться'],
+  ['فرح', 1, 'i-a', 'فَرَح', 'шод шудан', 'радоваться'],
+  ['كرم', 1, 'u-u', 'كَرَم', 'саховатманд будан', 'быть щедрым'],
+  ['حسن', 1, 'u-u', 'حُسْن', 'нек будан', 'быть красивым, хорошим'],
+  ['صغر', 1, 'u-u', 'صِغَر', 'хурд будан', 'быть маленьким'],
+  ['كبر', 1, 'i-u', 'كِبَر', 'калон будан', 'быть большим'],
+  ['ملك', 1, 'i-i', 'مُلْك', 'молик будан', 'владеть'],
+  ['حسب', 1, 'i-i', 'حِسَاب', 'ҳисоб кардан', 'считать'],
+  ['طلب', 1, 'a-u', 'طَلَب', 'талаб кардан', 'просить, требовать'],
+  ['بعث', 1, 'a-a', 'بَعْث', 'фиристодан', 'посылать'],
+  ['ترك', 1, 'a-u', 'تَرْك', 'тарк кардан', 'оставлять'],
+  ['سكن', 1, 'a-u', 'سُكُون', 'сокин шудан', 'жить, быть спокойным'],
+  ['نزل', 1, 'a-i', 'نُزُول', 'фуромадан', 'спускаться'],
+  ['رجع', 1, 'a-i', 'رُجُوع', 'баргаштан', 'возвращаться'],
+  ['سرق', 1, 'a-i', 'سَرِقَة', 'дуздидан', 'красть'],
+  ['هلك', 1, 'a-i', 'هَلَاك', 'ҳалок шудан', 'гибнуть'],
+  ['صدق', 1, 'a-u', 'صِدْق', 'рост гуфтан', 'говорить правду'],
+  ['كذب', 1, 'a-i', 'كَذِب', 'дурӯғ гуфтан', 'лгать'],
+  ['ضحك', 1, 'i-a', 'ضَحِك', 'хандидан', 'смеяться'],
+  ['جعل', 1, 'a-a', 'جَعْل', 'гардондан', 'делать, превращать'],
+  ['فعل', 1, 'a-a', 'فِعْل', 'кардан', 'совершать'],
+  ['ذكر', 1, 'a-u', 'ذِكْر', 'ёд кардан', 'вспоминать, поминать'],
+  ['ذبح', 1, 'a-a', 'ذَبْح', 'забҳ кардан', 'резать (жертву)'],
+  ['غلب', 1, 'a-i', 'غَلَبَة', 'ғолиб омадан', 'побеждать'],
+  ['ربح', 1, 'i-a', 'رِبْح', 'фоида гирифтан', 'получать прибыль'],
+  ['خسر', 1, 'i-a', 'خُسْر', 'зиён дидан', 'терпеть убыток'],
+  ['نظر', 1, 'a-u', 'نَظَر', 'нигоҳ кардан', 'смотреть'],
+  ['سلم', 1, 'i-a', 'سَلَامَة', 'саломат будан', 'быть невредимым'],
+  ['قدر', 1, 'a-i', 'قُدْرَة', 'тавонистан', 'мочь'],
+  ['مدد', 1, 'a-u', 'مَدّ', 'кашидан, дароз кардан', 'тянуть, протягивать'],
+  ['ظنن', 1, 'a-u', 'ظَنّ', 'гумон кардан', 'думать, полагать'],
+  ['حبب', 1, 'a-i', 'حُبّ', 'дӯст доштан', 'любить'],
+  ['ردد', 1, 'a-u', 'رَدّ', 'бозгардондан, ҷавоб додан', 'возвращать, отвечать'],
+  ['عدد', 1, 'a-u', 'عَدّ', 'шумурдан', 'считать'],
+  ['شدد', 1, 'a-i', 'شَدّ', 'маҳкам кардан', 'затягивать'],
+  ['ضلل', 1, 'a-i', 'ضَلَال', 'гумроҳ шудан', 'заблуждаться'],
+  ['مرر', 1, 'a-u', 'مُرُور', 'гузаштан', 'проходить'],
+  ['فرر', 1, 'a-i', 'فِرَار', 'гурехтан', 'убегать'],
+  ['حجج', 1, 'a-u', 'حَجّ', 'ҳаҷ кардан', 'совершать хаджж'],
+  ['مسس', 1, 'a-u', 'مَسّ', 'расидан, даст расондан', 'касаться'],
+  ['علم', 2, '', 'تَعْلِيم', 'омӯзондан', 'обучать'],
+  ['كسر', 2, '', 'تَكْسِير', 'шикастан (бисёр)', 'разбивать (многократно)'],
+  ['قدم', 2, '', 'تَقْدِيم', 'пеш гузоштан, пешниҳод кардан', 'представлять, предлагать'],
+  ['درس', 2, '', 'تَدْرِيس', 'дарс додан', 'преподавать'],
+  ['حدث', 2, '', 'تَحْدِيث', 'нақл кардан', 'рассказывать'],
+  ['حضر', 2, '', 'تَحْضِير', 'омода кардан', 'готовить'],
+  ['قتل', 3, '', 'قِتَال', 'ҷангидан', 'сражаться'],
+  ['سعد', 3, '', 'مُسَاعَدَة', 'кумак кардан', 'помогать'],
+  ['كتب', 3, '', 'مُكَاتَبَة', 'мукотиба кардан', 'переписываться'],
+  ['جهد', 3, '', 'جِهَاد', 'ҷиҳод кардан', 'усердствовать, вести джихад'],
+  ['شهد', 3, '', 'مُشَاهَدَة', 'мушоҳида кардан', 'наблюдать'],
+  ['كرم', 4, '', 'إِكْرَام', 'гиромӣ доштан', 'почитать'],
+  ['رسل', 4, '', 'إِرْسَال', 'фиристодан', 'отправлять'],
+  ['خرج', 4, '', 'إِخْرَاج', 'берун овардан', 'выводить'],
+  ['نزل', 4, '', 'إِنْزَال', 'нозил кардан', 'ниспосылать'],
+  ['سلم', 4, '', 'إِسْلَام', 'мусалмон шудан, таслим шудан', 'принимать ислам, покоряться'],
+  ['علم', 4, '', 'إِعْلَام', 'хабар додан', 'сообщать'],
+  ['حسن', 4, '', 'إِحْسَان', 'некӣ кардан', 'делать добро'],
+  ['خبر', 4, '', 'إِخْبَار', 'хабар додан', 'извещать'],
+  ['علم', 5, '', 'تَعَلُّم', 'омӯхтан', 'учиться'],
+  ['كلم', 5, '', 'تَكَلُّم', 'сухан гуфтан', 'говорить'],
+  ['قدم', 5, '', 'تَقَدُّم', 'пеш рафтан', 'продвигаться'],
+  ['قتل', 6, '', 'تَقَاتُل', 'бо ҳам ҷангидан', 'сражаться друг с другом'],
+  ['كتب', 6, '', 'تَكَاتُب', 'ҳамдигар навиштан', 'переписываться'],
+  ['شرك', 6, '', 'تَشَارُك', 'ширкат варзидан', 'участвовать совместно'],
+  ['كسر', 7, '', 'اِنْكِسَار', 'шикаста шудан', 'ломаться'],
+  ['فتح', 7, '', 'اِنْفِتَاح', 'кушода шудан', 'открываться'],
+  ['قطع', 7, '', 'اِنْقِطَاع', 'бурида шудан', 'прерываться'],
+  ['جمع', 8, '', 'اِجْتِمَاع', 'ҷамъ шудан', 'собираться'],
+  ['سمع', 8, '', 'اِسْتِمَاع', 'гӯш додан', 'слушать'],
+  ['نظر', 8, '', 'اِنْتِظَار', 'мунтазир шудан', 'ждать'],
+  ['قرب', 8, '', 'اِقْتِرَاب', 'наздик шудан', 'приближаться'],
+  ['حمر', 9, '', 'اِحْمِرَار', 'сурх шудан', 'краснеть'],
+  ['غفر', 10, '', 'اِسْتِغْفَار', 'омурзиш хостан', 'просить прощения'],
+  ['خرج', 10, '', 'اِسْتِخْرَاج', 'берун кашидан', 'извлекать'],
+  ['عمل', 10, '', 'اِسْتِعْمَال', 'истифода бурдан', 'использовать'],
+  ['قبل', 10, '', 'اِسْتِقْبَال', 'истиқбол кардан', 'встречать'],
+  ['فهم', 10, '', 'اِسْتِفْهَام', 'пурсидан', 'осведомляться'],
+  ['كبر', 10, '', 'اِسْتِكْبَار', 'кибр кардан', 'возгордиться']
+]
+
+const ARB_PERSONS = [
+  { ar: 'هُوَ', tg: 'ӯ (мард)', ru: 'он' },
+  { ar: 'هُمَا', tg: 'онҳо (ду мард)', ru: 'они двое (м)' },
+  { ar: 'هُمْ', tg: 'онҳо (мардон)', ru: 'они (м)' },
+  { ar: 'هِيَ', tg: 'ӯ (зан)', ru: 'она' },
+  { ar: 'هُمَا', tg: 'онҳо (ду зан)', ru: 'они двое (ж)' },
+  { ar: 'هُنَّ', tg: 'онҳо (занон)', ru: 'они (ж)' },
+  { ar: 'أَنْتَ', tg: 'ту (мард)', ru: 'ты (м)' },
+  { ar: 'أَنْتُمَا', tg: 'шумо (ду нафар)', ru: 'вы двое (м)' },
+  { ar: 'أَنْتُمْ', tg: 'шумо (мардон)', ru: 'вы (м)' },
+  { ar: 'أَنْتِ', tg: 'ту (зан)', ru: 'ты (ж)' },
+  { ar: 'أَنْتُمَا', tg: 'шумо (ду зан)', ru: 'вы двое (ж)' },
+  { ar: 'أَنْتُنَّ', tg: 'шумо (занон)', ru: 'вы (ж)' },
+  { ar: 'أَنَا', tg: 'ман', ru: 'я' },
+  { ar: 'نَحْنُ', tg: 'мо', ru: 'мы' }
+]
+
+const ARB_T = {
+  tg: {
+    tabSarf: '🔎 Сарф',
+    tabTheory: '📖 Тақсими калом',
+    tabForms: '📚 Бобҳои феъл',
+    searchPh: 'Калимаро нависед: ضَرَبَ، أَكَلَ، ذَهَبَ، ضربة...',
+    search: 'Ҷустуҷӯ',
+    clear: 'Тоза',
+    results: 'Натиҷаҳо',
+    notFound: 'Калима дар луғат ёфт нашуд. Агар решаи сеҳарфа бошад, бобро интихоб кунед:',
+    notFoundRoot: 'Ин калима дар луғат нест ва решаи сеҳарфа ҳам нест. Решаро (масалан: ك ت ب) нависед.',
+    chooseBab: 'Бобро интихоб кунед',
+    allVerbs: 'Ҳамаи феълҳо',
+    hideVerbs: 'Пинҳон кардан',
+    form: 'Боб',
+    meaning: 'Маъно',
+    masdar: 'Масдар',
+    voice: 'Ҳолат',
+    active: 'Маълум',
+    passive: 'Маҷҳул',
+    past: 'Мозӣ',
+    present: 'Музореъ',
+    amr: 'Амр',
+    nahy: 'Наҳӣ',
+    names: 'Исмҳо',
+    rafi: 'Марфӯъ',
+    nasb: 'Мансуб',
+    jazm: 'Маҷзум',
+    person: 'Шахс',
+    fail: 'Исми фоил',
+    mafool: 'Исми мафъул',
+    masdarName: 'Масдар',
+    noPassive: 'Барои ин феъл шакли маҷҳул истифода намешавад.',
+    saveVerb: '💾 Ба луғат илова кардан',
+    edited: 'Ислоҳ шудааст',
+    editCell: 'Ислоҳ',
+    save: 'Захира',
+    cancel: 'Бекор',
+    reset: '↺ Бозгашт',
+    adminHint: 'Админ: ҳар ҳуҷайраро пахш карда ислоҳ кунед.',
+    machineNote: 'Шаклҳо бо қоидаҳои сарф ҳосил шудаанд; дар ҳолати хато, админ метавонад ислоҳ кунад.',
+    unsupported: 'Барои ин боб ва ин реша шаклҳо худкор сохта намешаванд; админ метавонад ҳуҷайраҳоро дастӣ ворид кунад.',
+    rootType: 'Навъи реша',
+    types: {
+      sahih: 'саҳеҳ', mithal: 'мисол (вов)', ajwaf: 'аҷвaф (миёна заиф)', naqis: 'нақис (охир заиф)',
+      mudaaf: 'музоъаф', mahmuz: 'маҳмуз', lafifMafruq: 'лафиф маврук', lafifMaqrun: 'лафиф мақрун'
+    },
+    adm: {
+      title: '🔤 Забони арабӣ — идоракунӣ',
+      verbs: 'Феълҳо',
+      theory: 'Назария (тақсими калом)',
+      cells: 'Ислоҳҳои ҳуҷайраҳо',
+      root: 'Реша (3 ҳарф, масалан: ك ت ب)',
+      bab: 'Боби феъли сулосӣ (мозӣ – музореъ)',
+      masdar: 'Масдар (бо ҳаракат)',
+      tg: 'Маъно (тоҷикӣ)',
+      ru: 'Маъно (русӣ)',
+      add: 'Феъли нав илова кардан',
+      editing: 'Таҳрири феъл',
+      saveBtn: 'Захира',
+      hide: 'Пинҳон / ҳазф',
+      edit: 'Таҳрир',
+      restore: 'Баргардонидан',
+      hidden: 'пинҳон',
+      mine: 'ислоҳшуда',
+      filter: 'Ҷустуҷӯ дар луғат...',
+      invalidRoot: 'Решаи сеҳарфа ворид кунед.',
+      cannot: 'Барои ин реша ва боб шаклҳо худкор сохта намешаванд. Бобро ба I иваз кунед.',
+      saved: 'Захира шуд.',
+      deleted: 'Ҳазф шуд.',
+      tTitle: 'Сарлавҳа (тоҷикӣ)',
+      tBody: 'Матн (тоҷикӣ)',
+      tTitleRu: 'Сарлавҳа (русӣ)',
+      tBodyRu: 'Матн (русӣ)',
+      addTheory: 'Корти нав илова кардан',
+      noCells: 'Ислоҳи ҳуҷайра нест.'
+    }
+  },
+  ru: {
+    tabSarf: '🔎 Сарф',
+    tabTheory: '📖 Части речи',
+    tabForms: '📚 Породы глагола',
+    searchPh: 'Введите слово: ضَرَبَ، أَكَلَ، ذَهَبَ، ضربة...',
+    search: 'Поиск',
+    clear: 'Очистить',
+    results: 'Результаты',
+    notFound: 'Слово не найдено в словаре. Если это трёхбуквенный корень, выберите породу:',
+    notFoundRoot: 'Слова нет в словаре, и это не трёхбуквенный корень. Введите корень (например: ك ت ب).',
+    chooseBab: 'Выберите породу',
+    allVerbs: 'Все глаголы',
+    hideVerbs: 'Скрыть',
+    form: 'Порода',
+    meaning: 'Значение',
+    masdar: 'Масдар',
+    voice: 'Залог',
+    active: 'Действительный',
+    passive: 'Страдательный',
+    past: 'Прошедшее',
+    present: 'Настоящее',
+    amr: 'Повелительное',
+    nahy: 'Запрет',
+    names: 'Имена',
+    rafi: 'Марфуʿ',
+    nasb: 'Мансуб',
+    jazm: 'Мажзум',
+    person: 'Лицо',
+    fail: 'Причастие деятеля',
+    mafool: 'Причастие страдат.',
+    masdarName: 'Масдар',
+    noPassive: 'У этого глагола нет страдательного залога.',
+    saveVerb: '💾 Добавить в словарь',
+    edited: 'Исправлено',
+    editCell: 'Исправить',
+    save: 'Сохранить',
+    cancel: 'Отмена',
+    reset: '↺ Сбросить',
+    adminHint: 'Админ: нажмите на ячейку, чтобы исправить.',
+    machineNote: 'Формы строятся по правилам сарфа; при ошибке админ может исправить.',
+    unsupported: 'Для этого корня и породы формы автоматически не строятся; админ может ввести ячейки вручную.',
+    rootType: 'Тип корня',
+    types: {
+      sahih: 'сильный', mithal: 'мисаль (вав)', ajwaf: 'полый', naqis: 'недостаточный',
+      mudaaf: 'удвоенный', mahmuz: 'хамзованный', lafifMafruq: 'лафиф мафрук', lafifMaqrun: 'лафиф макрун'
+    },
+    adm: {
+      title: '🔤 Арабский язык — управление',
+      verbs: 'Глаголы',
+      theory: 'Теория (части речи)',
+      cells: 'Исправления ячеек',
+      root: 'Корень (3 буквы, например: ك ت ب)',
+      bab: 'Порода трёхбуквенного глагола (прош. – наст.)',
+      masdar: 'Масдар (с огласовками)',
+      tg: 'Значение (таджикский)',
+      ru: 'Значение (русский)',
+      add: 'Добавить новый глагол',
+      editing: 'Редактирование глагола',
+      saveBtn: 'Сохранить',
+      hide: 'Скрыть / удалить',
+      edit: 'Изменить',
+      restore: 'Вернуть',
+      hidden: 'скрыт',
+      mine: 'изменён',
+      filter: 'Поиск по словарю...',
+      invalidRoot: 'Введите трёхбуквенный корень.',
+      cannot: 'Для этого корня и породы формы автоматически не строятся. Выберите породу I.',
+      saved: 'Сохранено.',
+      deleted: 'Удалено.',
+      tTitle: 'Заголовок (таджикский)',
+      tBody: 'Текст (таджикский)',
+      tTitleRu: 'Заголовок (русский)',
+      tBodyRu: 'Текст (русский)',
+      addTheory: 'Добавить новую карточку',
+      noCells: 'Исправлений ячеек нет.'
+    }
+  }
+}
+
+const ARB_THEORY = [
+  {
+    id: 'kalam',
+    title: 'Тақсими калом — كَلَامٌ',
+    titleRu: 'Деление речи — كَلَامٌ',
+    body:
+      'Калом (الْكَلَامُ) — суханест, ки маънои пурра дорад. Он аз се қисм иборат аст:\n' +
+      '١. اِسْمٌ — ном: ҷонвар, ашё, мафҳумро мефаҳмонад ва бо замон алоқа надорад. Мисол: كِتَابٌ (китоб)، رَجُلٌ (мард)، عِلْمٌ (илм).\n' +
+      '٢. فِعْلٌ — феъл: кор ё ҳолатро дар замони муайян мефаҳмонад. Мисол: كَتَبَ (навишт)، يَكْتُبُ (менависад)، اُكْتُبْ (бинавис).\n' +
+      '٣. حَرْفٌ — ҳарф: худ маънои комил надорад, дар ҷумла маъно мегирад. Мисол: فِي (дар)، مِنْ (аз)، إِلَى (ба)، وَ (ва).',
+    bodyRu:
+      'Речь (الْكَلَامُ) — высказывание с законченным смыслом. Делится на три части:\n' +
+      '١. اِسْمٌ — имя: обозначает существо, предмет, понятие без привязки ко времени. Пример: كِتَابٌ (книга)، رَجُلٌ (мужчина)، عِلْمٌ (знание).\n' +
+      '٢. فِعْلٌ — глагол: действие или состояние во времени. Пример: كَتَبَ (написал)، يَكْتُبُ (пишет)، اُكْتُبْ (пиши).\n' +
+      '٣. حَرْفٌ — частица: сама не имеет полного значения, смысл получает в предложении. Пример: فِي (в)، مِنْ (из)، إِلَى (к)، وَ (и).'
+  },
+  {
+    id: 'ism',
+    title: 'Қисмҳои ном — اَلِاسْمُ',
+    titleRu: 'Виды имён — اَلِاسْمُ',
+    body:
+      '• Бо ҷинс: مُذَكَّرٌ (мардона) — طَالِبٌ؛ مُؤَنَّثٌ (занона) — طَالِبَةٌ.\n' +
+      '• Бо шумора: مُفْرَدٌ (танҳо) — كِتَابٌ؛ مُثَنَّى (ду) — كِتَابَانِ؛ جَمْعٌ (бисёр) — كُتُبٌ.\n' +
+      '• Бо ошкорӣ: نَكِرَةٌ (номуайян) — كِتَابٌ؛ مَعْرِفَةٌ (муайян) — اَلْكِتَابُ.\n' +
+      '• Аз феъл сохта мешаванд: مَصْدَرٌ (масдар) — كِتَابَةٌ؛ اِسْمُ الْفَاعِلِ (иҷрокунанда) — كَاتِبٌ؛ اِسْمُ الْمَفْعُولِ (вокеъшаванда) — مَكْتُوبٌ.\n' +
+      '• Ҳолатҳои охир: مَرْفُوعٌ (ـُ)، مَنْصُوبٌ (ـَ)، مَجْرُورٌ (ـِ).',
+    bodyRu:
+      '• По роду: مُذَكَّرٌ (муж.) — طَالِبٌ؛ مُؤَنَّثٌ (жен.) — طَالِبَةٌ.\n' +
+      '• По числу: مُفْرَدٌ (ед.) — كِتَابٌ؛ مُثَنَّى (дв.) — كِتَابَانِ؛ جَمْعٌ (мн.) — كُتُبٌ.\n' +
+      '• По определённости: نَكِرَةٌ (неопр.) — كِتَابٌ؛ مَعْرِفَةٌ (опр.) — اَلْكِتَابُ.\n' +
+      '• Образуются от глагола: مَصْدَرٌ (масдар) — كِتَابَةٌ؛ اِسْمُ الْفَاعِلِ (причастие деятеля) — كَاتِبٌ؛ اِسْمُ الْمَفْعُولِ (страдательное причастие) — مَكْتُوبٌ.\n' +
+      '• Падежи: مَرْفُوعٌ (ـُ)، مَنْصُوبٌ (ـَ)، مَجْرُورٌ (ـِ).'
+  },
+  {
+    id: 'fil',
+    title: 'Қисмҳои феъл — اَلْفِعْلُ',
+    titleRu: 'Виды глагола — اَلْفِعْلُ',
+    body:
+      '١. اَلْمَاضِي (мозӣ) — кори анҷомёфта: كَتَبَ — навишт.\n' +
+      '٢. اَلْمُضَارِعُ (музореъ) — кори ҳозира ё оянда: يَكْتُبُ — менависад. Се ҳолат дорад: مَرْفُوعٌ (يَكْتُبُ)، مَنْصُوبٌ (لَنْ يَكْتُبَ)، مَجْزُومٌ (لَمْ يَكْتُبْ).\n' +
+      '٣. اَلْأَمْرُ (амр) — фармон: اُكْتُبْ — бинавис. Наҳӣ (манъ): لَا تَكْتُبْ — нанавис.\n' +
+      'Ҳолат: مَعْلُومٌ (маълум, иҷрокунанда маълум) — كَتَبَ؛ مَجْهُولٌ (маҷҳул) — كُتِبَ.\n' +
+      'Феъл 14 шахс дорад: ғоиб (ӯ، онҳо)، мухотаб (ту، шумо)، мутакаллим (ман، мо).',
+    bodyRu:
+      '١. اَلْمَاضِي (прошедшее) — завершённое действие: كَتَبَ — написал.\n' +
+      '٢. اَلْمُضَارِعُ (настоящее-будущее) — يَكْتُبُ — пишет. Три наклонения: مَرْفُوعٌ (يَكْتُبُ)، مَنْصُوبٌ (لَنْ يَكْتُبَ)، مَجْزُومٌ (لَمْ يَكْتُبْ).\n' +
+      '٣. اَلْأَمْرُ (повелительное) — اُكْتُبْ — пиши. Запрет: لَا تَكْتُبْ — не пиши.\n' +
+      'Залог: مَعْلُومٌ (действительный) — كَتَبَ؛ مَجْهُولٌ (страдательный) — كُتِبَ.\n' +
+      'У глагола 14 лиц: третье (он، они)، второе (ты، вы)، первое (я، мы).'
+  },
+  {
+    id: 'harf',
+    title: 'Қисмҳои ҳарф — اَلْحَرْفُ',
+    titleRu: 'Виды частиц — اَلْحَرْفُ',
+    body:
+      '• حُرُوفُ الْجَرِّ (ҳарфҳои ҷарр): مِنْ، إِلَى، عَلَى، فِي، عَنْ، بِ، لِ، كَ.\n' +
+      '• حُرُوفُ الْعَطْفِ (пайвандак): وَ، فَ، ثُمَّ، أَوْ.\n' +
+      '• حُرُوفُ النَّصْبِ (ҳарфҳои насб): أَنْ، لَنْ، كَيْ.\n' +
+      '• حُرُوفُ الْجَزْمِ (ҳарфҳои ҷазм): لَمْ، لَمَّا، لَا (наҳӣ)، لَامُ الْأَمْرِ.\n' +
+      '• حُرُوفُ الِاسْتِفْهَامِ (пурсиш): هَلْ، أَ.\n' +
+      '• حُرُوفُ النَّفْيِ (инкор): مَا، لَا، لَنْ، لَمْ.\n' +
+      '• حُرُوفُ النِّدَاءِ (хитоб): يَا، أَيُّهَا.\n' +
+      '• إِنَّ وَأَخَوَاتُهَا: إِنَّ، أَنَّ، كَأَنَّ، لَكِنَّ، لَيْتَ، لَعَلَّ.',
+    bodyRu:
+      '• حُرُوفُ الْجَرِّ (предлоги): مِنْ، إِلَى، عَلَى، فِي، عَنْ، بِ، لِ، كَ.\n' +
+      '• حُرُوفُ الْعَطْفِ (союзы): وَ، فَ، ثُمَّ، أَوْ.\n' +
+      '• حُرُوفُ النَّصْبِ (частицы насба): أَنْ، لَنْ، كَيْ.\n' +
+      '• حُرُوفُ الْجَزْمِ (частицы джазма): لَمْ، لَمَّا، لَا (запрет)، لَامُ الْأَمْرِ.\n' +
+      '• حُرُوفُ الِاسْتِفْهَامِ (вопрос): هَلْ، أَ.\n' +
+      '• حُرُوفُ النَّفْيِ (отрицание): مَا، لَا، لَنْ، لَمْ.\n' +
+      '• حُرُوفُ النِّدَاءِ (звательные): يَا، أَيُّهَا.\n' +
+      '• إِنَّ وَأَخَوَاتُهَا: إِنَّ، أَنَّ، كَأَنَّ، لَكِنَّ، لَيْتَ، لَعَلَّ.'
+  },
+  {
+    id: 'babs',
+    title: 'Бобҳои феъли сулосии муҷаррад',
+    titleRu: 'Породы простого трёхбуквенного глагола',
+    body:
+      'Феъли сесоҳарфа дар шакли аввал (I) шаш боб дорад — аз рӯи ҳаракати ҳарфи миёна дар мозӣ ва музореъ:\n' +
+      '١. فَعَلَ – يَفْعُلُ: كَتَبَ – يَكْتُبُ\n' +
+      '٢. فَعَلَ – يَفْعِلُ: ضَرَبَ – يَضْرِبُ\n' +
+      '٣. فَعَلَ – يَفْعَلُ: فَتَحَ – يَفْتَحُ (одатан ҳарфи ҳалқӣ дорад)\n' +
+      '٤. فَعِلَ – يَفْعَلُ: عَلِمَ – يَعْلَمُ\n' +
+      '٥. فَعُلَ – يَفْعُلُ: كَرُمَ – يَكْرُمُ (сифатҳо)\n' +
+      '٦. فَعِلَ – يَفْعِلُ: حَسِبَ – يَحْسِبُ (кам)',
+    bodyRu:
+      'У простого трёхбуквенного глагола (форма I) шесть пород — по огласовке второй коренной в прошедшем и настоящем:\n' +
+      '١. فَعَلَ – يَفْعُلُ: كَتَبَ – يَكْتُبُ\n' +
+      '٢. فَعَلَ – يَفْعِلُ: ضَرَبَ – يَضْرِبُ\n' +
+      '٣. فَعَلَ – يَفْعَلُ: فَتَحَ – يَفْتَحُ (обычно с гортанной буквой)\n' +
+      '٤. فَعِلَ – يَفْعَلُ: عَلِمَ – يَعْلَمُ\n' +
+      '٥. فَعُلَ – يَفْعُلُ: كَرُمَ – يَكْرُمُ (качества)\n' +
+      '٦. فَعِلَ – يَفْعِلُ: حَسِبَ – يَحْسِبُ (редко)'
+  },
+  {
+    id: 'mazid',
+    title: 'Феълҳои мазид (II–X)',
+    titleRu: 'Производные породы (II–X)',
+    body:
+      'II فَعَّلَ – يُفَعِّلُ – تَفْعِيلٌ: интенсивӣ/гузаранда. عَلَّمَ (омӯзонд)\n' +
+      'III فَاعَلَ – يُفَاعِلُ – مُفَاعَلَةٌ: ҳамкорӣ. قَاتَلَ (ҷангид)\n' +
+      'IV أَفْعَلَ – يُفْعِلُ – إِفْعَالٌ: гузаранда. أَرْسَلَ (фиристод)\n' +
+      'V تَفَعَّلَ – يَتَفَعَّلُ – تَفَعُّلٌ: худписанд аз II. تَعَلَّمَ (омӯхт)\n' +
+      'VI تَفَاعَلَ – يَتَفَاعَلُ – تَفَاعُلٌ: ҳамдигар. تَقَاتَلَ\n' +
+      'VII اِنْفَعَلَ – يَنْفَعِلُ – اِنْفِعَالٌ: худписанд. اِنْكَسَرَ (шикаст шуд)\n' +
+      'VIII اِفْتَعَلَ – يَفْتَعِلُ – اِفْتِعَالٌ: اِجْتَمَعَ (ҷамъ шуд)\n' +
+      'IX اِفْعَلَّ – يَفْعَلُّ – اِفْعِلَالٌ: рангу айб. اِحْمَرَّ (сурх шуд)\n' +
+      'X اِسْتَفْعَلَ – يَسْتَفْعِلُ – اِسْتِفْعَالٌ: хостан. اِسْتَغْفَرَ (омурзиш хост)',
+    bodyRu:
+      'II فَعَّلَ – يُفَعِّلُ – تَفْعِيلٌ: усиление/переходность. عَلَّمَ (обучил)\n' +
+      'III فَاعَلَ – يُفَاعِلُ – مُفَاعَلَةٌ: взаимодействие. قَاتَلَ (сражался)\n' +
+      'IV أَفْعَلَ – يُفْعِلُ – إِفْعَالٌ: переходность. أَرْسَلَ (отправил)\n' +
+      'V تَفَعَّلَ – يَتَفَعَّلُ – تَفَعُّلٌ: возвратная к II. تَعَلَّمَ (учился)\n' +
+      'VI تَفَاعَلَ – يَتَفَاعَلُ – تَفَاعُلٌ: взаимность. تَقَاتَلَ\n' +
+      'VII اِنْفَعَلَ – يَنْفَعِلُ – اِنْفِعَالٌ: страдательность. اِنْكَسَرَ (сломался)\n' +
+      'VIII اِفْتَعَلَ – يَفْتَعِلُ – اِفْتِعَالٌ: اِجْتَمَعَ (собрался)\n' +
+      'IX اِفْعَلَّ – يَفْعَلُّ – اِفْعِلَالٌ: цвета и дефекты. اِحْمَرَّ (покраснел)\n' +
+      'X اِسْتَفْعَلَ – يَسْتَفْعِلُ – اِسْتِفْعَالٌ: просьба/оценка. اِسْتَغْفَرَ (попросил прощения)'
+  }
+]
+
+/* ---------- ёрирасонҳо ---------- */
+
+function arbSearchKey(text) {
+  return String(text || '')
+    .replace(/[ً-ٰٟـ]/g, '')
+    .replace(/[آأإٱ]/g, 'ا')
+    .replace(/[ؤئ]/g, 'ء')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/\s+/g, '')
+}
+
+function arbVerbKey(root, form) {
+  return `${normalizeLetters(root)}|${form}`
+}
+
+function arbBab(id) {
+  return ARB_BABS.find(item => item.id === id) || ARB_BABS[0]
+}
+
+function arbConj(verb) {
+  try {
+    const bab = arbBab(verb.bab)
+    return conjugate({ root: verb.root, form: Number(verb.form) || 1, pv: bab.pv, mv: bab.mv, masdar: verb.masdar || '' })
+  } catch {
+    return null
+  }
+}
+
+function buildArabicData(rows) {
+  const verbMap = new Map()
+
+  ARB_SEED.forEach(([root, form, bab, masdar, tg, ru]) => {
+    const key = arbVerbKey(root, form)
+    verbMap.set(key, { key, root: normalizeLetters(root), form, bab: bab || 'a-u', masdar, tg, ru, src: 'seed', rowId: null, hidden: false })
+  })
+
+  const theoryMap = new Map()
+  ARB_THEORY.forEach((item, index) => {
+    theoryMap.set(item.id, { ...item, order: index, src: 'seed', rowId: null, hidden: false })
+  })
+
+  const cells = new Map()
+  const cellRows = []
+
+  ;(rows || []).forEach(row => {
+    const meta = parseStoredNote(row.source_note).meta || {}
+    if (meta.kind === 'verb') {
+      const form = Number(meta.form) || 1
+      const key = arbVerbKey(meta.root || row.title, form)
+      const old = verbMap.get(key)
+      verbMap.set(key, {
+        key,
+        root: normalizeLetters(meta.root || row.title),
+        form,
+        bab: meta.bab || (old && old.bab) || 'a-u',
+        masdar: meta.masdar ?? (old ? old.masdar : ''),
+        tg: meta.tg ?? (old ? old.tg : ''),
+        ru: meta.ru ?? (old ? old.ru : ''),
+        src: old ? 'seed' : 'db',
+        edited: true,
+        rowId: row.id,
+        hidden: meta.hide === '1'
+      })
+    } else if (meta.kind === 'theory') {
+      const tid = meta.tid || `t${row.id}`
+      const old = theoryMap.get(tid)
+      theoryMap.set(tid, {
+        id: tid,
+        title: row.title || (old && old.title) || '',
+        titleRu: meta.title_ru || (old && old.titleRu) || '',
+        body: row.content_text || (old && old.body) || '',
+        bodyRu: meta.body_ru || (old && old.bodyRu) || '',
+        order: Number(meta.order) || (old ? old.order : 100 + Number(row.id || 0)),
+        src: old ? 'seed' : 'db',
+        edited: true,
+        rowId: row.id,
+        hidden: meta.hide === '1'
+      })
+    } else if (meta.kind === 'cell') {
+      cells.set(`${meta.vk}|${meta.cell}`, { value: row.content_text || meta.value || '', rowId: row.id })
+      cellRows.push({ rowId: row.id, vk: meta.vk, cell: meta.cell, value: row.content_text || meta.value || '' })
+    }
+  })
+
+  const verbs = [...verbMap.values()].sort((a, b) => a.form - b.form || a.root.localeCompare(b.root, 'ar'))
+  const theory = [...theoryMap.values()].sort((a, b) => a.order - b.order)
+  return { verbs, theory, cells, cellRows }
+}
+
+function arbCellValue(conj, path) {
+  if (!conj) return ''
+  const [a, b, c, d] = path.split('.')
+  if (path === 'fail' || path === 'mafool' || path === 'masdar') return conj[path] || ''
+  if (a === 'past') return (conj.past[b] || [])[Number(c)] || ''
+  if (a === 'pres') return ((conj.pres[b] || {})[c] || [])[Number(d)] || ''
+  if (a === 'amr') return conj.amr[Number(b)] || ''
+  if (a === 'nahy') return conj.nahy[Number(b)] || ''
+  return ''
+}
+
+function arbHasPassive(conj) {
+  return !!(conj && conj.past.pas && conj.pres.pas)
+}
+
+/* ---------- Қисми оммавӣ ---------- */
+
+function ArabicSection({ rows, lang, admin, db, notify, reload }) {
+  const tt = ARB_T[lang] || ARB_T.tg
+  const [tab, setTab] = useState('sarf')
+  const [query, setQuery] = useState('')
+  const [submitted, setSubmitted] = useState('')
+  const [showAll, setShowAll] = useState(false)
+  const [current, setCurrent] = useState(null)
+  const [voice, setVoice] = useState('act')
+  const [tense, setTense] = useState('past')
+  const [mood, setMood] = useState('rafi')
+  const [editing, setEditing] = useState(null)
+  const [editText, setEditText] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const data = useMemo(() => buildArabicData(rows), [rows])
+  const activeVerbs = useMemo(() => data.verbs.filter(item => !item.hidden), [data.verbs])
+
+  const index = useMemo(() => {
+    const map = new Map()
+    const add = (word, key) => {
+      const k = arbSearchKey(word)
+      if (!k) return
+      if (!map.has(k)) map.set(k, new Set())
+      map.get(k).add(key)
+    }
+    activeVerbs.forEach(verb => {
+      const conj = arbConj(verb)
+      add(verb.root, verb.key)
+      if (!conj) return
+      const push = list => (list || []).forEach(word => add(word, verb.key))
+      push(conj.past.act)
+      push(conj.past.pas)
+      ;['act', 'pas'].forEach(v => {
+        if (conj.pres[v]) MOODS.forEach(m => push(conj.pres[v][m]))
+      })
+      push(conj.amr)
+      add(conj.fail, verb.key)
+      add(conj.mafool, verb.key)
+      add(conj.masdar, verb.key)
+    })
+    return map
+  }, [activeVerbs])
+
+  const verbByKey = useMemo(() => new Map(data.verbs.map(item => [item.key, item])), [data.verbs])
+
+  const rootCandidate = useMemo(() => {
+    const key = arbSearchKey(submitted)
+    if (!key) return ''
+    let letters = key.replace(/^ال/, '')
+    if (letters.length === 4 && letters.endsWith('ه')) letters = letters.slice(0, 3)
+    return letters.length === 3 ? normalizeLetters(letters) : ''
+  }, [submitted])
+
+  const results = useMemo(() => {
+    const key = arbSearchKey(submitted)
+    if (!key) return null
+    let hit = index.get(key)
+    if ((!hit || !hit.size) && rootCandidate) hit = index.get(arbSearchKey(rootCandidate))
+    const found = hit ? [...hit].map(k => verbByKey.get(k)).filter(Boolean) : []
+    return found.sort((a, b) => a.form - b.form)
+  }, [submitted, index, verbByKey, rootCandidate])
+
+  const conj = useMemo(() => (current ? arbConj(current) : null), [current])
+
+  const cellOverride = (path) => (current ? data.cells.get(`${current.key}|${path}`) : null)
+  const cellText = path => {
+    const override = cellOverride(path)
+    return override && override.value ? override.value : arbCellValue(conj, path)
+  }
+
+  const runSearch = event => {
+    if (event) event.preventDefault()
+    setSubmitted(query)
+    setCurrent(null)
+    setEditing(null)
+  }
+
+  const openVerb = verb => {
+    setCurrent(verb)
+    setVoice('act')
+    setTense('past')
+    setMood('rafi')
+    setEditing(null)
+  }
+
+  const startEdit = (path, value) => {
+    if (!admin) return
+    setEditing(path)
+    setEditText(value)
+  }
+
+  const saveCell = async path => {
+    if (!db || !admin || busy || !current) return
+    setBusy(true)
+    try {
+      const old = cellOverride(path)
+      const text = String(editText || '').trim()
+      if (!text || text === arbCellValue(conj, path)) {
+        if (old) await db.from('content_items').delete().eq('id', old.rowId)
+      } else {
+        const payload = {
+          section_slug: '__arabic',
+          title: `${current.root} ${current.form}`,
+          content_text: text,
+          source_note: makeStoredNote('', { kind: 'cell', vk: current.key, cell: path, value: text }),
+          is_published: true,
+          updated_at: new Date().toISOString()
+        }
+        const result = old
+          ? await db.from('content_items').update(payload).eq('id', old.rowId)
+          : await db.from('content_items').insert(payload)
+        if (result.error) throw result.error
+      }
+      setEditing(null)
+      await reload()
+    } catch (error) {
+      notify(error.message || 'Хато', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const resetCell = async path => {
+    const old = cellOverride(path)
+    if (!db || !admin || !old || busy) return
+    setBusy(true)
+    try {
+      const { error } = await db.from('content_items').delete().eq('id', old.rowId)
+      if (error) throw error
+      setEditing(null)
+      await reload()
+    } catch (error) {
+      notify(error.message || 'Хато', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const saveToDictionary = async () => {
+    if (!db || !admin || !current || busy) return
+    setBusy(true)
+    try {
+      const payload = {
+        section_slug: '__arabic',
+        title: current.root,
+        content_text: current.tg || '',
+        source_note: makeStoredNote('', {
+          kind: 'verb', root: current.root, form: String(current.form), bab: current.bab,
+          masdar: current.masdar || '', tg: current.tg || '', ru: current.ru || '', hide: ''
+        }),
+        is_published: true,
+        updated_at: new Date().toISOString()
+      }
+      const { error } = await db.from('content_items').insert(payload)
+      if (error) throw error
+      notify(tt.adm.saved)
+      await reload()
+    } catch (error) {
+      notify(error.message || 'Хато', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const meaningOf = verb => (lang === 'ru' ? (verb.ru || verb.tg) : (verb.tg || verb.ru)) || ''
+
+  const renderCell = (path, personIndex) => {
+    const value = cellText(path)
+    const edited = !!cellOverride(path)
+    const isEditing = editing === path
+
+    if (isEditing) {
+      return (
+        <div className="arb-edit">
+          <input
+            dir="rtl"
+            className="arb-input"
+            value={editText}
+            onChange={event => setEditText(event.target.value)}
+            autoFocus
+          />
+          <div className="arb-edit-actions">
+            <button type="button" className="primary-button" disabled={busy} onClick={() => saveCell(path)}>{tt.save}</button>
+            <button type="button" className="secondary-button" onClick={() => setEditing(null)}>{tt.cancel}</button>
+            {edited && <button type="button" className="secondary-button" disabled={busy} onClick={() => resetCell(path)}>{tt.reset}</button>}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <button
+        type="button"
+        className={`arb-cell${edited ? ' is-edited' : ''}${admin ? ' is-editable' : ''}`}
+        dir="rtl"
+        onClick={() => startEdit(path, value)}
+        title={admin ? tt.editCell : undefined}
+      >
+        {value || '—'}
+      </button>
+    )
+  }
+
+  const personLabel = index2 => {
+    const p = ARB_PERSONS[index2]
+    return (
+      <div className="arb-person">
+        <span className="arb-person-ar" dir="rtl">{p.ar}</span>
+        <span className="arb-person-tr">{lang === 'ru' ? p.ru : p.tg}</span>
+      </div>
+    )
+  }
+
+  const renderTable = () => {
+    if (!conj) return <p className="arb-note">{tt.unsupported}</p>
+
+    if (tense === 'past' || tense === 'present') {
+      const sideVoice = voice === 'pas' ? 'pas' : 'act'
+      if (sideVoice === 'pas' && !arbHasPassive(conj)) return <p className="arb-note">{tt.noPassive}</p>
+      return (
+        <div className="arb-table">
+          {range(14).map(j => {
+            const path = tense === 'past' ? `past.${sideVoice}.${j}` : `pres.${sideVoice}.${mood}.${j}`
+            return (
+              <div className="arb-row" key={j}>
+                {personLabel(j)}
+                {renderCell(path, j)}
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+
+    if (tense === 'amr' || tense === 'nahy') {
+      return (
+        <div className="arb-table">
+          {range(6).map(j => (
+            <div className="arb-row" key={j}>
+              {personLabel(6 + j)}
+              {renderCell(`${tense}.${j}`, 6 + j)}
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    return (
+      <div className="arb-table">
+        {[['fail', tt.fail], ['mafool', tt.mafool], ['masdar', tt.masdarName]].map(([path, label]) => (
+          <div className="arb-row" key={path}>
+            <div className="arb-person"><span className="arb-person-tr">{label}</span></div>
+            {renderCell(path, 0)}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  const renderVerbHeader = () => {
+    if (!current) return null
+    const past = (conj && conj.past.act[0]) || current.root
+    const pres = conj && conj.pres.act.rafi[0]
+    return (
+      <div className="arb-verb-card">
+        <div className="arb-verb-main" dir="rtl">
+          <span className="arb-verb-past">{cellOverride('past.act.0')?.value || past}</span>
+          {pres && <span className="arb-verb-pres">{cellOverride('pres.act.rafi.0')?.value || pres}</span>}
+        </div>
+        <div className="arb-verb-meta">
+          <span>{tt.form}: <b>{FORM_NAMES[current.form]}</b></span>
+          {conj && <span>{tt.rootType}: <b>{tt.types[conj.cls] || conj.cls}</b></span>}
+          {(cellOverride('masdar')?.value || (conj && conj.masdar)) && (
+            <span>{tt.masdar}: <b dir="rtl">{cellOverride('masdar')?.value || conj.masdar}</b></span>
+          )}
+        </div>
+        {meaningOf(current) && <p className="arb-meaning">{meaningOf(current)}</p>}
+        {admin && current.src === 'temp' && (
+          <button type="button" className="primary-button" disabled={busy} onClick={saveToDictionary}>{tt.saveVerb}</button>
+        )}
+      </div>
+    )
+  }
+
+  const renderControls = () => (
+    <div className="arb-controls">
+      <div className="arb-seg">
+        {['past', 'present', 'amr', 'nahy', 'names'].map(item => (
+          <button
+            key={item}
+            type="button"
+            className={tense === item ? 'active' : ''}
+            onClick={() => { setTense(item); setEditing(null) }}
+          >
+            {tt[item]}
+          </button>
+        ))}
+      </div>
+
+      {(tense === 'past' || tense === 'present') && (
+        <div className="arb-seg arb-seg-small">
+          <button type="button" className={voice === 'act' ? 'active' : ''} onClick={() => { setVoice('act'); setEditing(null) }}>{tt.active}</button>
+          <button type="button" className={voice === 'pas' ? 'active' : ''} onClick={() => { setVoice('pas'); setEditing(null) }}>{tt.passive}</button>
+        </div>
+      )}
+
+      {tense === 'present' && (
+        <div className="arb-seg arb-seg-small">
+          {['rafi', 'nasb', 'jazm'].map(item => (
+            <button key={item} type="button" className={mood === item ? 'active' : ''} onClick={() => { setMood(item); setEditing(null) }}>
+              {tt[item]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {admin && <p className="arb-note">{tt.adminHint}</p>}
+    </div>
+  )
+
+  const renderSarf = () => (
+    <>
+      <form className="arb-search" onSubmit={runSearch}>
+        <input
+          dir="auto"
+          value={query}
+          onChange={event => setQuery(event.target.value)}
+          placeholder={tt.searchPh}
+          className="arb-search-input"
+        />
+        <button className="primary-button" type="submit">{tt.search}</button>
+        {(query || submitted) && (
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => { setQuery(''); setSubmitted(''); setCurrent(null) }}
+          >
+            {tt.clear}
+          </button>
+        )}
+      </form>
+
+      {current ? (
+        <>
+          <button className="secondary-button back-button" type="button" onClick={() => setCurrent(null)}>← {tt.results}</button>
+          {renderVerbHeader()}
+          {renderControls()}
+          {renderTable()}
+          <p className="arb-note">{tt.machineNote}</p>
+        </>
+      ) : (
+        <>
+          {results && results.length > 0 && (
+            <div className="arb-results">
+              <h4>{tt.results}</h4>
+              {results.map(verb => {
+                const c = arbConj(verb)
+                return (
+                  <button key={verb.key} type="button" className="arb-result" onClick={() => openVerb(verb)}>
+                    <span className="arb-result-ar" dir="rtl">{c ? c.past.act[0] : verb.root}</span>
+                    <span className="arb-result-meta">
+                      {FORM_NAMES[verb.form]} · {meaningOf(verb)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {results && results.length === 0 && (
+            <div className="arb-results">
+              {rootCandidate && canConjugate(rootCandidate, 1) ? (
+                <>
+                  <p className="arb-note">{tt.notFound}</p>
+                  <div className="arb-babs">
+                    {ARB_BABS.map(bab => (
+                      <button
+                        key={bab.id}
+                        type="button"
+                        className="arb-bab"
+                        dir="rtl"
+                        onClick={() => openVerb({
+                          key: arbVerbKey(rootCandidate, 1), root: rootCandidate, form: 1, bab: bab.id,
+                          masdar: '', tg: '', ru: '', src: 'temp'
+                        })}
+                      >
+                        {bab.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="arb-note">{tt.notFoundRoot}</p>
+              )}
+            </div>
+          )}
+
+          <div className="arb-all">
+            <button type="button" className="secondary-button" onClick={() => setShowAll(value => !value)}>
+              {showAll ? tt.hideVerbs : `${tt.allVerbs} (${activeVerbs.length})`}
+            </button>
+            {showAll && (
+              <div className="arb-chips">
+                {activeVerbs.map(verb => {
+                  const c = arbConj(verb)
+                  return (
+                    <button key={verb.key} type="button" className="arb-chip" onClick={() => openVerb(verb)}>
+                      <span dir="rtl">{c ? c.past.act[0] : verb.root}</span>
+                      <small>{FORM_NAMES[verb.form]}</small>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </>
+  )
+
+  const renderTheory = () => (
+    <div className="arb-theory">
+      {data.theory.filter(item => !item.hidden).map(item => (
+        <article className="public-item arb-theory-card" key={item.id}>
+          <h3>{lang === 'ru' ? (item.titleRu || item.title) : item.title}</h3>
+          {String(lang === 'ru' ? (item.bodyRu || item.body) : item.body).split('\n').map((line, i) => (
+            <p key={i} className="arb-line">{line}</p>
+          ))}
+        </article>
+      ))}
+    </div>
+  )
+
+  const renderForms = () => (
+    <div className="arb-theory">
+      {data.theory.filter(item => !item.hidden && (item.id === 'babs' || item.id === 'mazid')).map(item => (
+        <article className="public-item arb-theory-card" key={item.id}>
+          <h3>{lang === 'ru' ? (item.titleRu || item.title) : item.title}</h3>
+          {String(lang === 'ru' ? (item.bodyRu || item.body) : item.body).split('\n').map((line, i) => (
+            <p key={i} className="arb-line">{line}</p>
+          ))}
+        </article>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="arb-wrap">
+      <div className="arb-tabs">
+        <button type="button" className={tab === 'sarf' ? 'active' : ''} onClick={() => setTab('sarf')}>{tt.tabSarf}</button>
+        <button type="button" className={tab === 'theory' ? 'active' : ''} onClick={() => setTab('theory')}>{tt.tabTheory}</button>
+        <button type="button" className={tab === 'forms' ? 'active' : ''} onClick={() => setTab('forms')}>{tt.tabForms}</button>
+      </div>
+      {tab === 'sarf' && renderSarf()}
+      {tab === 'theory' && renderTheory()}
+      {tab === 'forms' && renderForms()}
+    </div>
+  )
+}
+
+/* ---------- Панели админ ---------- */
+
+const ARB_EMPTY_VERB = { root: '', form: '1', bab: 'a-u', masdar: '', tg: '', ru: '' }
+const ARB_EMPTY_THEORY = { title: '', body: '', titleRu: '', bodyRu: '' }
+
+function ArabicAdmin({ rows, lang, db, notify, reload }) {
+  const tt = (ARB_T[lang] || ARB_T.tg).adm
+  const [sub, setSub] = useState('verbs')
+  const [filter, setFilter] = useState('')
+  const [form, setForm] = useState(ARB_EMPTY_VERB)
+  const [editing, setEditing] = useState(null)
+  const [tForm, setTForm] = useState(ARB_EMPTY_THEORY)
+  const [tEditing, setTEditing] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const data = useMemo(() => buildArabicData(rows), [rows])
+
+  const visibleVerbs = useMemo(() => {
+    const key = arbSearchKey(filter)
+    return data.verbs.filter(verb => {
+      if (!key) return true
+      return arbSearchKey(verb.root).includes(key) || String(verb.tg || '').toLowerCase().includes(filter.toLowerCase()) ||
+        String(verb.ru || '').toLowerCase().includes(filter.toLowerCase())
+    })
+  }, [data.verbs, filter])
+
+  const run = async action => {
+    if (!db || busy) return
+    setBusy(true)
+    try {
+      await action()
+      await reload()
+    } catch (error) {
+      notify(error.message || 'Хато', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const verbPayload = (values, hide) => ({
+    section_slug: '__arabic',
+    title: normalizeLetters(values.root),
+    content_text: clean(values.tg),
+    source_note: makeStoredNote('', {
+      kind: 'verb',
+      root: normalizeLetters(values.root),
+      form: String(values.form),
+      bab: values.bab,
+      masdar: clean(values.masdar),
+      tg: clean(values.tg),
+      ru: clean(values.ru),
+      hide: hide ? '1' : ''
+    }),
+    is_published: true,
+    updated_at: new Date().toISOString()
+  })
+
+  const saveVerb = event => {
+    event.preventDefault()
+    const root = normalizeLetters(form.root)
+    if (root.length !== 3) { notify(tt.invalidRoot, 'error'); return }
+    if (!canConjugate(root, Number(form.form))) { notify(tt.cannot, 'error'); return }
+
+    const key = arbVerbKey(root, Number(form.form))
+    const existing = data.verbs.find(item => item.key === key)
+
+    run(async () => {
+      const payload = verbPayload(form, false)
+      const result = existing && existing.rowId
+        ? await db.from('content_items').update(payload).eq('id', existing.rowId)
+        : await db.from('content_items').insert(payload)
+      if (result.error) throw result.error
+      setForm(ARB_EMPTY_VERB)
+      setEditing(null)
+      notify(tt.saved)
+    })
+  }
+
+  const editVerb = verb => {
+    setForm({ root: verb.root, form: String(verb.form), bab: verb.bab || 'a-u', masdar: verb.masdar || '', tg: verb.tg || '', ru: verb.ru || '' })
+    setEditing(verb.key)
+    setSub('verbs')
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const hideVerb = verb => run(async () => {
+    const isSeed = verb.src === 'seed'
+    if (verb.hidden) {
+      // баргардонидан
+      if (verb.rowId) {
+        if (isSeed && !verb.edited) return
+        const payload = verbPayload(verb, false)
+        const { error } = await db.from('content_items').update(payload).eq('id', verb.rowId)
+        if (error) throw error
+      }
+      return
+    }
+    if (verb.rowId && !isSeed) {
+      const { error } = await db.from('content_items').delete().eq('id', verb.rowId)
+      if (error) throw error
+    } else {
+      const payload = verbPayload(verb, true)
+      const result = verb.rowId
+        ? await db.from('content_items').update(payload).eq('id', verb.rowId)
+        : await db.from('content_items').insert(payload)
+      if (result.error) throw result.error
+    }
+    notify(tt.deleted)
+  })
+
+  const saveTheory = event => {
+    event.preventDefault()
+    if (!clean(tForm.title) || !clean(tForm.body)) return
+
+    run(async () => {
+      const tid = tEditing || `t${Date.now()}`
+      const existing = data.theory.find(item => item.id === tid)
+      const payload = {
+        section_slug: '__arabic',
+        title: clean(tForm.title),
+        content_text: clean(tForm.body),
+        source_note: makeStoredNote('', {
+          kind: 'theory', tid, title_ru: clean(tForm.titleRu), body_ru: clean(tForm.bodyRu),
+          order: String(existing ? existing.order + 1 : data.theory.length + 1), hide: ''
+        }),
+        is_published: true,
+        updated_at: new Date().toISOString()
+      }
+      const result = existing && existing.rowId
+        ? await db.from('content_items').update(payload).eq('id', existing.rowId)
+        : await db.from('content_items').insert(payload)
+      if (result.error) throw result.error
+      setTForm(ARB_EMPTY_THEORY)
+      setTEditing(null)
+      notify(tt.saved)
+    })
+  }
+
+  const editTheory = item => {
+    setTForm({ title: item.title, body: item.body, titleRu: item.titleRu || '', bodyRu: item.bodyRu || '' })
+    setTEditing(item.id)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const hideTheory = item => run(async () => {
+    if (item.src === 'seed') {
+      const payload = {
+        section_slug: '__arabic',
+        title: item.title,
+        content_text: item.body,
+        source_note: makeStoredNote('', {
+          kind: 'theory', tid: item.id, title_ru: item.titleRu || '', body_ru: item.bodyRu || '',
+          order: String(item.order + 1), hide: item.hidden ? '' : '1'
+        }),
+        is_published: true,
+        updated_at: new Date().toISOString()
+      }
+      const result = item.rowId
+        ? await db.from('content_items').update(payload).eq('id', item.rowId)
+        : await db.from('content_items').insert(payload)
+      if (result.error) throw result.error
+    } else if (item.rowId) {
+      const { error } = await db.from('content_items').delete().eq('id', item.rowId)
+      if (error) throw error
+    }
+    notify(tt.deleted)
+  })
+
+  const removeCell = cell => run(async () => {
+    const { error } = await db.from('content_items').delete().eq('id', cell.rowId)
+    if (error) throw error
+  })
+
+  return (
+    <>
+      <div className="arb-tabs">
+        {[['verbs', tt.verbs], ['theory', tt.theory], ['cells', tt.cells]].map(([id, label]) => (
+          <button key={id} type="button" className={sub === id ? 'active' : ''} onClick={() => setSub(id)}>{label}</button>
+        ))}
+      </div>
+
+      {sub === 'verbs' && (
+        <>
+          <form className="admin-form" onSubmit={saveVerb}>
+            <h3>{editing ? tt.editing : tt.add}</h3>
+
+            <div className="form-group">
+              <label>{tt.root}</label>
+              <input dir="rtl" value={form.root} onChange={event => setForm({ ...form, root: event.target.value })} />
+            </div>
+
+            <div className="form-group">
+              <label>{(ARB_T[lang] || ARB_T.tg).form}</label>
+              <select value={form.form} onChange={event => setForm({ ...form, form: event.target.value })}>
+                {ARB_FORMS.map(item => <option key={item} value={item}>{FORM_NAMES[item]}</option>)}
+              </select>
+            </div>
+
+            {String(form.form) === '1' && (
+              <div className="form-group">
+                <label>{tt.bab}</label>
+                <select value={form.bab} onChange={event => setForm({ ...form, bab: event.target.value })}>
+                  {ARB_BABS.map(bab => <option key={bab.id} value={bab.id}>{bab.label}</option>)}
+                </select>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label>{tt.masdar}</label>
+              <input dir="rtl" value={form.masdar} onChange={event => setForm({ ...form, masdar: event.target.value })} />
+            </div>
+
+            <div className="form-group">
+              <label>{tt.tg}</label>
+              <input value={form.tg} onChange={event => setForm({ ...form, tg: event.target.value })} />
+            </div>
+
+            <div className="form-group">
+              <label>{tt.ru}</label>
+              <input value={form.ru} onChange={event => setForm({ ...form, ru: event.target.value })} />
+            </div>
+
+            <div className="arb-edit-actions">
+              <button className="primary-button" type="submit" disabled={busy}>{tt.saveBtn}</button>
+              {editing && (
+                <button className="secondary-button" type="button" onClick={() => { setEditing(null); setForm(ARB_EMPTY_VERB) }}>
+                  {(ARB_T[lang] || ARB_T.tg).cancel}
+                </button>
+              )}
+            </div>
+          </form>
+
+          <div className="form-group">
+            <input value={filter} onChange={event => setFilter(event.target.value)} placeholder={tt.filter} />
+          </div>
+
+          {visibleVerbs.map(verb => {
+            const c = arbConj(verb)
+            return (
+              <article className={`public-item arb-admin-item${verb.hidden ? ' is-hidden' : ''}`} key={verb.key}>
+                <h3 dir="rtl" className="arb-admin-ar">{c ? c.past.act[0] : verb.root}</h3>
+                <p>
+                  {FORM_NAMES[verb.form]} · {verb.tg} {verb.ru ? `/ ${verb.ru}` : ''}
+                  {verb.hidden ? ` · ${tt.hidden}` : ''}{verb.edited ? ` · ${tt.mine}` : ''}
+                </p>
+                <div className="arb-edit-actions">
+                  <button className="secondary-button" type="button" onClick={() => editVerb(verb)}>{tt.edit}</button>
+                  <button className="danger-button" type="button" disabled={busy} onClick={() => hideVerb(verb)}>
+                    {verb.hidden ? tt.restore : tt.hide}
+                  </button>
+                </div>
+              </article>
+            )
+          })}
+        </>
+      )}
+
+      {sub === 'theory' && (
+        <>
+          <form className="admin-form" onSubmit={saveTheory}>
+            <h3>{tEditing ? tt.editing : tt.addTheory}</h3>
+            <div className="form-group">
+              <label>{tt.tTitle}</label>
+              <input value={tForm.title} onChange={event => setTForm({ ...tForm, title: event.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>{tt.tBody}</label>
+              <textarea rows={6} value={tForm.body} onChange={event => setTForm({ ...tForm, body: event.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>{tt.tTitleRu}</label>
+              <input value={tForm.titleRu} onChange={event => setTForm({ ...tForm, titleRu: event.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>{tt.tBodyRu}</label>
+              <textarea rows={6} value={tForm.bodyRu} onChange={event => setTForm({ ...tForm, bodyRu: event.target.value })} />
+            </div>
+            <div className="arb-edit-actions">
+              <button className="primary-button" type="submit" disabled={busy}>{tt.saveBtn}</button>
+              {tEditing && (
+                <button className="secondary-button" type="button" onClick={() => { setTEditing(null); setTForm(ARB_EMPTY_THEORY) }}>
+                  {(ARB_T[lang] || ARB_T.tg).cancel}
+                </button>
+              )}
+            </div>
+          </form>
+
+          {data.theory.map(item => (
+            <article className={`public-item arb-admin-item${item.hidden ? ' is-hidden' : ''}`} key={item.id}>
+              <h3>{item.title}{item.hidden ? ` · ${tt.hidden}` : ''}</h3>
+              <div className="arb-edit-actions">
+                <button className="secondary-button" type="button" onClick={() => editTheory(item)}>{tt.edit}</button>
+                <button className="danger-button" type="button" disabled={busy} onClick={() => hideTheory(item)}>
+                  {item.hidden ? tt.restore : tt.hide}
+                </button>
+              </div>
+            </article>
+          ))}
+        </>
+      )}
+
+      {sub === 'cells' && (
+        <>
+          {data.cellRows.length === 0 && <p className="arb-note">{tt.noCells}</p>}
+          {data.cellRows.map(cell => (
+            <article className="public-item arb-admin-item" key={cell.rowId}>
+              <h3 dir="rtl" className="arb-admin-ar">{cell.value}</h3>
+              <p>{cell.vk} · {cell.cell}</p>
+              <div className="arb-edit-actions">
+                <button className="danger-button" type="button" disabled={busy} onClick={() => removeCell(cell)}>{(ARB_T[lang] || ARB_T.tg).reset}</button>
+              </div>
+            </article>
+          ))}
+        </>
+      )}
+    </>
+  )
+}
+
 function App() {
   const [lang, setLang] = useState('tg')
   const [page, setPage] = useState('home')
@@ -1110,6 +2965,7 @@ function App() {
   const [userSearch, setUserSearch] = useState('')
   const [dailyPick, setDailyPick] = useState({ hadith: '', sunnah: '' })
   const [chapterRows, setChapterRows] = useState([])
+  const [arabicRows, setArabicRows] = useState([])
   const [selectedChapter, setSelectedChapter] = useState(null)
   const [chapterForm, setChapterForm] = useState({ parent: '', title: '', title_ru: '', order: '' })
   const [editingChapter, setEditingChapter] = useState(null)
@@ -1202,8 +3058,9 @@ function App() {
   )
 
   const applyContent = useCallback(rows => {
-    setContentRows(rows.filter(item => item.section_slug !== '__chapter'))
+    setContentRows(rows.filter(item => item.section_slug !== '__chapter' && item.section_slug !== '__arabic'))
     setChapterRows(rows.filter(item => item.section_slug === '__chapter'))
+    setArabicRows(rows.filter(item => item.section_slug === '__arabic'))
   }, [])
 
   // Маводи сабтшуда аз қадим ба нав: рақами 1 дар боло, навтарин дар поён.
@@ -4613,7 +6470,9 @@ function App() {
                 <p>{localizeSection(selectedSection, lang).description}</p>
               </div>
 
-              {selectedSection.slug === 'quran' ? renderQuran() : selectedSection.slug === 'questions' ? renderAsk() : selectedSection.slug === 'hadith' && !selectedBook ? (
+              {selectedSection.slug === 'quran' ? renderQuran() : selectedSection.slug === 'arabic' ? (
+                <ArabicSection rows={arabicRows} lang={lang} admin={admin} db={db} notify={notify} reload={reloadAll} />
+              ) : selectedSection.slug === 'questions' ? renderAsk() : selectedSection.slug === 'hadith' && !selectedBook ? (
                 <div className="menu menu-list">
                   {bookGroups
                     .filter(book => book.is_active !== false)
@@ -4866,6 +6725,10 @@ function App() {
                 <button className={adminTab === 'translate' ? 'active' : ''} onClick={() => setAdminTab('translate')}>
                   🌐 Тарҷума
                 </button>
+
+                <button className={adminTab === 'arabic' ? 'active' : ''} onClick={() => setAdminTab('arabic')}>
+                  🔤 Забони арабӣ
+                </button>
               </div>
 
               {adminTab === 'hadith' && renderAdminHadith()}
@@ -4877,6 +6740,9 @@ function App() {
               {adminTab === 'questions' && renderAdminQuestions()}
               {adminTab === 'chapters' && renderAdminChapters()}
               {adminTab === 'translate' && renderAdminTranslate()}
+              {adminTab === 'arabic' && (
+                <ArabicAdmin rows={arabicRows} lang={lang} db={db} notify={notify} reload={reloadAll} />
+              )}
             </>
           )}
         </main>
