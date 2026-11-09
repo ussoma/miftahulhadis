@@ -4663,7 +4663,7 @@ function arbParseImport(text) {
       out.cat = out.cat === 'particle' || out.cat === 'harf' ? 'particle' : 'noun'
       return out
     })
-    .filter(item => item.ar && (item.tg || item.ru))
+    .filter(item => item.ar && (item.tg || item.ru || item.note))
 }
 
 function ArbWordEditor({ cat, initial, tt, busy, onSave, onCancel, onReset }) {
