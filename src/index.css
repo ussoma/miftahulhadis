@@ -1514,3 +1514,13 @@ input[type='checkbox'] {
 .arb-wc-forms span { grid-column: 1 / -1; font-size: 11px; color: var(--muted, #9aa7a0); }
 .arb-wc-forms b { font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: 26px; font-weight: 500; line-height: 1.7; color: var(--cream, #f4ecd8); justify-self: end; }
 .arb-wc-forms i { font-style: normal; font-size: 12px; color: var(--muted, #9aa7a0); }
+
+/* ===== Бобҳо, машқҳо ===== */
+.arb-bab-title { margin: 0 0 6px; font-size: 15px; color: var(--gold, #d3b97f); }
+.arb-bab.is-right { background: rgba(80, 180, 110, .35); border-color: rgba(80, 180, 110, .9); }
+.arb-bab.is-wrong { background: rgba(200, 80, 80, .3); border-color: rgba(200, 80, 80, .9); }
+.arb-qa { margin: 8px 0; padding: 10px 12px; border-radius: 12px; background: rgba(0, 0, 0, .18); }
+.arb-qa summary { cursor: pointer; font-size: 14px; }
+.arb-qa b { display: block; margin-top: 8px; font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: 24px; font-weight: 500; line-height: 1.7; }
+.arb-tabs { overflow-x: auto; flex-wrap: nowrap; }
+.arb-tabs button { white-space: nowrap; }
