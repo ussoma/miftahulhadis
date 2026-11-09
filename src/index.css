@@ -1221,8 +1221,8 @@ input[type='checkbox'] {
   background: var(--surface);
   color: var(--text);
   border-radius: 11px;
-  padding: 9px 12px;
-  font-size: 12px;
+  padding: 10px 13px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -1235,19 +1235,15 @@ input[type='checkbox'] {
   border-color: var(--gold);
 }
 
-.arb-seg-small button { font-size: 11px; padding: 7px 10px; }
+.arb-seg-small button { font-size: 12px; padding: 8px 11px; }
 
-.arb-search {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+.arb-search { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .arb-search-input {
   flex: 1 1 100%;
   font-family: 'Noto Naskh Arabic', Inter, sans-serif;
-  font-size: 16px;
-  padding: 12px 14px;
+  font-size: 20px;
+  padding: 13px 15px;
   border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--surface-deep);
@@ -1261,6 +1257,18 @@ input[type='checkbox'] {
 .arb-all { display: grid; gap: 8px; }
 
 .arb-results h4 { margin: 4px 0; color: var(--gold); font-size: 13px; }
+
+.arb-root-card {
+  background: var(--surface-deep);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.arb-root-title { display: flex; gap: 8px; align-items: baseline; color: var(--muted); font-size: 12px; }
+.arb-root-title b { font-family: 'Noto Naskh Arabic', serif; font-size: 20px; color: var(--gold-soft); }
 
 .arb-result {
   display: flex;
@@ -1279,11 +1287,19 @@ input[type='checkbox'] {
 
 .arb-result-ar {
   font-family: 'Noto Naskh Arabic', serif;
-  font-size: 22px;
+  font-size: 28px;
+  line-height: 1.5;
   color: var(--gold-soft);
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
 }
 
-.arb-result-meta { color: var(--muted); font-size: 12px; text-align: end; }
+.arb-result-ar small { font-size: 21px; color: var(--cream); }
+
+.arb-result-meta { display: grid; gap: 2px; text-align: end; font-size: 11px; color: var(--muted); max-width: 52%; }
+.arb-result-meta b { color: var(--text); font-weight: 700; font-family: 'Noto Naskh Arabic', Inter, sans-serif; font-size: 13px; }
+.arb-result-meta i { font-style: normal; color: var(--cream); font-size: 13px; }
 
 .arb-babs { display: grid; gap: 8px; }
 
@@ -1294,71 +1310,107 @@ input[type='checkbox'] {
   border-radius: 12px;
   padding: 11px 14px;
   font-family: 'Noto Naskh Arabic', serif;
-  font-size: 18px;
+  font-size: 19px;
   cursor: pointer;
 }
+
+.arb-letters { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.arb-letters button {
+  min-width: 38px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--gold-soft);
+  border-radius: 10px;
+  padding: 7px 8px;
+  font-family: 'Noto Naskh Arabic', serif;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.arb-letters button.active { background: var(--gold); color: var(--text-dark); }
 
 .arb-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 
 .arb-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--gold-soft);
   border-radius: 10px;
   padding: 6px 10px;
   font-family: 'Noto Naskh Arabic', serif;
-  font-size: 17px;
+  font-size: 19px;
   cursor: pointer;
 }
-
-.arb-chip small { color: var(--muted); font-family: Inter, sans-serif; font-size: 10px; }
 
 .arb-verb-card {
   background: linear-gradient(135deg, var(--surface), var(--surface-soft));
   border: 1px solid rgba(211, 185, 127, .25);
   border-radius: 18px;
-  padding: 14px 16px;
+  padding: 16px;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .arb-verb-main {
   display: flex;
-  gap: 16px;
+  gap: 18px;
   align-items: baseline;
   justify-content: center;
   font-family: 'Noto Naskh Arabic', serif;
   color: var(--gold-soft);
-}
-
-.arb-verb-past { font-size: 30px; }
-.arb-verb-pres { font-size: 24px; color: var(--cream); }
-
-.arb-verb-meta {
-  display: flex;
   flex-wrap: wrap;
-  gap: 4px 14px;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 12px;
 }
 
-.arb-verb-meta b { color: var(--text); font-weight: 700; font-family: 'Noto Naskh Arabic', Inter, sans-serif; }
+.arb-verb-past { font-size: 42px; line-height: 1.5; }
+.arb-verb-pres { font-size: 32px; color: var(--cream); }
+.arb-verb-tr { text-align: center; color: var(--muted); font-size: 13px; }
 
-.arb-meaning { margin: 0; text-align: center; color: var(--cream); font-size: 14px; }
+.arb-meaning {
+  margin: 0;
+  text-align: center;
+  color: var(--cream);
+  font-size: 17px;
+  font-weight: 600;
+  display: grid;
+  gap: 2px;
+}
+
+.arb-meaning small { color: var(--muted); font-size: 11px; font-weight: 500; }
+
+.arb-facts { display: grid; gap: 6px; }
+
+.arb-facts > div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  background: rgba(0, 0, 0, .15);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.arb-facts span { color: var(--muted); font-size: 12px; }
+.arb-facts b { color: var(--text); font-weight: 600; font-family: 'Noto Naskh Arabic', Inter, sans-serif; line-height: 1.7; }
 
 .arb-controls { display: grid; gap: 8px; }
-
 .arb-note { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.arb-legend { margin: 0; font-size: 12px; color: var(--muted); }
+
+.arb-fa { color: var(--gold); }
+.arb-vb { color: var(--cream); }
+.arb-part { color: var(--green-accent); }
+.arb-legend .arb-fa,
+.arb-legend .arb-vb { font-weight: 700; }
+
+.arb-group { margin: 10px 0 2px; color: var(--gold); font-size: 13px; }
 
 .arb-table { display: grid; gap: 6px; }
 
 .arb-row {
   display: grid;
-  grid-template-columns: 1fr 1.1fr;
+  grid-template-columns: .85fr 1.25fr;
   align-items: center;
   gap: 8px;
   background: var(--surface);
@@ -1368,32 +1420,45 @@ input[type='checkbox'] {
 }
 
 .arb-person { display: grid; gap: 1px; }
-.arb-person-ar { font-family: 'Noto Naskh Arabic', serif; font-size: 15px; color: var(--gold); }
+.arb-person-ar { font-family: 'Noto Naskh Arabic', serif; font-size: 20px; color: var(--gold); line-height: 1.6; }
 .arb-person-tr { font-size: 11px; color: var(--muted); }
+
+.arb-forms { display: grid; gap: 4px; }
 
 .arb-cell {
   border: 0;
   background: transparent;
   color: var(--cream);
-  font-family: 'Noto Naskh Arabic', serif;
-  font-size: 22px;
-  line-height: 1.7;
   text-align: center;
   padding: 2px 4px;
   border-radius: 8px;
   cursor: default;
   width: 100%;
+  display: grid;
+  gap: 0;
 }
+
+.arb-word {
+  font-family: 'Noto Naskh Arabic', serif;
+  font-size: 30px;
+  line-height: 1.7;
+  display: block;
+  unicode-bidi: isolate;
+}
+
+.arb-tr { font-size: 11px; color: var(--muted); }
 
 .arb-cell.is-editable { cursor: pointer; }
 .arb-cell.is-editable:hover { background: rgba(211, 185, 127, .1); }
-.arb-cell.is-edited { color: var(--green-accent); }
+.arb-cell.is-edited .arb-vb { color: var(--green-accent); }
+.arb-unknown { color: var(--muted); font-size: 22px; }
+.arb-unknown small { font-size: 10px; display: block; }
 
 .arb-edit { display: grid; gap: 6px; }
 
 .arb-input {
   font-family: 'Noto Naskh Arabic', serif;
-  font-size: 20px;
+  font-size: 24px;
   text-align: center;
   padding: 8px;
   border-radius: 10px;
@@ -1402,6 +1467,8 @@ input[type='checkbox'] {
   color: var(--text);
   width: 100%;
 }
+
+.arb-meta-edit { display: grid; gap: 6px; background: rgba(0, 0, 0, .15); padding: 10px; border-radius: 12px; }
 
 .arb-edit-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .arb-edit-actions button { padding: 8px 12px; font-size: 12px; }
@@ -1412,14 +1479,15 @@ input[type='checkbox'] {
 .arb-line {
   margin: 0 0 8px;
   color: var(--text);
-  font-size: 14px;
-  line-height: 1.9;
+  font-size: 15px;
+  line-height: 2;
 }
 
 .arb-admin-item.is-hidden { opacity: .55; }
-.arb-admin-ar { font-family: 'Noto Naskh Arabic', serif; font-size: 22px !important; color: var(--gold-soft) !important; }
+.arb-admin-ar { font-family: 'Noto Naskh Arabic', serif; font-size: 24px !important; color: var(--gold-soft) !important; }
 
 @media (max-width: 420px) {
-  .arb-cell { font-size: 19px; }
-  .arb-verb-past { font-size: 26px; }
+  .arb-word { font-size: 26px; }
+  .arb-verb-past { font-size: 36px; }
+  .arb-facts > div { grid-template-columns: 92px 1fr; }
 }
