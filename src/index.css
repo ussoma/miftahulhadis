@@ -1491,3 +1491,26 @@ input[type='checkbox'] {
   .arb-verb-past { font-size: 36px; }
   .arb-facts > div { grid-template-columns: 92px 1fr; }
 }
+
+/* ===== Забони арабӣ: исмҳо, ҳарфҳо ва ҷадвалҳои нав ===== */
+.arb-cats { margin-bottom: 12px; }
+.arb-wordcard {
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(211, 185, 127, .22);
+  border-radius: 16px;
+  padding: 14px;
+  margin: 10px 0;
+}
+.arb-wordcard.is-hidden { opacity: .55; }
+.arb-wc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.arb-wc-ar { font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: 34px; line-height: 1.7; color: var(--cream, #f4ecd8); }
+.arb-wc-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.arb-tag { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(211, 185, 127, .16); color: var(--gold, #d3b97f); }
+.arb-wc-forms { display: grid; gap: 6px; margin-top: 8px; }
+.arb-wc-forms > div {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center;
+  padding: 8px 10px; border-radius: 12px; background: rgba(0, 0, 0, .18);
+}
+.arb-wc-forms span { grid-column: 1 / -1; font-size: 11px; color: var(--muted, #9aa7a0); }
+.arb-wc-forms b { font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: 26px; font-weight: 500; line-height: 1.7; color: var(--cream, #f4ecd8); justify-self: end; }
+.arb-wc-forms i { font-style: normal; font-size: 12px; color: var(--muted, #9aa7a0); }
