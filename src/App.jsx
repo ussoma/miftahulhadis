@@ -4571,7 +4571,7 @@ Object.assign(ARB_T.tg, {
   levelAll: 'Ҳама', levelEasy: 'Осон', levelMid: 'Миёна', levelHard: 'Душвор',
   sentTask: 'Калимаҳоро бо тартиби дуруст гузоред', sentEmpty: 'Калимаҳоро пахш кунед', sentCheck: 'Санҷиш', sentReset: 'Аз нав',
   sentTr: 'Тарҷума', sentGrammar: 'Шарҳи наҳвӣ',
-  sgPronoun: 'Замир', sgVerb: 'Феъл', sgPron: 'Талаффуз', sgMeaning: 'Маъно', sgTense: 'Замон / шакл', sgPerson: 'Шахс', sgNumber: 'Шумора',
+  sgTrans: 'Тарҷума', sgPronoun: 'Замир', sgVerb: 'Феъл', sgPron: 'Талаффуз', sgMeaning: 'Маъно', sgTense: 'Замон / шакл', sgPerson: 'Шахс', sgNumber: 'Шумора',
   sgGender: 'Ҷинс', sgState: 'Ҳолат', sgVoice: 'Навъ', sgSigha: 'Сиға', sgMasdar: 'Масдар', sgWazn: 'Вазн', sgBab: 'Боб',
   sighaHint: 'Ба ҳар сатр пахш кунед — саҳифаи шарҳи сиға кушода мешавад.'
 })
@@ -4582,7 +4582,7 @@ Object.assign(ARB_T.ru, {
   levelAll: 'Все', levelEasy: 'Лёгкий', levelMid: 'Средний', levelHard: 'Сложный',
   sentTask: 'Расставьте слова в правильном порядке', sentEmpty: 'Нажимайте на слова', sentCheck: 'Проверить', sentReset: 'Сначала',
   sentTr: 'Перевод', sentGrammar: 'Грамматический разбор',
-  sgPronoun: 'Местоимение', sgVerb: 'Глагол', sgPron: 'Произношение', sgMeaning: 'Значение', sgTense: 'Время / форма', sgPerson: 'Лицо', sgNumber: 'Число',
+  sgTrans: 'Перевод', sgPronoun: 'Местоимение', sgVerb: 'Глагол', sgPron: 'Произношение', sgMeaning: 'Значение', sgTense: 'Время / форма', sgPerson: 'Лицо', sgNumber: 'Число',
   sgGender: 'Род', sgState: 'Состояние', sgVoice: 'Залог', sgSigha: 'Сыга', sgMasdar: 'Масдар', sgWazn: 'Вазн', sgBab: 'Порода',
   sighaHint: 'Нажмите на строку — откроется страница разбора формы.'
 })
@@ -5330,6 +5330,51 @@ function ArbSentences({ tt, lang }) {
   )
 }
 
+/** Тарҷумаи сиға: танҳо барои мозӣ аз масдари забон қоидаи дақиқ дорад; дигар замонҳо -- шарҳи беғалат */
+const ARB_SUBJ = {
+  tg: { '3ms': 'Ӯ (як мард)', '3md': 'Он ду мард', '3mp': 'Онҳо (мардон)', '3fs': 'Ӯ (як зан)', '3fd': 'Он ду зан', '3fp': 'Онҳо (занон)', '2ms': 'Ту (мард)', '2md': 'Шумо (ду мард)', '2mp': 'Шумо (мардон)', '2fs': 'Ту (зан)', '2fd': 'Шумо (ду зан)', '2fp': 'Шумо (занон)', '1s': 'Ман', '1p': 'Мо' },
+  ru: { '3ms': 'Он', '3md': 'Они двое (м)', '3mp': 'Они (м)', '3fs': 'Она', '3fd': 'Они двое (ж)', '3fp': 'Они (ж)', '2ms': 'Ты (м)', '2md': 'Вы двое (м)', '2mp': 'Вы (м)', '2fs': 'Ты (ж)', '2fd': 'Вы двое (ж)', '2fp': 'Вы (ж)', '1s': 'Я', '1p': 'Мы' }
+}
+const ARB_TG_END = { '3ms': '', '3md': 'анд', '3mp': 'анд', '3fs': '', '3fd': 'анд', '3fp': 'анд', '2ms': 'ӣ', '2md': 'ед', '2mp': 'ед', '2fs': 'ӣ', '2fd': 'ед', '2fp': 'ед', '1s': 'ам', '1p': 'ем' }
+
+function arbFirstGloss(text) {
+  return String(text || '').split(/[;,]/)[0].trim()
+}
+
+function arbSighaTranslate(person, gloss, lang, tense, passive) {
+  const ru = lang === 'ru'
+  const subj = ARB_SUBJ[ru ? 'ru' : 'tg'][person]
+  const g = arbFirstGloss(gloss)
+  if (!subj || !g) return ''
+  if (tense === 'past') {
+    if (!ru) {
+      if (!/ан$/.test(g)) return ''
+      const stem = g.slice(0, -2)
+      const end = ARB_TG_END[person]
+      if (passive) return `${subj} ${stem}а шуд${end}.`
+      return `${subj} ${stem}${end}.`
+    }
+    if (passive) return ''
+    const refl = /ться$/.test(g)
+    if (!/ть(ся)?$/.test(g) || /(сти|чь|ти)$/.test(g)) return ''
+    const base = g.replace(/ться$/, '').replace(/ть$/, '')
+    const sfx = refl ? 'ся' : ''
+    const plural = person.endsWith('d') || person.endsWith('p')
+    if (person === '1s') return `${subj} ${base}л${refl ? 'ся (' + base + 'лась)' : '(а)'}.`
+    const fem = person[1] === 'f'
+    const form = plural ? `${base}ли${sfx}` : fem ? `${base}л${refl ? 'а' : 'а'}${refl ? 'сь' : ''}` : `${base}л${sfx}`
+    return `${subj} ${form}.`
+  }
+  return ''
+}
+
+function arbSighaExplain(info, lang) {
+  const ru = lang === 'ru'
+  const head = info.trans ? `${info.form} — ${info.trans.replace(/\.$/, '')}. ` : `${info.form}. `
+  if (ru) return `${head}Это глагол в форме «${info.tense}», ${info.voice}. ${info.note} Сыга: ${info.sigha}.`
+  return `${head}Ин феъли ${info.tense}-и ${info.voice} аст. ${info.note} Сиғаи он: ${info.sigha}.`
+}
+
 function ArbSighaSheet({ info, tt, lang, onClose, onCopy }) {
   if (!info) return null
   const ru = lang === 'ru'
@@ -5337,6 +5382,7 @@ function ArbSighaSheet({ info, tt, lang, onClose, onCopy }) {
     [tt.sgPronoun, info.pronoun, true],
     [tt.sgVerb, info.form, true],
     [tt.sgPron, info.translit],
+    [tt.sgTrans, info.trans],
     [tt.sgMeaning, info.meaning],
     [tt.sgTense, info.tense],
     [tt.sgPerson, info.person],
@@ -5349,7 +5395,8 @@ function ArbSighaSheet({ info, tt, lang, onClose, onCopy }) {
     [tt.sgWazn, info.wazn, true],
     [tt.sgBab, info.bab]
   ].filter(row => row[1])
-  const text = rows.map(row => `${row[0]}: ${row[1]}`).join('\n') + (info.note ? `\n${info.note}` : '')
+  const explain = arbSighaExplain(info, lang)
+  const text = rows.map(row => `${row[0]}: ${row[1]}`).join('\n') + `\n${explain}`
   return (
     <div className="arb-sheet-back" onClick={onClose}>
       <div className="arb-sheet" onClick={event => event.stopPropagation()}>
@@ -5364,7 +5411,7 @@ function ArbSighaSheet({ info, tt, lang, onClose, onCopy }) {
               <b dir={row[2] ? 'rtl' : 'auto'}>{row[1]}</b>
             </div>
           ))}
-          {info.note && <p className="arb-note">{info.note}</p>}
+          <p className="arb-note">{explain}</p>
         </div>
         <div className="arb-edit-actions">
           <button type="button" className="primary-button" onClick={() => onCopy(info.form)}>📋 {tt.copyForm}</button>
@@ -6166,7 +6213,8 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessonRows }) {
       pronoun: info0.ar,
       form,
       translit: arbTranslit(form),
-      meaning: verbMeaning ? `${lang === 'ru' ? info0.ru : info0.tg} — ${verbMeaning}` : (lang === 'ru' ? info0.ru : info0.tg),
+      trans: arbSighaTranslate(person, verbMeaning, lang, kindKey === 'past' ? 'past' : kindKey, voice === 'pas'),
+      meaning: verbMeaning,
       tense: tenseName,
       person: parts.personName,
       number: parts.number,
@@ -7506,6 +7554,7 @@ function App() {
   const [usersLoading, setUsersLoading] = useState(false)
   const [usersLimit, setUsersLimit] = useState(50)
   const [userSearch, setUserSearch] = useState('')
+  const [userFilter, setUserFilter] = useState('all')
   const [dailyPick, setDailyPick] = useState({ hadith: '', sunnah: '' })
   const [chapterRows, setChapterRows] = useState([])
   const [arabicRows, setArabicRows] = useState([])
@@ -9845,19 +9894,25 @@ function App() {
         return result.count || 0
       }
 
-      const [total, blockedCount, activeToday, newToday, activeWeek, activeNow, list] = await Promise.all([
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
+      const month = monthStart.toISOString()
+      const idle = new Date(Date.now() - 30 * 86400000).toISOString()
+
+      const [total, blockedCount, activeToday, newToday, activeWeek, activeNow, newMonth, inactive, list] = await Promise.all([
         count(query => query),
         count(query => query.eq('blocked', true)),
         count(query => query.gte('last_seen', day)),
         count(query => query.gte('first_seen', day)),
         count(query => query.gte('last_seen', week)),
         count(query => query.gte('last_seen', online)),
+        count(query => query.gte('first_seen', month)),
+        count(query => query.lt('last_seen', idle)),
         db.from('app_users').select('*').order('last_seen', { ascending: false }).limit(limit)
       ])
 
       if (list.error) throw list.error
 
-      setUserStats({ total, blocked: blockedCount, activeToday, newToday, activeWeek, activeNow })
+      setUserStats({ total, blocked: blockedCount, activeToday, newToday, activeWeek, activeNow, newMonth, inactive })
       setAdminUsers(list.data || [])
       setUsersError('')
     } catch (error) {
@@ -9875,6 +9930,10 @@ function App() {
     if (!db || !admin) return
 
     const willBlock = !user.blocked
+    if (willBlock && user.user_key === currentUserKey()) {
+      notify('Худро блок кардан мумкин нест.', 'error')
+      return
+    }
     const label = user.display_name || user.username || user.user_key
     const question = willBlock
       ? `«${label}» блок карда шавад? Ӯ дигар ба барнома дохил шуда наметавонад.`
@@ -9905,11 +9964,15 @@ function App() {
 
   const renderAdminUsers = () => {
     const query = clean(userSearch).toLowerCase()
+    const nowMs = Date.now()
+    const statusOf = user => (user.blocked ? 'blocked' : (nowMs - new Date(user.last_seen).getTime() > 30 * 86400000 ? 'inactive' : 'active'))
     const shown = adminUsers.filter(user =>
+      (userFilter === 'all' || statusOf(user) === userFilter) && (
       !query ||
       String(user.display_name || '').toLowerCase().includes(query) ||
       String(user.username || '').toLowerCase().includes(query) ||
       String(user.user_key || '').toLowerCase().includes(query)
+      )
     )
 
     const stats = userStats ? [
@@ -9918,6 +9981,8 @@ function App() {
       ['Имрӯз фаъол', userStats.activeToday],
       ['Имрӯз нав', userStats.newToday],
       ['7 рӯзи охир', userStats.activeWeek],
+      ['Ин моҳ нав', userStats.newMonth],
+      ['Ғайрифаъол (30+ рӯз)', userStats.inactive],
       ['Блокшуда', userStats.blocked]
     ] : []
 
@@ -9951,6 +10016,12 @@ function App() {
           />
         </div>
 
+        <div className="arb-seg">
+          {[['all', 'Ҳама'], ['active', 'Фаъол'], ['inactive', 'Ғайрифаъол'], ['blocked', 'Блокшуда']].map(([key, label]) => (
+            <button type="button" key={key} className={userFilter === key ? 'active' : ''} onClick={() => setUserFilter(key)}>{label}</button>
+          ))}
+        </div>
+
         <div className="admin-list">
           {shown.map(user => (
             <div className="admin-item" key={user.id}>
@@ -9961,7 +10032,7 @@ function App() {
               </h4>
 
               <p>
-                {String(user.user_key).startsWith('tg:') ? 'Telegram' : 'Браузер/дастгоҳ'} · …{String(user.user_key).slice(-6)}
+                {String(user.user_key).startsWith('tg:') ? `Telegram ID: ${String(user.user_key).slice(3)}` : `Браузер/дастгоҳ · …${String(user.user_key).slice(-6)}`}
                 {'\n'}Аввалин ташриф: {formatDate(user.first_seen)}
                 {'\n'}Охирин ташриф: {formatDate(user.last_seen)} · ташрифҳо: {user.visits}
                 {user.blocked && `\nБлок: ${formatDate(user.blocked_at)}${user.blocked_by ? ` · аз тарафи ${user.blocked_by}` : ''}${user.block_reason ? ` · сабаб: ${user.block_reason}` : ''}`}
