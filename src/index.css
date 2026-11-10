@@ -1545,3 +1545,11 @@ input[type='checkbox'] {
 .arb-sheet-row span { opacity: 0.75; }
 .arb-sheet-row b { text-align: right; }
 .arb-sent-answer { min-height: 48px; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border: 1px dashed rgba(255, 255, 255, 0.3); border-radius: 10px; }
+
+/* ---- дарсҳои савтӣ/видео ---- */
+.arb-file-wrap { position: relative; display: inline-block; margin: 8px 0; }
+.arb-file-wrap .upload-button { display: inline-block; padding: 10px 14px; border-radius: 12px; border: 1px dashed currentColor; cursor: pointer; }
+.arb-file-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+.arb-check { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
+.arb-badge { opacity: 0.7; font-size: 13px; font-weight: 400; }
+.arb-lesson-desc { white-space: pre-wrap; }
