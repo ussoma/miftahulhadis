@@ -3310,6 +3310,18 @@ function arbBigTr(ar) {
   return ARB_BIG_TR_MAP.get(arbKey(ar)) || ['', '']
 }
 
+let ARB_DICT_TOTALS = null
+function arbDictTotals() {
+  if (!ARB_DICT_TOTALS) {
+    let verbs = 0
+    try {
+      MZ.lexiconRoots().forEach(root => { verbs += (MZ.attestedWazns(root) || []).length })
+    } catch { /* ignore */ }
+    ARB_DICT_TOTALS = { words: ARB_NOUNS.length + arbBigNouns().length + ARB_PARTICLES.length, verbs }
+  }
+  return ARB_DICT_TOTALS
+}
+
 function arbBigNouns() {
   if (ARB_BIG_CACHE) return ARB_BIG_CACHE
   const out = []
@@ -7555,6 +7567,8 @@ function App() {
   const [usersLimit, setUsersLimit] = useState(50)
   const [userSearch, setUserSearch] = useState('')
   const [userFilter, setUserFilter] = useState('all')
+  const [userSort, setUserSort] = useState('last')
+  const [openUser, setOpenUser] = useState(null)
   const [dailyPick, setDailyPick] = useState({ hadith: '', sunnah: '' })
   const [chapterRows, setChapterRows] = useState([])
   const [arabicRows, setArabicRows] = useState([])
@@ -9912,7 +9926,12 @@ function App() {
 
       if (list.error) throw list.error
 
-      setUserStats({ total, blocked: blockedCount, activeToday, newToday, activeWeek, activeNow, newMonth, inactive })
+      let adminCount = null
+      try {
+        const rpc = await db.rpc('admin_count')
+        if (!rpc.error && typeof rpc.data === 'number') adminCount = rpc.data
+      } catch { /* RPC ҳанӯз сохта нашудааст */ }
+      setUserStats({ total, blocked: blockedCount, activeToday, newToday, activeWeek, activeNow, newMonth, inactive, adminCount })
       setAdminUsers(list.data || [])
       setUsersError('')
     } catch (error) {
@@ -9975,8 +9994,17 @@ function App() {
       )
     )
 
+    shown.sort((a, b) => userSort === 'first'
+      ? new Date(b.first_seen) - new Date(a.first_seen)
+      : userSort === 'visits' ? (b.visits || 0) - (a.visits || 0)
+      : userSort === 'name' ? String(a.display_name || '').localeCompare(String(b.display_name || ''))
+      : new Date(b.last_seen) - new Date(a.last_seen))
+
     const stats = userStats ? [
-      ['Ҳамагӣ корбар', userStats.total],
+      ['Корбарони оддӣ', userStats.total],
+      ['Администраторҳо', userStats.adminCount === null || userStats.adminCount === undefined ? '—' : userStats.adminCount],
+      ['Калимаҳои луғат', arbDictTotals().words.toLocaleString()],
+      ['Феълҳои луғат', arbDictTotals().verbs.toLocaleString()],
       ['Ҳоло дар барнома (5 дақ.)', userStats.activeNow],
       ['Имрӯз фаъол', userStats.activeToday],
       ['Имрӯз нав', userStats.newToday],
@@ -10022,6 +10050,12 @@ function App() {
           ))}
         </div>
 
+        <div className="arb-seg">
+          {[['last', 'Охирин фаъолият'], ['first', 'Санаи бақайдгирӣ'], ['visits', 'Ташрифҳо'], ['name', 'Ном']].map(([key, label]) => (
+            <button type="button" key={key} className={userSort === key ? 'active' : ''} onClick={() => setUserSort(key)}>{label}</button>
+          ))}
+        </div>
+
         <div className="admin-list">
           {shown.map(user => (
             <div className="admin-item" key={user.id}>
@@ -10038,7 +10072,15 @@ function App() {
                 {user.blocked && `\nБлок: ${formatDate(user.blocked_at)}${user.blocked_by ? ` · аз тарафи ${user.blocked_by}` : ''}${user.block_reason ? ` · сабаб: ${user.block_reason}` : ''}`}
               </p>
 
+              {openUser === user.id && (
+                <p className="arb-note">
+                  {`Ном: ${user.display_name || '—'}\nUsername: ${user.username ? '@' + user.username : '—'}\nID: ${String(user.user_key).startsWith('tg:') ? String(user.user_key).slice(3) : String(user.user_key)}\nҲолат: ${user.blocked ? 'блокшуда' : 'фаъол'}\nАввалин воридшавӣ: ${formatDate(user.first_seen)}\nОхирин фаъолият: ${formatDate(user.last_seen)}\nШумораи ташрифҳо: ${user.visits}`}
+                </p>
+              )}
               <div className="admin-item-actions">
+                <button className="secondary-button" type="button" onClick={() => setOpenUser(openUser === user.id ? null : user.id)}>
+                  {openUser === user.id ? 'Пӯшидан' : 'Профил'}
+                </button>
                 <button
                   className={user.blocked ? 'secondary-button' : 'danger-button'}
                   onClick={() => toggleBlockUser(user)}
