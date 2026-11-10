@@ -2251,7 +2251,58 @@ const ARB_SEED = [
   ['مرر', 10, '', 'اِسْتِمْرَار', 'идома додан', 'продолжаться'],
   ['عدد', 10, '', 'اِسْتِعْدَاد', 'омода шудан', 'готовиться'],
   ['فيد', 10, '', 'اِسْتِفَادَة', 'фоида бурдан', 'извлекать пользу'],
-  ['جيب', 10, '', 'اِسْتِجَابَة', 'ҷавоб додан, қабул кардан', 'отвечать, откликаться']
+  ['جيب', 10, '', 'اِسْتِجَابَة', 'ҷавоб додан, қабул кардан', 'отвечать, откликаться'],
+  ['ربط', 1, 'a-u', 'رَبْط', 'бастан, пайваст кардан', 'связывать'],
+  ['نشر', 1, 'a-u', 'نَشْر', 'паҳн кардан, нашр кардан', 'распространять, публиковать'],
+  ['طرد', 1, 'a-u', 'طَرْد', 'рондан', 'прогонять'],
+  ['صعد', 1, 'a-a', 'صُعُود', 'боло баромадан', 'подниматься'],
+  ['غضب', 1, 'i-a', 'غَضَب', 'хашмгин шудан', 'гневаться'],
+  ['فرق', 1, 'a-u', 'فَرْق', 'фарқ кардан, ҷудо кардан', 'различать, разделять'],
+  ['ختم', 1, 'a-i', 'خَتْم', 'хатм кардан, анҷом додан', 'завершать'],
+  ['قبل', 1, 'i-a', 'قَبُول', 'қабул кардан', 'принимать'],
+  ['رفض', 1, 'a-u', 'رَفْض', 'рад кардан', 'отвергать'],
+  ['سمح', 1, 'a-a', 'سَمَاح', 'иҷозат додан', 'позволять'],
+  ['حرم', 1, 'a-i', 'حِرْمَان', 'маҳрум кардан', 'лишать'],
+  ['يبس', 1, 'i-a', 'يُبْس', 'хушк шудан', 'сохнуть'],
+  ['درس', 1, 'a-u', 'دِرَاسَة', 'хондан, омӯхтан', 'изучать'],
+  ['حمد', 1, 'i-a', 'حَمْد', 'ҳамд гуфтан, ситоиш кардан', 'хвалить'],
+  ['نبت', 1, 'a-u', 'نَبَات', 'руидан', 'расти (о растении)'],
+  ['سفر', 1, 'a-i', 'سَفَر', 'сафар кардан', 'путешествовать'],
+  ['شري', 1, 'a-i', 'شِرَاء', 'харидан', 'покупать'],
+  ['عيش', 1, 'a-i', 'عَيْش', 'зиндагӣ кардан', 'жить'],
+  ['خرج', 2, '', 'تَخْرِيج', 'хатм кардан, баровардан', 'выпускать'],
+  ['كبر', 2, '', 'تَكْبِير', 'бузург кардан, такбир гуфтан', 'увеличивать, произносить такбир'],
+  ['حرر', 2, '', 'تَحْرِير', 'озод кардан', 'освобождать'],
+  ['علق', 2, '', 'تَعْلِيق', 'овезон кардан', 'вешать, комментировать'],
+  ['قسم', 2, '', 'تَقْسِيم', 'тақсим кардан', 'делить'],
+  ['نظم', 2, '', 'تَنْظِيم', 'ба тартиб овардан', 'организовывать'],
+  ['بشر', 2, '', 'تَبْشِير', 'башорат додан', 'возвещать радостную весть'],
+  ['حذر', 2, '', 'تَحْذِير', 'огоҳ кардан', 'предостерегать'],
+  ['وجه', 2, '', 'تَوْجِيه', 'равона кардан', 'направлять'],
+  ['عمل', 3, '', 'مُعَامَلَة', 'муомила кардан', 'обходиться, иметь дело'],
+  ['شرك', 3, '', 'مُشَارَكَة', 'шарик шудан', 'участвовать'],
+  ['خطب', 3, '', 'مُخَاطَبَة', 'муроҷиат кардан', 'обращаться'],
+  ['ظهر', 4, '', 'إِظْهَار', 'нишон додан', 'показывать'],
+  ['بعد', 4, '', 'إِبْعَاد', 'дур кардан', 'удалять'],
+  ['نذر', 4, '', 'إِنْذَار', 'бим додан', 'предупреждать'],
+  ['سرع', 4, '', 'إِسْرَاع', 'шитофтан', 'спешить'],
+  ['قبل', 4, '', 'إِقْبَال', 'рӯ овардан', 'приближаться, обращаться'],
+  ['حدث', 5, '', 'تَحَدُّث', 'сӯҳбат кардан', 'беседовать'],
+  ['فكر', 5, '', 'تَفَكُّر', 'андеша кардан', 'размышлять'],
+  ['طهر', 5, '', 'تَطَهُّر', 'пок шудан', 'очищаться'],
+  ['حرك', 5, '', 'تَحَرُّك', 'ҳаракат кардан', 'двигаться'],
+  ['عرف', 6, '', 'تَعَارُف', 'шинос шудан', 'знакомиться друг с другом'],
+  ['حدث', 6, '', 'تَحَادُث', 'бо ҳам гап задан', 'беседовать друг с другом'],
+  ['شغل', 7, '', 'اِنْشِغَال', 'машғул шудан', 'быть занятым'],
+  ['شرك', 8, '', 'اِشْتِرَاك', 'иштирок кардан', 'участвовать'],
+  ['عبر', 8, '', 'اِعْتِبَار', 'ба назар гирифтан', 'считать'],
+  ['حرم', 8, '', 'اِحْتِرَام', 'эҳтиром кардан', 'уважать'],
+  ['حفل', 8, '', 'اِحْتِفَال', 'ҷашн гирифтан', 'праздновать'],
+  ['كسب', 8, '', 'اِكْتِسَاب', 'ба даст овардан', 'приобретать'],
+  ['سلم', 10, '', 'اِسْتِسْلَام', 'таслим шудан', 'сдаваться'],
+  ['فسر', 10, '', 'اِسْتِفْسَار', 'пурсон шудан', 'осведомляться'],
+  ['شهد', 10, '', 'اِسْتِشْهَاد', 'шаҳид шудан', 'становиться мучеником; цитировать'],
+  ['علم', 10, '', 'اِسْتِعْلَام', 'пурсиш кардан', 'справляться, узнавать']
 ]
 
 
@@ -2855,7 +2906,83 @@ const ARB_NOUNS = [
   ['حُكُومَةٌ', 'حُكُومَاتٌ', 'f', 'ҳукумат', 'правительство'],
   ['رَئِيسٌ', 'رُؤَسَاءُ', 'm', 'раис', 'председатель, президент'],
   ['دُنْيَا', '', 'f', 'дунё', 'мир (этот мир)'],
-  ['آخِرَةٌ', '', 'f', 'охират', 'загробная жизнь']
+  ['آخِرَةٌ', '', 'f', 'охират', 'загробная жизнь'],
+  ['لَبَنٌ', 'أَلْبَانٌ', 'm', 'шир', 'молоко'],
+  ['سُكَّرٌ', '', 'm', 'шакар', 'сахар'],
+  ['أَرُزٌّ', '', 'm', 'биринҷ', 'рис'],
+  ['تُفَّاحَةٌ', 'تُفَّاحٌ', 'f', 'себ', 'яблоко'],
+  ['عِنَبٌ', 'أَعْنَابٌ', 'm', 'ангур', 'виноград'],
+  ['زَيْتٌ', 'زُيُوتٌ', 'm', 'равған', 'масло'],
+  ['فِيلٌ', 'فِيَلَةٌ', 'm', 'фил', 'слон'],
+  ['خَرُوفٌ', 'خِرْفَانٌ', 'm', 'барра', 'баран'],
+  ['غَنَمٌ', 'أَغْنَامٌ', 'm', 'гӯсфанд', 'овцы'],
+  ['دَجَاجَةٌ', 'دَجَاجٌ', 'f', 'мурғ', 'курица'],
+  ['طَيْرٌ', 'طُيُورٌ', 'm', 'парранда', 'птица'],
+  ['نَحْلَةٌ', 'نَحْلٌ', 'f', 'занбӯри асал', 'пчела'],
+  ['ذُبَابَةٌ', 'ذُبَابٌ', 'f', 'магас', 'муха'],
+  ['ثُعْبَانٌ', 'ثَعَابِينُ', 'm', 'мор', 'змея'],
+  ['سَحَابٌ', 'سُحُبٌ', 'm', 'абр', 'облака'],
+  ['هَوَاءٌ', 'أَهْوِيَةٌ', 'm', 'ҳаво', 'воздух'],
+  ['تُرَابٌ', 'أَتْرِبَةٌ', 'm', 'хок', 'земля, прах'],
+  ['مِصْبَاحٌ', 'مَصَابِيحُ', 'm', 'чароғ', 'лампа'],
+  ['مِرْآةٌ', 'مَرَايَا', 'f', 'оина', 'зеркало'],
+  ['فِرَاشٌ', 'فُرُشٌ', 'm', 'бистар', 'постель'],
+  ['وِسَادَةٌ', 'وَسَائِدُ', 'f', 'болишт', 'подушка'],
+  ['عِمَامَةٌ', 'عَمَائِمُ', 'f', 'саллa', 'чалма'],
+  ['خَاتَمٌ', 'خَوَاتِمُ', 'm', 'ангуштарин', 'перстень'],
+  ['فَلَّاحٌ', 'فَلَّاحُونَ', 'm', 'деҳқон', 'земледелец'],
+  ['خَبَّازٌ', 'خَبَّازُونَ', 'm', 'нонпаз', 'пекарь'],
+  ['نَجَّارٌ', 'نَجَّارُونَ', 'm', 'дурадгар', 'плотник'],
+  ['إِمَامٌ', 'أَئِمَّةٌ', 'm', 'имом', 'имам'],
+  ['خَطِيبٌ', 'خُطَبَاءُ', 'm', 'хатиб', 'проповедник'],
+  ['عَالِمٌ', 'عُلَمَاءُ', 'm', 'олим', 'учёный'],
+  ['مُدِيرٌ', 'مُدَرَاءُ', 'm', 'мудир', 'директор'],
+  ['سَائِقٌ', 'سَائِقُونَ', 'm', 'ронанда', 'водитель'],
+  ['صَوْمٌ', '', 'm', 'рӯза', 'пост'],
+  ['زَكَاةٌ', '', 'f', 'закот', 'закят'],
+  ['حَجٌّ', '', 'm', 'ҳаҷ', 'хадж'],
+  ['قُرْآنٌ', '', 'm', 'Қуръон', 'Коран'],
+  ['سُورَةٌ', 'سُوَرٌ', 'f', 'сура', 'сура'],
+  ['آيَةٌ', 'آيَاتٌ', 'f', 'ояд, нишона', 'аят, знамение'],
+  ['دُعَاءٌ', 'أَدْعِيَةٌ', 'm', 'дуо', 'мольба'],
+  ['إِيمَانٌ', '', 'm', 'имон', 'вера'],
+  ['إِسْلَامٌ', '', 'm', 'ислом', 'ислам'],
+  ['وُضُوءٌ', '', 'm', 'абдаст', 'омовение'],
+  ['مِحْرَابٌ', 'مَحَارِيبُ', 'm', 'меҳроб', 'михраб'],
+  ['مِنْبَرٌ', 'مَنَابِرُ', 'm', 'минбар', 'минбар'],
+  ['ذِكْرٌ', 'أَذْكَارٌ', 'm', 'зикр', 'поминание'],
+  ['تَوْبَةٌ', 'تَوْبَاتٌ', 'f', 'тавба', 'покаяние'],
+  ['صَدَقَةٌ', 'صَدَقَاتٌ', 'f', 'садақа', 'милостыня'],
+  ['رَحْمَةٌ', 'رَحَمَاتٌ', 'f', 'раҳмат, марҳамат', 'милость'],
+  ['ذَنْبٌ', 'ذُنُوبٌ', 'm', 'гуноҳ', 'грех'],
+  ['عِبَادَةٌ', 'عِبَادَاتٌ', 'f', 'ибодат', 'поклонение'],
+  ['شَيْطَانٌ', 'شَيَاطِينُ', 'm', 'шайтон', 'шайтан'],
+  ['كَافِرٌ', 'كُفَّارٌ', 'm', 'кофир', 'неверующий'],
+  ['مُؤْمِنٌ', 'مُؤْمِنُونَ', 'm', 'мӯъмин', 'верующий'],
+  ['مُسْلِمٌ', 'مُسْلِمُونَ', 'm', 'мусулмон', 'мусульманин'],
+  ['زَمَنٌ', 'أَزْمَانٌ', 'm', 'замон', 'эпоха, время'],
+  ['مَرَّةٌ', 'مَرَّاتٌ', 'f', 'бор, маротиба', 'раз'],
+  ['صَفْحَةٌ', 'صَفَحَاتٌ', 'f', 'саҳифа', 'страница'],
+  ['دَوْلَةٌ', 'دُوَلٌ', 'f', 'давлат', 'государство'],
+  ['سَفِينَةٌ', 'سُفُنٌ', 'f', 'киштӣ', 'корабль'],
+  ['قِطَارٌ', 'قِطَارَاتٌ', 'm', 'қатора', 'поезд'],
+  ['مَزْرَعَةٌ', 'مَزَارِعُ', 'f', 'киштзор, ферма', 'ферма'],
+  ['مَصْنَعٌ', 'مَصَانِعُ', 'm', 'корхона, завод', 'завод'],
+  ['عَدُوٌّ', 'أَعْدَاءُ', 'm', 'душман', 'враг'],
+  ['نَتِيجَةٌ', 'نَتَائِجُ', 'f', 'натиҷа', 'результат'],
+  ['حُلْمٌ', 'أَحْلَامٌ', 'm', 'хоб, орзу', 'сон, мечта'],
+  ['أَمَلٌ', 'آمَالٌ', 'm', 'умед', 'надежда'],
+  ['حُبٌّ', '', 'm', 'муҳаббат', 'любовь'],
+  ['صَبْرٌ', '', 'm', 'сабр', 'терпение'],
+  ['عَدْلٌ', '', 'm', 'адолат', 'справедливость'],
+  ['ظُلْمٌ', '', 'm', 'зулм, ситам', 'несправедливость, притеснение'],
+  ['قُوَّةٌ', 'قُوًى', 'f', 'қувват', 'сила'],
+  ['صِحَّةٌ', '', 'f', 'саломатӣ', 'здоровье'],
+  ['مَرَضٌ', 'أَمْرَاضٌ', 'm', 'беморӣ', 'болезнь'],
+  ['دَوَاءٌ', 'أَدْوِيَةٌ', 'm', 'дору', 'лекарство'],
+  ['أَلَمٌ', 'آلَامٌ', 'm', 'дард', 'боль'],
+  ['نَوْمٌ', '', 'm', 'хоб', 'сон (процесс)'],
+  ['شَرَابٌ', 'أَشْرِبَةٌ', 'm', 'нӯшокӣ', 'напиток']
 ]
 
 // [арабӣ, навъ, тоҷикӣ, русӣ]
@@ -3220,7 +3347,33 @@ const ARB_PARTICLES = [
   ['كَلَّا', 'ҳарфи радъ', 'ҳаргиз не', 'отнюдь нет'],
   ['لَمَّا', 'ҳарфи ҷазм / вақт', 'ҳанӯз не; вақте ки', 'ещё не; когда'],
   ['لَامُ الْأَمْرِ', 'ҳарфи амр (ل + музореъ)', 'бояд… (амри ғоиб)', 'пусть (повелит. 3 л.)'],
-  ['اَلْ', 'ҳарфи таърифи исм', 'артикли муайянкунанда', 'определённый артикль']
+  ['اَلْ', 'ҳарфи таърифи исм', 'артикли муайянкунанда', 'определённый артикль'],
+  ['إِذَا', 'зарфи шарт', 'агар, ҳангоме ки', 'если, когда'],
+  ['إِذْ', 'зарф', 'вақте ки', 'когда'],
+  ['حَيْثُ', 'зарфи макон', 'ҷое ки', 'где, там где'],
+  ['بَيْنَ', 'зарфи макон', 'миёни', 'между'],
+  ['بَعْدَ', 'зарф', 'баъд аз', 'после'],
+  ['قَبْلَ', 'зарф', 'пеш аз', 'перед, до'],
+  ['عِنْدَ', 'зарф', 'назди, дар назди', 'у, при'],
+  ['مَعَ', 'зарф', 'бо, ҳамроҳи', 'с, вместе с'],
+  ['تَحْتَ', 'зарфи макон', 'зери', 'под'],
+  ['فَوْقَ', 'зарфи макон', 'болои', 'над, сверху'],
+  ['أَمَامَ', 'зарфи макон', 'пеши', 'перед'],
+  ['خَلْفَ', 'зарфи макон', 'пушти', 'позади'],
+  ['حَوْلَ', 'зарфи макон', 'атрофи', 'вокруг'],
+  ['دُونَ', 'зарф', 'бе, поёнтар аз', 'без, ниже'],
+  ['غَيْرُ', 'исм (ғайр)', 'ғайри', 'кроме, не'],
+  ['كَيْفَ', 'исми истифҳом', 'чӣ тавр', 'как'],
+  ['أَيْنَ', 'исми истифҳом', 'дар куҷо', 'где'],
+  ['مَتَى', 'исми истифҳом', 'кай', 'когда'],
+  ['لِمَاذَا', 'исми истифҳом', 'барои чӣ', 'почему'],
+  ['كَمْ', 'исми истифҳом', 'чанд', 'сколько'],
+  ['أَيُّ', 'исми истифҳом', 'кадом', 'какой'],
+  ['لَدَى', 'зарф', 'назди', 'у, при'],
+  ['نَحْوَ', 'зарф / ҳарфи ҷарр', 'ба сӯи, тақрибан', 'к, около'],
+  ['خِلَالَ', 'зарф', 'дар давоми', 'в течение'],
+  ['ضِدَّ', 'зарф', 'зидди', 'против'],
+  ['عَبْرَ', 'зарф', 'тавассути', 'через']
 ]
 
 const ARB_PARTICLE_EX = {
@@ -5393,7 +5546,335 @@ function ArbWordEditor({ cat, initial, tt, busy, onSave, onCancel, onReset }) {
   )
 }
 
-function ArabicSection({ rows, lang, admin, db, notify, reload, lessons }) {
+/* =====================================================================
+   Дарсҳои савтӣ ва видеоӣ (таб «Дарсҳо ва медиа»)
+   Захира: content_items, section_slug='arabic'. Файлҳо: Supabase Storage, bucket «media».
+   ===================================================================== */
+
+const ARB_AUDIO_EXT = ['mp3', 'm4a', 'aac', 'ogg', 'oga', 'opus', 'wav', 'weba', 'amr', 'flac', 'mp4', '3gp']
+const ARB_VIDEO_EXT = ['mp4', 'webm', 'mov', 'm4v', 'mkv', '3gp', 'ogv']
+const ARB_MEDIA_MAX = 50 * 1024 * 1024
+
+function arbFmtDuration(sec) {
+  const total = Math.round(Number(sec) || 0)
+  if (!total) return ''
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  const two = n => String(n).padStart(2, '0')
+  return h ? `${h}:${two(m)}:${two(s)}` : `${m}:${two(s)}`
+}
+
+function arbMediaDuration(src, kind) {
+  return new Promise(resolve => {
+    try {
+      const el = document.createElement(kind === 'video' ? 'video' : 'audio')
+      let done = false
+      const finish = value => { if (!done) { done = true; resolve(value) } }
+      el.preload = 'metadata'
+      el.onloadedmetadata = () => finish(Number.isFinite(el.duration) ? Math.round(el.duration) : 0)
+      el.onerror = () => finish(0)
+      setTimeout(() => finish(0), 8000)
+      el.src = src
+    } catch { resolve(0) }
+  })
+}
+
+function arbLessonOf(row) {
+  const stored = parseStoredNote(row.source_note)
+  const m = stored.meta || {}
+  return {
+    id: row.id,
+    published: row.is_published !== false,
+    title: row.title || '',
+    titleRu: m.title_ru || '',
+    desc: row.tajik_text || row.content_text || '',
+    descRu: m.russian_text || '',
+    category: m.category || '',
+    order: Number(m.order) || 0,
+    audio: m.audio_url || '',
+    video: m.video_url || '',
+    duration: Number(m.duration) || 0,
+    created: row.created_at || ''
+  }
+}
+
+const ARB_LESSON_EMPTY = { title: '', titleRu: '', desc: '', descRu: '', category: '', audio: '', video: '', duration: 0, published: true }
+
+function ArbLessons({ rows, lang, admin, db, notify, reload }) {
+  const ru = lang === 'ru'
+  const L = (tg, rus) => (ru ? rus : tg)
+  const [form, setForm] = useState(null) // null | {id?, ...}
+  const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState('')
+  const [cat, setCat] = useState('')
+  const [own, setOwn] = useState(null)
+
+  const refresh = useCallback(async () => {
+    if (db && admin) {
+      try {
+        const { data } = await db.from('content_items').select('*').eq('section_slug', 'arabic')
+        if (data) setOwn(data)
+      } catch { /* ignore */ }
+    }
+  }, [db, admin])
+  useEffect(() => { refresh() }, [refresh])
+  const source = admin && own ? own : rows
+
+  const all = useMemo(() => {
+    const list = (source || []).filter(r => r.section_slug === 'arabic').map(arbLessonOf)
+    list.sort((a, b) => (a.order || 1e9) - (b.order || 1e9) || String(a.created).localeCompare(String(b.created)))
+    return list
+  }, [source])
+  const shown = all.filter(item => (admin || item.published) && (!cat || item.category === cat))
+  const cats = [...new Set(all.filter(item => admin || item.published).map(item => item.category).filter(Boolean))]
+
+  const payloadOf = (f, order) => ({
+    section_slug: 'arabic',
+    title: f.title.trim() || null,
+    tajik_text: f.desc.trim() || null,
+    content_text: f.desc.trim() || null,
+    source_note: makeStoredNote('', {
+      title_ru: f.titleRu.trim(),
+      russian_text: f.descRu.trim(),
+      category: f.category.trim(),
+      order: order || '',
+      audio_url: f.audio.trim(),
+      video_url: f.video.trim(),
+      duration: f.duration || ''
+    }),
+    is_published: f.published !== false,
+    updated_at: new Date().toISOString()
+  })
+
+  const save = async event => {
+    event.preventDefault()
+    if (!db || !admin || busy || !form) return
+    if (!form.title.trim() && !form.audio.trim() && !form.video.trim()) {
+      notify(L('Номи дарс ё файли аудио/видео лозим аст.', 'Нужно название урока или аудио/видео.'), 'error')
+      return
+    }
+    setBusy(true)
+    try {
+      const maxOrder = all.reduce((x, item) => Math.max(x, item.order || 0), 0)
+      const order = form.id ? (all.find(item => item.id === form.id) || {}).order || maxOrder + 1 : maxOrder + 1
+      const payload = payloadOf(form, order)
+      const result = form.id
+        ? await db.from('content_items').update(payload).eq('id', form.id)
+        : await db.from('content_items').insert(payload)
+      if (result.error) throw result.error
+      setForm(null)
+      await refresh(); await reload()
+      notify(L('Дарс сабт шуд', 'Урок сохранён'))
+    } catch (error) {
+      console.error(error)
+      notify((error && error.message) || 'Хато', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const patch = async (item, values, message) => {
+    if (!db || !admin) return
+    try {
+      const row = (source || []).find(r => String(r.id) === String(item.id))
+      const stored = parseStoredNote(row && row.source_note)
+      const next = { ...item, ...values }
+      const payload = payloadOf({ ...next }, next.order)
+      payload.source_note = makeStoredNote(stored.source, { ...stored.meta, order: next.order || '' })
+      const result = await db.from('content_items').update(payload).eq('id', item.id)
+      if (result.error) throw result.error
+      await refresh(); await reload()
+      if (message) notify(message)
+    } catch (error) {
+      notify((error && error.message) || 'Хато', 'error')
+    }
+  }
+
+  const move = async (item, dir) => {
+    const list = all
+    const i = list.findIndex(x => x.id === item.id)
+    const j = i + dir
+    if (j < 0 || j >= list.length) return
+    // тартиби пайдарпайро аз нав месозем
+    try {
+      const reordered = [...list]
+      ;[reordered[i], reordered[j]] = [reordered[j], reordered[i]]
+      for (let k = 0; k < reordered.length; k += 1) {
+        if (reordered[k].order === k + 1) continue
+        const row = (source || []).find(r => String(r.id) === String(reordered[k].id))
+        const stored = parseStoredNote(row && row.source_note)
+        const res = await db.from('content_items').update({
+          source_note: makeStoredNote(stored.source, { ...stored.meta, order: k + 1 }),
+          updated_at: new Date().toISOString()
+        }).eq('id', reordered[k].id)
+        if (res.error) throw res.error
+      }
+      await refresh(); await reload()
+    } catch (error) {
+      notify((error && error.message) || 'Хато', 'error')
+    }
+  }
+
+  const remove = async item => {
+    if (!db || !admin) return
+    if (!window.confirm(L('Ин дарс нест карда шавад?', 'Удалить этот урок?'))) return
+    try {
+      const res = await db.from('content_items').delete().eq('id', item.id)
+      if (res.error) throw res.error
+      // файлҳои худи мо дар Storage -- кӯшиши беҳатар
+      const paths = [item.audio, item.video]
+        .map(url => { const k = String(url || '').split('/object/public/media/')[1]; return k ? decodeURIComponent(k.split('?')[0]) : '' })
+        .filter(Boolean)
+      if (paths.length) { try { await db.storage.from('media').remove(paths) } catch { /* ignore */ } }
+      await refresh(); await reload()
+      notify(L('Нест шуд', 'Удалено'))
+    } catch (error) {
+      notify((error && error.message) || 'Хато', 'error')
+    }
+  }
+
+  const extOf = name => (String(name).split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+
+  const upload = async (file, kind) => {
+    if (!db || !admin || !file) return
+    const ext = extOf(file.name)
+    const okType = String(file.type || '').startsWith(`${kind}/`)
+    const okExt = (kind === 'audio' ? ARB_AUDIO_EXT : ARB_VIDEO_EXT).includes(ext)
+    if (!okType && !okExt) {
+      notify(L('Формати файл дастгирӣ намешавад.', 'Формат файла не поддерживается.') + (ext ? ` (.${ext})` : ''), 'error')
+      return
+    }
+    if (file.size > ARB_MEDIA_MAX) {
+      notify(L('Файл аз 50 МБ калон аст. Онро фишурда кунед ё URL ворид намоед.', 'Файл больше 50 МБ. Сожмите его или вставьте URL.'), 'error')
+      return
+    }
+    setUploading(kind)
+    try {
+      let duration = 0
+      try {
+        const local = URL.createObjectURL(file)
+        duration = await arbMediaDuration(local, kind)
+        URL.revokeObjectURL(local)
+      } catch { /* ignore */ }
+      const path = `${kind}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || kind}`
+      const contentType = okType ? file.type : (kind === 'audio' ? (ext === 'mp3' ? 'audio/mpeg' : `audio/${ext === 'm4a' ? 'mp4' : ext}`) : `video/${ext === 'mov' ? 'quicktime' : ext}`)
+      const { error } = await db.storage.from('media').upload(path, file, { contentType, cacheControl: '31536000', upsert: false })
+      if (error) throw error
+      const { data } = db.storage.from('media').getPublicUrl(path)
+      setForm(current => ({ ...current, [kind]: data.publicUrl, duration: duration || current.duration }))
+      notify(L('Файл бор шуд. «Сабт»-ро пахш кунед.', 'Файл загружен. Нажмите «Сохранить».'))
+    } catch (error) {
+      console.error(error)
+      const msg = String((error && (error.message || error.error)) || '')
+      let hint = ''
+      if (/bucket/i.test(msg) && /not found/i.test(msg)) hint = L(' — Bucket «media» нест: файли supabase-setup.sql-ро дар Supabase SQL Editor иҷро кунед.', ' — Bucket «media» не создан: выполните supabase-setup.sql в Supabase SQL Editor.')
+      else if (/row-level|policy|unauthorized|not allowed/i.test(msg)) hint = L(' — Иҷозат нест: бояд ба ҳайси админ (profiles.role=admin) ворид шуда бошед ва SQL иҷро шуда бошад.', ' — Нет прав: войдите как админ (profiles.role=admin) и выполните SQL.')
+      else if (/size|too large|payload/i.test(msg)) hint = L(' — Ҳаҷми файл аз ҳад зиёд.', ' — Файл слишком большой.')
+      notify((msg || 'Боргирӣ нашуд') + hint, 'error')
+    } finally {
+      setUploading('')
+    }
+  }
+
+  const setUrl = async (kind, value) => {
+    setForm(current => ({ ...current, [kind]: value }))
+    if (/^https?:\/\//i.test(value.trim())) {
+      const duration = await arbMediaDuration(value.trim(), kind)
+      if (duration) setForm(current => (current && current[kind] === value ? { ...current, duration } : current))
+    }
+  }
+
+  const mediaInput = (kind, label, accept) => (
+    <div className="form-group media-field">
+      <label>{label}</label>
+      <input dir="ltr" className="arb-input" placeholder="https://…" value={form[kind]} onChange={event => setUrl(kind, event.target.value)} />
+      <span className="arb-file-wrap">
+        <span className="upload-button">
+          {uploading === kind ? L('Бор шуда истодааст…', 'Загрузка…') : L('📁 Аз телефон/файл бор кунед', '📁 Загрузить из телефона/файла')}
+        </span>
+        <input
+          type="file"
+          accept={accept}
+          className="arb-file-input"
+          disabled={!!uploading}
+          onChange={event => {
+            const file = event.target.files && event.target.files[0]
+            event.target.value = ''
+            if (file) upload(file, kind)
+          }}
+        />
+      </span>
+      {form[kind] && <button type="button" className="danger-button" onClick={() => setForm({ ...form, [kind]: '', duration: kind === 'audio' ? 0 : form.duration })}>{L('Нест кардани файл аз дарс', 'Убрать файл из урока')}</button>}
+    </div>
+  )
+
+  return (
+    <div className="arb-lessons-box">
+      {admin && !form && (
+        <div className="arb-copybar">
+          <button type="button" className="primary-button" onClick={() => setForm({ ...ARB_LESSON_EMPTY })}>➕ {L('Дарси нав', 'Новый урок')}</button>
+        </div>
+      )}
+
+      {admin && form && (
+        <form className="admin-form" onSubmit={save}>
+          <h3>{form.id ? L('Таҳрири дарс', 'Редактирование урока') : L('Дарси нав', 'Новый урок')}</h3>
+          <div className="form-group"><label>{L('Номи дарс', 'Название')} *</label><input className="arb-input" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
+          <div className="form-group"><label>Название на русском</label><input className="arb-input" value={form.titleRu} onChange={e => setForm({ ...form, titleRu: e.target.value })} /></div>
+          <div className="form-group"><label>{L('Тавсифи дарс', 'Описание')}</label><textarea rows={3} value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} /></div>
+          <div className="form-group"><label>Описание на русском</label><textarea rows={3} value={form.descRu} onChange={e => setForm({ ...form, descRu: e.target.value })} /></div>
+          <div className="form-group">
+            <label>{L('Категория', 'Категория')}</label>
+            <input className="arb-input" list="arb-lesson-cats" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder={L('Масалан: Сарф, Наҳв, Луғат', 'Например: Сарф, Наху, Лексика')} />
+            <datalist id="arb-lesson-cats">{cats.map(c => <option key={c} value={c} />)}</datalist>
+          </div>
+          {mediaInput('audio', L('🎧 Аудио (URL ё файл)', '🎧 Аудио (URL или файл)'), 'audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.amr,.flac')}
+          {mediaInput('video', L('🎬 Видео (URL ё файл)', '🎬 Видео (URL или файл)'), 'video/*,.mp4,.webm,.mov,.m4v,.mkv,.3gp')}
+          {form.duration ? <p className="arb-note">⏱ {L('Давомнокӣ', 'Длительность')}: {arbFmtDuration(form.duration)}</p> : null}
+          <label className="arb-check"><input type="checkbox" checked={form.published !== false} onChange={e => setForm({ ...form, published: e.target.checked })} /> {L('Нашр шавад (барои корбарон намоён)', 'Опубликовать (видно пользователям)')}</label>
+          <div className="arb-edit-actions">
+            <button type="submit" className="primary-button" disabled={busy || !!uploading}>{busy ? '…' : L('Сабт', 'Сохранить')}</button>
+            <button type="button" className="secondary-button" onClick={() => setForm(null)}>{L('Бекор', 'Отмена')}</button>
+          </div>
+        </form>
+      )}
+
+      {cats.length > 0 && (
+        <div className="arb-seg">
+          <button type="button" className={!cat ? 'active' : ''} onClick={() => setCat('')}>{L('Ҳама', 'Все')}</button>
+          {cats.map(c => <button type="button" key={c} className={cat === c ? 'active' : ''} onClick={() => setCat(c)}>{c}</button>)}
+        </div>
+      )}
+
+      {!shown.length && <div className="empty-state">{L('Ҳоло дарс нест.', 'Уроков пока нет.')}</div>}
+
+      {shown.map((item, index) => (
+        <article className="public-item arb-lesson" key={item.id}>
+          <h3>{(ru && item.titleRu) || item.title || '—'}{!item.published && <span className="arb-badge"> · {L('пинҳон', 'скрыт')}</span>}</h3>
+          <p className="arb-note">
+            {item.category && <span>🏷 {item.category} </span>}
+            {item.duration ? <span>⏱ {arbFmtDuration(item.duration)}</span> : null}
+          </p>
+          {((ru && item.descRu) || item.desc) && <p className="arb-lesson-desc">{(ru && item.descRu) || item.desc}</p>}
+          {item.audio && <div className="media-player"><audio controls preload="none" src={item.audio}>{L('Браузер аудиоро дастгирӣ намекунад.', 'Браузер не поддерживает аудио.')}</audio></div>}
+          {item.video && <div className="media-player"><video controls playsInline preload="metadata" src={item.video}>{L('Браузер видеоро дастгирӣ намекунад.', 'Браузер не поддерживает видео.')}</video></div>}
+          {admin && (
+            <div className="arb-edit-actions">
+              <button type="button" className="secondary-button" onClick={() => setForm({ id: item.id, title: item.title, titleRu: item.titleRu, desc: item.desc, descRu: item.descRu, category: item.category, audio: item.audio, video: item.video, duration: item.duration, published: item.published })}>✏️ {L('Таҳрир', 'Изменить')}</button>
+              <button type="button" className="secondary-button" onClick={() => patch(item, { published: !item.published }, item.published ? L('Пинҳон шуд', 'Скрыто') : L('Нашр шуд', 'Опубликовано'))}>{item.published ? L('🙈 Пинҳон', '🙈 Скрыть') : L('👁 Нашр', '👁 Опубликовать')}</button>
+              <button type="button" className="secondary-button" disabled={index === 0 || !!cat} onClick={() => move(item, -1)}>↑</button>
+              <button type="button" className="secondary-button" disabled={index === shown.length - 1 || !!cat} onClick={() => move(item, 1)}>↓</button>
+              <button type="button" className="danger-button" onClick={() => remove(item)}>🗑</button>
+            </div>
+          )}
+        </article>
+      ))}
+    </div>
+  )
+}
+
+function ArabicSection({ rows, lang, admin, db, notify, reload, lessonRows }) {
   const tt = ARB_T[lang] || ARB_T.tg
   const [tab, setTab] = useState('sarf')
   const [sighaView, setSighaView] = useState(null)
@@ -6545,7 +7026,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessons }) {
       {tab === 'sent' && <ArbSentences tt={tt} lang={lang} />}
       {tab === 'nahw' && renderTheory('nahw')}
       {tab === 'theory' && renderTheory('theory')}
-      {tab === 'lessons' && <div className="arb-lessons">{lessons}</div>}
+      {tab === 'lessons' && <div className="arb-lessons"><ArbLessons rows={lessonRows} lang={lang} admin={admin} db={db} notify={notify} reload={reload} /></div>}
     </div>
   )
 }
@@ -9314,6 +9795,12 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Администратор ба омори корбарони оддӣ дохил намешавад: сабти худи ӯ нест мешавад.
+  useEffect(() => {
+    if (!db || !admin) return
+    db.from('app_users').delete().eq('user_key', currentUserKey()).then(() => {}, () => {})
+  }, [db, admin])
+
   const loadUsers = useCallback(async (limit = 50) => {
     if (!db) return
 
@@ -9369,9 +9856,18 @@ function App() {
     if (!window.confirm(question)) return
 
     try {
-      const { error } = await db.from('app_users')
-        .update({ blocked: willBlock, blocked_at: willBlock ? new Date().toISOString() : null })
+      let reason = ''
+      if (willBlock) reason = (window.prompt('Сабаби блок (ихтиёрӣ):', '') || '').slice(0, 200)
+      let byWho = ''
+      try { const got = await db.auth.getUser(); byWho = (got && got.data && got.data.user && got.data.user.email) || '' } catch { /* ignore */ }
+      const base = { blocked: willBlock, blocked_at: willBlock ? new Date().toISOString() : null }
+      let { error } = await db.from('app_users')
+        .update({ ...base, block_reason: willBlock ? reason : null, blocked_by: willBlock ? byWho : null })
         .eq('id', user.id)
+      if (error && /block_reason|blocked_by|column/i.test(error.message || '')) {
+        // ҷадвал ҳанӯз бо сутунҳои нав навсозӣ нашудааст -- блок бе сабаб
+        ;({ error } = await db.from('app_users').update(base).eq('id', user.id))
+      }
       if (error) throw error
 
       await loadUsers(usersLimit)
@@ -9442,6 +9938,7 @@ function App() {
                 {String(user.user_key).startsWith('tg:') ? 'Telegram' : 'Браузер/дастгоҳ'} · …{String(user.user_key).slice(-6)}
                 {'\n'}Аввалин ташриф: {formatDate(user.first_seen)}
                 {'\n'}Охирин ташриф: {formatDate(user.last_seen)} · ташрифҳо: {user.visits}
+                {user.blocked && `\nБлок: ${formatDate(user.blocked_at)}${user.blocked_by ? ` · аз тарафи ${user.blocked_by}` : ''}${user.block_reason ? ` · сабаб: ${user.block_reason}` : ''}`}
               </p>
 
               <div className="admin-item-actions">
@@ -10582,7 +11079,7 @@ function App() {
               </div>
 
               {selectedSection.slug === 'quran' ? renderQuran() : selectedSection.slug === 'arabic' ? (
-                <ArabicSection rows={arabicRows} lang={lang} admin={admin} db={db} notify={notify} reload={reloadAll} lessons={renderGenericBody()} />
+                <ArabicSection rows={arabicRows} lang={lang} admin={admin} db={db} notify={notify} reload={reloadAll} lessonRows={contentRows} />
               ) : selectedSection.slug === 'questions' ? renderAsk() : selectedSection.slug === 'hadith' && !selectedBook ? (
                 <div className="menu menu-list">
                   {bookGroups
