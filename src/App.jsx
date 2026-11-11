@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './index.css'
@@ -7569,12 +7568,6 @@ function qiblaDistanceKm(lat, lon) {
   return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-const QIBLA_CITIES = [
-  ['Душанбе', 38.5598, 68.787], ['Хуҷанд', 40.2826, 69.6222], ['Бохтар', 37.8363, 68.7803], ['Кӯлоб', 37.9146, 69.7845],
-  ['Тошкент', 41.2995, 69.2401], ['Кобул', 34.5553, 69.2075],
-  ['Москва', 55.7558, 37.6173], ['Истанбул', 41.0082, 28.9784]
-]
-
 function arbYouTubeId(url) {
   const m = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|live\/|embed\/|shorts\/))([A-Za-z0-9_-]{11})/)
   return m ? m[1] : ''
@@ -7623,7 +7616,8 @@ function ArbHlsVideo({ src }) {
   return <video ref={ref} controls playsInline autoPlay className="mecca-video" />
 }
 
-function MeccaLive({ db, admin, notify, lang }) {
+function MeccaLive({ db, admin, notify, lang, place = 'makkah' }) {
+  const madina = place === 'madina'
   const ru = lang === 'ru'
   const L = (tg, rus) => (ru ? rus : tg)
   const [row, setRow] = useState(null)
@@ -7634,11 +7628,11 @@ function MeccaLive({ db, admin, notify, lang }) {
   const load = useCallback(async () => {
     if (!db) { setLoaded(true); return }
     try {
-      const { data } = await db.from('content_items').select('id, tajik_text').eq('section_slug', '__settings').eq('title', 'makkah_live').limit(1)
+      const { data } = await db.from('content_items').select('id, tajik_text').eq('section_slug', '__settings').eq('title', madina ? 'madina_live' : 'makkah_live').limit(1)
       setRow(data && data[0] ? data[0] : null)
     } catch { /* ignore */ }
     setLoaded(true)
-  }, [db])
+  }, [db, madina])
   useEffect(() => { load() }, [load])
 
   const url = row ? row.tajik_text || '' : ''
@@ -7651,7 +7645,7 @@ function MeccaLive({ db, admin, notify, lang }) {
       return
     }
     try {
-      const payload = { section_slug: '__settings', title: 'makkah_live', tajik_text: value, is_published: true, updated_at: new Date().toISOString() }
+      const payload = { section_slug: '__settings', title: madina ? 'madina_live' : 'makkah_live', tajik_text: value, is_published: true, updated_at: new Date().toISOString() }
       const result = row ? await db.from('content_items').update(payload).eq('id', row.id) : await db.from('content_items').insert(payload)
       if (result.error) throw result.error
       setEditing(false)
@@ -7664,9 +7658,9 @@ function MeccaLive({ db, admin, notify, lang }) {
 
   return (
     <div className="mecca-live">
-      <h3>🕋 {L('Пахши мустақими Масҷидулҳаром', 'Прямая трансляция из Масджид аль-Харам')}</h3>
+      <h3>{madina ? '🕌 ' + L('Пахши мустақими Масҷидуннабавӣ (Мадина)', 'Прямая трансляция из Мечети Пророка (Медина)') : '🕋 ' + L('Пахши мустақими Масҷидулҳаром', 'Прямая трансляция из Масджид аль-Харам')}</h3>
       {info.kind === 'iframe' && (
-        <div className="mecca-frame"><iframe title="Makkah live" src={info.src} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /></div>
+        <div className="mecca-frame"><iframe title={madina ? 'Madinah live' : 'Makkah live'} src={info.src} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /></div>
       )}
       {info.kind === 'hls' && <ArbHlsVideo src={info.src} />}
       {info.kind === 'video' && <video className="mecca-video" src={info.src} controls playsInline autoPlay />}
@@ -7695,27 +7689,41 @@ function MeccaLive({ db, admin, notify, lang }) {
   )
 }
 
-function QiblaFinder({ lang, notify }) {
+/* ---------- Ҷойгиршавӣ (ҷустуҷӯи шаҳр, GPS ё координата) ---------- */
+
+function LocationPicker({ lang, pos, onPick, notify }) {
   const ru = lang === 'ru'
   const L = (tg, rus) => (ru ? rus : tg)
-  const [pos, setPos] = useState(null) // { lat, lon, label }
-  const [status, setStatus] = useState('')
-  const [heading, setHeading] = useState(null)
-  const [compassOn, setCompassOn] = useState(false)
-  const [decl, setDecl] = useState(() => { try { return Number(window.localStorage.getItem('mh_decl')) || 0 } catch { return 0 } })
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
   const [manual, setManual] = useState({ lat: '', lon: '' })
-  const wasAligned = useRef(false)
+  const deviceTz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch { return 'UTC' } })()
 
-  const bearing = pos ? qiblaBearing(pos.lat, pos.lon) : null
-  const dist = pos ? qiblaDistanceKm(pos.lat, pos.lon) : null
+  const search = async () => {
+    const q = query.trim()
+    if (q.length < 2) return
+    setBusy(true)
+    setMsg('')
+    try {
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=${ru ? 'ru' : 'en'}&format=json`)
+      const json = await res.json()
+      setResults(json.results || [])
+      if (!json.results || !json.results.length) setMsg(L('Шаҳр ёфт нашуд. Бо ҳарфҳои лотинӣ ё русӣ нависед (масалан: Dushanbe, Душанбе).', 'Город не найден. Введите латиницей или по-русски (например: Dushanbe, Душанбе).'))
+    } catch {
+      setMsg(L('Ҷустуҷӯ кор накард (интернет нест?). Координатаро дастӣ ворид кунед.', 'Поиск не сработал (нет интернета?). Введите координаты вручную.'))
+    }
+    setBusy(false)
+  }
 
-  const locate = () => {
-    setStatus(L('Ҷойгиршавӣ ҷустуҷӯ мешавад…', 'Определяем местоположение…'))
+  const useGps = () => {
+    setMsg(L('Ҷойгиршавӣ ҷустуҷӯ мешавад…', 'Определяем местоположение…'))
     const fromBrowser = () => {
-      if (!navigator.geolocation) { setStatus(L('Дастгоҳ ҷойгиршавиро дастгирӣ намекунад. Шаҳрро интихоб кунед.', 'Геолокация недоступна. Выберите город.')); return }
+      if (!navigator.geolocation) { setMsg(L('Дастгоҳ ҷойгиршавиро дастгирӣ намекунад. Шаҳрро ҷустуҷӯ кунед.', 'Геолокация недоступна. Найдите город.')); return }
       navigator.geolocation.getCurrentPosition(
-        p => { setPos({ lat: p.coords.latitude, lon: p.coords.longitude, label: L('Ҷойгиршавии шумо', 'Ваше местоположение'), acc: p.coords.accuracy }); setStatus('') },
-        () => setStatus(L('Иҷозати ҷойгиршавӣ дода нашуд. Шаҳрро интихоб кунед ё координатаро ворид намоед.', 'Нет доступа к геолокации. Выберите город или введите координаты.')),
+        p => { setMsg(''); onPick({ lat: p.coords.latitude, lon: p.coords.longitude, label: L('Ҷойгиршавии шумо', 'Ваше местоположение'), tz: deviceTz, acc: p.coords.accuracy }) },
+        () => setMsg(L('Иҷозати ҷойгиршавӣ дода нашуд. Шаҳрро ҷустуҷӯ кунед ё координатаро ворид намоед.', 'Нет доступа к геолокации. Найдите город или введите координаты.')),
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
       )
     }
@@ -7724,7 +7732,7 @@ function QiblaFinder({ lang, notify }) {
       try {
         lm.init(() => {
           lm.getLocation(data => {
-            if (data && typeof data.latitude === 'number') { setPos({ lat: data.latitude, lon: data.longitude, label: L('Ҷойгиршавии шумо', 'Ваше местоположение') }); setStatus('') }
+            if (data && typeof data.latitude === 'number') { setMsg(''); onPick({ lat: data.latitude, lon: data.longitude, label: L('Ҷойгиршавии шумо', 'Ваше местоположение'), tz: deviceTz }) }
             else fromBrowser()
           })
         })
@@ -7734,13 +7742,88 @@ function QiblaFinder({ lang, notify }) {
     fromBrowser()
   }
 
+  const applyManual = () => {
+    const lat = Number(String(manual.lat).replace(',', '.'))
+    const lon = Number(String(manual.lon).replace(',', '.'))
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      notify(L('Координата нодуруст аст.', 'Неверные координаты.'), 'error')
+      return
+    }
+    onPick({ lat, lon, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, tz: deviceTz })
+  }
+
+  return (
+    <div className="loc-picker">
+      <div className="arb-copybar">
+        <button type="button" className="primary-button" onClick={useGps}>📍 {L('Ҷойгиршавии ман', 'Моё местоположение')}</button>
+      </div>
+      <form className="arb-copybar" onSubmit={event => { event.preventDefault(); search() }}>
+        <input className="arb-input" value={query} onChange={event => setQuery(event.target.value)} placeholder={L('Номи шаҳр ё деҳа…', 'Название города или села…')} />
+        <button type="submit" className="secondary-button" disabled={busy}>{busy ? '…' : '🔎'}</button>
+      </form>
+      {results.length > 0 && (
+        <div className="arb-seg">
+          {results.map(item => (
+            <button
+              type="button"
+              key={`${item.id}`}
+              onClick={() => {
+                onPick({ lat: item.latitude, lon: item.longitude, label: [item.name, item.admin1, item.country].filter(Boolean).join(', '), tz: item.timezone || deviceTz })
+                setResults([])
+                setQuery('')
+              }}
+            >{[item.name, item.admin1, item.country].filter(Boolean).join(', ')}</button>
+          ))}
+        </div>
+      )}
+      <details>
+        <summary>{L('Координатаро дастӣ ворид кардан', 'Ввести координаты вручную')}</summary>
+        <div className="arb-copybar">
+          <input className="arb-input" inputMode="decimal" placeholder={L('Арз (масалан 38.56)', 'Широта (напр. 38.56)')} value={manual.lat} onChange={e => setManual({ ...manual, lat: e.target.value })} />
+          <input className="arb-input" inputMode="decimal" placeholder={L('Тӯл (масалан 68.79)', 'Долгота (напр. 68.79)')} value={manual.lon} onChange={e => setManual({ ...manual, lon: e.target.value })} />
+          <button type="button" className="secondary-button" onClick={applyManual}>OK</button>
+        </div>
+      </details>
+      {msg && <p className="arb-note">{msg}</p>}
+      {pos && <p className="arb-note">📌 {pos.label} · {pos.lat.toFixed(4)}, {pos.lon.toFixed(4)} · {pos.tz}</p>}
+    </div>
+  )
+}
+
+/** Самти компас (дараҷа аз шимол) аз alpha/beta/gamma бо ислоҳи моили телефон */
+function arbHeadingFromEuler(alphaDeg, betaDeg, gammaDeg) {
+  const r = Math.PI / 180
+  const a = alphaDeg * r
+  const b = betaDeg * r
+  const g = gammaDeg * r
+  const cA = Math.cos(a), sA = Math.sin(a), cB = Math.cos(b), sB = Math.sin(b), cG = Math.cos(g), sG = Math.sin(g)
+  // сутуни 2 (болои дастгоҳ) ва сутуни 3 (қафои дастгоҳ) -- матритсаи Rz(a)Rx(b)Ry(g)
+  const top = { x: -cB * sA, y: cA * cB, z: sB }
+  const back = { x: -(cA * sG + cG * sA * sB), y: -(sA * sG - cA * cG * sB), z: -cB * cG }
+  const v = Math.abs(back.z) > Math.abs(top.z) ? top : back // ҳамвор: болои телефон; рост: қафо
+  return (Math.atan2(v.x, v.y) / r + 360) % 360
+}
+
+function QiblaFinder({ lang, pos }) {
+  const ru = lang === 'ru'
+  const L = (tg, rus) => (ru ? rus : tg)
+  const [heading, setHeading] = useState(null)
+  const [compassOn, setCompassOn] = useState(false)
+  const [status, setStatus] = useState('')
+  const [decl, setDecl] = useState(() => { try { return Number(window.localStorage.getItem('mh_decl')) || 0 } catch { return 0 } })
+  const wasAligned = useRef(false)
+
+  const bearing = pos ? qiblaBearing(pos.lat, pos.lon) : null
+  const dist = pos ? qiblaDistanceKm(pos.lat, pos.lon) : null
+
   const startCompass = async () => {
     try {
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         const res = await DeviceOrientationEvent.requestPermission()
-        if (res !== 'granted') { setStatus(L('Иҷозати компас дода нашуд.', 'Нет доступа к компасу.')); return }
+        if (res !== 'granted') { setStatus(L('Иҷозати компас дода нашуд (Танзимот → Safari → Ҳаракат ва самт).', 'Нет доступа к компасу (Настройки → Safari → Движение и ориентация).')); return }
       }
       setCompassOn(true)
+      setStatus(L('Агар тир ҳаракат накунад, телефонро ҳамвор нигоҳ дошта «ҳашт» кашед (калибр).', 'Если стрелка не двигается, держите телефон горизонтально и нарисуйте «восьмёрку» (калибровка).'))
     } catch {
       setStatus(L('Компас дастгирӣ намешавад.', 'Компас не поддерживается.'))
     }
@@ -7748,18 +7831,38 @@ function QiblaFinder({ lang, notify }) {
 
   useEffect(() => {
     if (!compassOn) return undefined
+    const tg = window.Telegram && window.Telegram.WebApp
+    const cleanups = []
     const handler = event => {
       let h = null
-      if (typeof event.webkitCompassHeading === 'number') h = event.webkitCompassHeading
-      else if (event.alpha !== null && event.alpha !== undefined && (event.absolute || event.type === 'deviceorientationabsolute')) h = (360 - event.alpha) % 360
+      if (typeof event.webkitCompassHeading === 'number' && event.webkitCompassHeading >= 0) h = event.webkitCompassHeading
+      else if (event.alpha !== null && event.alpha !== undefined && (event.absolute || event.type === 'deviceorientationabsolute')) {
+        h = arbHeadingFromEuler(event.alpha, event.beta || 0, event.gamma || 0)
+      }
       if (h !== null) setHeading(h)
     }
     window.addEventListener('deviceorientationabsolute', handler, true)
     window.addEventListener('deviceorientation', handler, true)
-    return () => {
+    cleanups.push(() => {
       window.removeEventListener('deviceorientationabsolute', handler, true)
       window.removeEventListener('deviceorientation', handler, true)
+    })
+    // Telegram Mini App: датчики расмии Telegram (Bot API 8.0+), агар мавҷуд бошад
+    if (tg && tg.DeviceOrientation && typeof tg.DeviceOrientation.start === 'function') {
+      try {
+        const onTg = () => {
+          const d = tg.DeviceOrientation
+          if (d && typeof d.alpha === 'number') {
+            const deg = 180 / Math.PI
+            setHeading(arbHeadingFromEuler(d.alpha * deg, (d.beta || 0) * deg, (d.gamma || 0) * deg))
+          }
+        }
+        tg.onEvent('deviceOrientationChanged', onTg)
+        tg.DeviceOrientation.start({ refresh_rate: 100, need_absolute: true })
+        cleanups.push(() => { try { tg.offEvent('deviceOrientationChanged', onTg); tg.DeviceOrientation.stop() } catch { /* ignore */ } })
+      } catch { /* ignore */ }
     }
+    return () => cleanups.forEach(fn => fn())
   }, [compassOn])
 
   const trueHeading = heading === null ? null : (heading + decl + 360) % 360
@@ -7780,70 +7883,226 @@ function QiblaFinder({ lang, notify }) {
     try { window.localStorage.setItem('mh_decl', String(n)) } catch { /* ignore */ }
   }
 
-  const applyManual = () => {
-    const lat = Number(String(manual.lat).replace(',', '.'))
-    const lon = Number(String(manual.lon).replace(',', '.'))
-    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
-      notify(L('Координата нодуруст аст.', 'Неверные координаты.'), 'error')
-      return
-    }
-    setPos({ lat, lon, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}` })
-    setStatus('')
-  }
-
   const dial = trueHeading === null ? 0 : -trueHeading
   const cardinal = b => (ru
     ? ['север', 'северо-восток', 'восток', 'юго-восток', 'юг', 'юго-запад', 'запад', 'северо-запад']
     : ['шимол', 'шимолу шарқ', 'шарқ', 'ҷанубу шарқ', 'ҷануб', 'ҷанубу ғарб', 'ғарб', 'шимолу ғарб'])[Math.round(b / 45) % 8]
 
+  if (!pos) return <p className="arb-note">{L('Аввал шаҳр ё ҷойгиршавиро интихоб кунед.', 'Сначала выберите город или местоположение.')}</p>
+
   return (
-    <div className="qibla">
-      <h3>🧭 {L('Ёфтани қибла', 'Определение киблы')}</h3>
-      <div className="arb-copybar">
-        <button type="button" className="primary-button" onClick={locate}>📍 {L('Ҷойгиршавии ман', 'Моё местоположение')}</button>
+    <div className="qibla-card">
+      <p className="qibla-main">{L('Самти қибла', 'Направление киблы')}: <b>{bearing.toFixed(1)}°</b> ({cardinal(bearing)})</p>
+      <p className="arb-note">{L('То Каъба', 'До Каабы')}: {Math.round(dist).toLocaleString()} {L('км', 'км')}{pos.acc ? ` · ±${Math.round(pos.acc)} м` : ''}</p>
+
+      <div className={`qibla-compass ${aligned ? 'is-aligned' : ''}`}>
+        <div className="qibla-dial" style={{ transform: `rotate(${dial}deg)` }}>
+          <span className="qibla-n">N</span>
+          <span className="qibla-kaaba" style={{ transform: `rotate(${bearing}deg) translateY(-96px)` }}>🕋</span>
+        </div>
+        <div className="qibla-arrow" />
       </div>
-      <div className="arb-seg">
-        {QIBLA_CITIES.map(([name, lat, lon]) => (
-          <button type="button" key={name} className={pos && pos.label === name ? 'active' : ''} onClick={() => { setPos({ lat, lon, label: name }); setStatus('') }}>{name}</button>
-        ))}
-      </div>
-      <div className="arb-copybar">
-        <input className="arb-input" inputMode="decimal" placeholder={L('Арз (масалан 38.56)', 'Широта (напр. 38.56)')} value={manual.lat} onChange={e => setManual({ ...manual, lat: e.target.value })} />
-        <input className="arb-input" inputMode="decimal" placeholder={L('Тӯл (масалан 68.79)', 'Долгота (напр. 68.79)')} value={manual.lon} onChange={e => setManual({ ...manual, lon: e.target.value })} />
-        <button type="button" className="secondary-button" onClick={applyManual}>OK</button>
-      </div>
+
+      {!compassOn ? (
+        <button type="button" className="secondary-button" onClick={startCompass}>🧲 {L('Фаъол кардани компас', 'Включить компас')}</button>
+      ) : (
+        <p className="arb-note">
+          {heading === null
+            ? L('Датчик маълумот намедиҳад… Телефонро ҳаракат диҳед.', 'Датчик не отдаёт данные… Подвигайте телефон.')
+            : aligned
+              ? `✅ ${L('Шумо ба сӯи қибла истодаед', 'Вы смотрите в сторону киблы')}`
+              : `${L('Бигардед', 'Повернитесь')}: ${diff > 0 ? '→' : '←'} ${Math.abs(Math.round(diff))}°`}
+        </p>
+      )}
       {status && <p className="arb-note">{status}</p>}
 
-      {pos && bearing !== null && (
-        <div className="qibla-card">
-          <p className="qibla-main">{L('Самти қибла', 'Направление киблы')}: <b>{bearing.toFixed(1)}°</b> ({cardinal(bearing)})</p>
-          <p className="arb-note">{pos.label} · {pos.lat.toFixed(4)}, {pos.lon.toFixed(4)} · {L('То Каъба', 'До Каабы')}: {Math.round(dist).toLocaleString()} {L('км', 'км')}{pos.acc ? ` · ±${Math.round(pos.acc)} м` : ''}</p>
+      <label className="qibla-decl">{L('Ислоҳи мағнотисӣ (дараҷа, + шарқ)', 'Магнитное склонение (градусы, + восток)')}:
+        <input type="number" step="0.5" value={decl} onChange={e => setDeclination(e.target.value)} />
+      </label>
+      <p className="arb-note">{L('Адади «Самти қибла» аз координата дақиқ ҳисоб мешавад (нисбат ба шимоли ҳақиқӣ). Компаси телефон шимоли мағнотисиро нишон медиҳад; барои дақиқӣ ислоҳи мағнотисии шаҳри худро дар майдони боло ворид кунед ва аз ашёи оҳанин дур бошед.', 'Число «Направление киблы» рассчитано точно по координатам (относительно истинного севера). Компас телефона показывает магнитный север; для точности введите склонение вашего города и держитесь подальше от металла.')}</p>
+    </div>
+  )
+}
 
-          <div className={`qibla-compass ${aligned ? 'is-aligned' : ''}`}>
-            <div className="qibla-dial" style={{ transform: `rotate(${dial}deg)` }}>
-              <span className="qibla-n">N</span>
-              <span className="qibla-kaaba" style={{ transform: `rotate(${bearing}deg) translateY(-96px)` }}>🕋</span>
-            </div>
-            <div className="qibla-arrow" />
-          </div>
+/* ---------- Вақти намоз ---------- */
 
-          {!compassOn ? (
-            <button type="button" className="secondary-button" onClick={startCompass}>🧲 {L('Фаъол кардани компас', 'Включить компас')}</button>
-          ) : (
-            <p className="arb-note">
-              {heading === null
-                ? L('Телефонро ҳамвор нигоҳ дошта, каме ҳаракат диҳед (калибр кардан).', 'Держите телефон горизонтально и сделайте «восьмёрку» (калибровка).')
-                : aligned
-                  ? `✅ ${L('Шумо ба сӯи қибла истодаед', 'Вы смотрите в сторону киблы')}`
-                  : `${L('Бигардед', 'Повернитесь')}: ${diff > 0 ? '→' : '←'} ${Math.abs(Math.round(diff))}°`}
-            </p>
-          )}
-          <label className="qibla-decl">{L('Ислоҳи мағнотисӣ (дараҷа, + шарқ)', 'Магнитное склонение (градусы, + восток)')}:
-            <input type="number" step="0.5" value={decl} onChange={e => setDeclination(e.target.value)} />
-          </label>
-          <p className="arb-note">{L('Самти қибла аз координата дақиқ ҳисоб мешавад (шимоли ҳақиқӣ). Компаси телефон шимоли мағнотисиро нишон медиҳад; барои дақиқӣ ислоҳи мағнотисии шаҳратонро ворид кунед ва аз ашёи оҳанин дур бошед.', 'Направление рассчитано точно по координатам (истинный север). Компас телефона показывает магнитный север; для точности введите склонение вашего города и держитесь подальше от металла.')}</p>
-        </div>
-      )}
+const PRAYER_METHODS = [
+  { id: 3, name: 'Muslim World League (MWL)', fajr: 18, isha: 17 },
+  { id: 1, name: 'University of Islamic Sciences, Karachi', fajr: 18, isha: 18 },
+  { id: 2, name: 'ISNA (Shimoli Amrико)', fajr: 15, isha: 15 },
+  { id: 5, name: 'Egyptian General Authority', fajr: 19.5, isha: 17.5 },
+  { id: 4, name: 'Umm al-Qura (Макка)', fajr: 18.5, ishaMin: 90 }
+]
+PRAYER_METHODS[2].name = 'ISNA (Амрикои Шимолӣ)'
+
+function arbTzOffsetHours(tz, y, m, d) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(Date.UTC(y, m - 1, d, 12)))
+    const get = type => Number(parts.find(p => p.type === type).value)
+    const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
+    return (asUtc - Date.UTC(y, m - 1, d, 12)) / 3600000 + 0
+  } catch { return 0 }
+}
+
+/** Ҳисоби астрономии вақти намоз (бе интернет). Натиља: соат бо воҳиди 24-соата ё NaN */
+function arbPrayerLocal(y, m, d, lat, lon, tz, methodId, hanafi) {
+  const method = PRAYER_METHODS.find(item => item.id === methodId) || PRAYER_METHODS[0]
+  const r = Math.PI / 180
+  const sin = x => Math.sin(x * r), cos = x => Math.cos(x * r), tan = x => Math.tan(x * r)
+  const asin = x => Math.asin(x) / r, acos = x => Math.acos(x) / r, atan2 = (a, b) => Math.atan2(a, b) / r
+  const fix = (x, n) => ((x % n) + n) % n
+  const tzOff = arbTzOffsetHours(tz, y, m, d)
+  // рӯзи Юлианӣ
+  let yy = y, mm = m
+  if (mm <= 2) { yy -= 1; mm += 12 }
+  const A = Math.floor(yy / 100)
+  const B = 2 - A + Math.floor(A / 4)
+  const jd0 = Math.floor(365.25 * (yy + 4716)) + Math.floor(30.6001 * (mm + 1)) + d + B - 1524.5
+  const jd = jd0 - lon / (15 * 24)
+  const sunPos = t => {
+    const D = jd + t / 24 - 2451545.0
+    const g = fix(357.529 + 0.98560028 * D, 360)
+    const q = fix(280.459 + 0.98564736 * D, 360)
+    const L2 = fix(q + 1.915 * sin(g) + 0.02 * sin(2 * g), 360)
+    const e = 23.439 - 0.00000036 * D
+    const RA = fix(atan2(cos(e) * sin(L2), cos(L2)), 360) / 15
+    return { decl: asin(sin(e) * sin(L2)), eqt: q / 15 - fix(RA, 24) }
+  }
+  const midDay = t => {
+    const eqt = sunPos(t).eqt
+    return fix(12 - (eqt > 12 ? eqt - 24 : eqt < -12 ? eqt + 24 : eqt), 24)
+  }
+  const angleTime = (angle, t, ccw) => {
+    const dec = sunPos(t).decl
+    const val = (-sin(angle) - sin(dec) * sin(lat)) / (cos(dec) * cos(lat))
+    if (val < -1 || val > 1) return NaN
+    return midDay(t) + (ccw ? -1 : 1) * acos(val) / 15
+  }
+  const asrTime = (factor, t) => {
+    const dec = sunPos(t).decl
+    const angle = -Math.atan(1 / (factor + tan(Math.abs(lat - dec)))) / r
+    return angleTime(angle, t, false)
+  }
+  let t = { fajr: 5, sunrise: 6, dhuhr: 12, asr: 13, maghrib: 18, isha: 18 }
+  for (let i = 0; i < 2; i += 1) {
+    t = {
+      fajr: angleTime(method.fajr, t.fajr, true),
+      sunrise: angleTime(0.833, t.sunrise, true),
+      dhuhr: midDay(t.dhuhr),
+      asr: asrTime(hanafi ? 2 : 1, t.asr),
+      maghrib: angleTime(0.833, t.maghrib, false),
+      isha: method.ishaMin ? NaN : angleTime(method.isha, t.isha, false)
+    }
+  }
+  const shift = tzOff - lon / 15
+  const out = {}
+  Object.keys(t).forEach(key => { out[key] = t[key] + shift })
+  out.dhuhr += 1 / 60 // эҳтиёт: 1 дақиқа баъд аз зевол
+  if (method.ishaMin) out.isha = out.maghrib + method.ishaMin / 60
+  // арзҳои баланд: агар Бомдод/Хуфтан ёфт нашавад, 1/7-и шаб
+  const night = fix(out.sunrise - out.maghrib, 24)
+  if (!Number.isFinite(out.fajr)) out.fajr = out.sunrise - night / 7
+  if (!Number.isFinite(out.isha)) out.isha = out.maghrib + night / 7
+  return out
+}
+
+const PRAYER_KEYS = [['fajr', 'Бомдод', 'Фаджр'], ['sunrise', 'Тулӯи офтоб', 'Восход'], ['dhuhr', 'Пешин', 'Зухр'], ['asr', 'Аср (Намози дигар)', 'Аср'], ['maghrib', 'Шом', 'Магриб'], ['isha', 'Хуфтан', 'Иша']]
+
+function arbFmtHour(h) {
+  if (!Number.isFinite(h)) return '—'
+  const total = Math.round(fixDay(h) * 60)
+  const hh = Math.floor(total / 60) % 24
+  const mm = total % 60
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+}
+function fixDay(h) { return ((h % 24) + 24) % 24 }
+
+function PrayerTimes({ lang, pos, notify }) {
+  const ru = lang === 'ru'
+  const L = (tg, rus) => (ru ? rus : tg)
+  const [methodId, setMethodId] = useState(() => { try { return Number(window.localStorage.getItem('mh_pm')) || 3 } catch { return 3 } })
+  const [hanafi, setHanafi] = useState(() => { try { return window.localStorage.getItem('mh_hanafi') !== '0' } catch { return true } })
+  const [times, setTimes] = useState(null)
+  const [source, setSource] = useState('')
+  const [now, setNow] = useState(Date.now())
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    if (!pos) return undefined
+    let cancelled = false
+    const tz = pos.tz || 'UTC'
+    const nowParts = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).split('-').map(Number)
+    const [y, m, d] = nowParts
+    const local = arbPrayerLocal(y, m, d, pos.lat, pos.lon, tz, methodId, hanafi)
+    const asObj = Object.fromEntries(PRAYER_KEYS.map(([key]) => [key, local[key]]))
+    setTimes(asObj)
+    setSource('local')
+    const url = `https://api.aladhan.com/v1/timings/${String(d).padStart(2, '0')}-${String(m).padStart(2, '0')}-${y}?latitude=${pos.lat}&longitude=${pos.lon}&method=${methodId}&school=${hanafi ? 1 : 0}&timezonestring=${encodeURIComponent(tz)}`
+    fetch(url).then(res => res.json()).then(json => {
+      if (cancelled || !json || !json.data || !json.data.timings) return
+      const tm = json.data.timings
+      const hm = text => { const [h, mi] = String(text).slice(0, 5).split(':').map(Number); return h + mi / 60 }
+      setTimes({ fajr: hm(tm.Fajr), sunrise: hm(tm.Sunrise), dhuhr: hm(tm.Dhuhr), asr: hm(tm.Asr), maghrib: hm(tm.Maghrib), isha: hm(tm.Isha) })
+      setSource('api')
+    }).catch(() => { /* ҳисоби дохилӣ мемонад */ })
+    return () => { cancelled = true }
+  }, [pos, methodId, hanafi])
+
+  const saveMethod = id => { setMethodId(id); try { window.localStorage.setItem('mh_pm', String(id)) } catch { /* ignore */ } }
+  const saveHanafi = value => { setHanafi(value); try { window.localStorage.setItem('mh_hanafi', value ? '1' : '0') } catch { /* ignore */ } }
+
+  if (!pos) return <p className="arb-note">{L('Аввал шаҳр ё ҷойгиршавиро интихоб кунед.', 'Сначала выберите город или местоположение.')}</p>
+  if (!times) return null
+
+  // намози навбатӣ дар вақти маҳаллии шаҳр
+  let nextKey = ''
+  let remaining = ''
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: pos.tz || 'UTC', hourCycle: 'h23', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(now))
+    const nowH = Number(parts.find(p => p.type === 'hour').value) + Number(parts.find(p => p.type === 'minute').value) / 60
+    const order = PRAYER_KEYS.map(([key]) => key)
+    let found = order.find(key => times[key] > nowH)
+    let target = found ? times[found] : times.fajr + 24
+    if (!found) found = 'fajr'
+    nextKey = found
+    const mins = Math.max(0, Math.round((target - nowH) * 60))
+    remaining = `${Math.floor(mins / 60)} ${L('соат', 'ч')} ${mins % 60} ${L('дақ', 'мин')}`
+  } catch { /* ignore */ }
+
+  return (
+    <div className="prayer-card">
+      <h3>🕌 {pos.label}</h3>
+      {nextKey && <p className="arb-note">⏳ {L('Намози навбатӣ', 'Следующий намаз')}: <b>{PRAYER_KEYS.find(k => k[0] === nextKey)[ru ? 2 : 1]}</b> — {remaining}</p>}
+      <table className="prayer-table">
+        <tbody>
+          {PRAYER_KEYS.map(([key, tg, rus]) => (
+            <tr key={key} className={key === nextKey ? 'is-next' : ''}>
+              <td>{ru ? rus : tg}</td>
+              <td dir="ltr"><b>{arbFmtHour(times[key])}</b></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="form-group">
+        <label>{L('Усули ҳисоб', 'Метод расчёта')}</label>
+        <select value={methodId} onChange={e => saveMethod(Number(e.target.value))}>
+          {PRAYER_METHODS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
+      </div>
+      <div className="arb-seg">
+        <button type="button" className={hanafi ? 'active' : ''} onClick={() => saveHanafi(true)}>{L('Аср: ҳанафӣ', 'Аср: ханафитский')}</button>
+        <button type="button" className={!hanafi ? 'active' : ''} onClick={() => saveHanafi(false)}>{L('Аср: шофеӣ/маликӣ/ҳанбалӣ', 'Аср: шафиитский/малики/ханбали')}</button>
+      </div>
+      <p className="arb-note">
+        {source === 'api'
+          ? L('Манбаъ: Aladhan API (бо усул ва мазҳаби интихобшуда).', 'Источник: Aladhan API (по выбранному методу и мазхабу).')
+          : L('Ҳисоби астрономии дохилӣ (бе интернет). Бо интернет аз Aladhan API нав мешавад.', 'Встроенный астрономический расчёт (офлайн). При наличии интернета обновляется из Aladhan API.')}
+        {' '}{L('Вақти расмии масҷиди шаҳри шумо метавонад аз ҳисоб 1–3 дақиқа фарқ кунад; усули мақомоти динии мавзеъро интихоб кунед.', 'Официальное время мечети вашего города может отличаться на 1–3 минуты; выберите метод местного духовного управления.')}
+      </p>
     </div>
   )
 }
@@ -7851,14 +8110,27 @@ function QiblaFinder({ lang, notify }) {
 function MeccaPage({ db, admin, notify, lang, initialTab, onBack, backLabel }) {
   const [tab, setTab] = useState(initialTab || 'live')
   const ru = lang === 'ru'
+  const [pos, setPos] = useState(() => {
+    try { const saved = JSON.parse(window.localStorage.getItem('mh_loc') || 'null'); return saved && Number.isFinite(saved.lat) ? saved : null } catch { return null }
+  })
+  const pick = value => {
+    setPos(value)
+    try { window.localStorage.setItem('mh_loc', JSON.stringify(value)) } catch { /* ignore */ }
+  }
   return (
     <section className="content-page">
       <button className="secondary-button back-button" type="button" onClick={onBack}>← {backLabel}</button>
       <div className="arb-seg">
         <button type="button" className={tab === 'live' ? 'active' : ''} onClick={() => setTab('live')}>🕋 {ru ? 'Мекка онлайн' : 'Макка зинда'}</button>
+        <button type="button" className={tab === 'madina' ? 'active' : ''} onClick={() => setTab('madina')}>🕌 {ru ? 'Медина онлайн' : 'Мадина зинда'}</button>
         <button type="button" className={tab === 'qibla' ? 'active' : ''} onClick={() => setTab('qibla')}>🧭 {ru ? 'Кибла' : 'Қибла'}</button>
+        <button type="button" className={tab === 'prayer' ? 'active' : ''} onClick={() => setTab('prayer')}>🕌 {ru ? 'Время намаза' : 'Вақти намоз'}</button>
       </div>
-      {tab === 'live' ? <MeccaLive db={db} admin={admin} notify={notify} lang={lang} /> : <QiblaFinder lang={lang} notify={notify} />}
+      {tab === 'live' && <MeccaLive db={db} admin={admin} notify={notify} lang={lang} place="makkah" />}
+      {tab === 'madina' && <MeccaLive db={db} admin={admin} notify={notify} lang={lang} place="madina" />}
+      {tab !== 'live' && tab !== 'madina' && <LocationPicker lang={lang} pos={pos} onPick={pick} notify={notify} />}
+      {tab === 'qibla' && <QiblaFinder lang={lang} pos={pos} />}
+      {tab === 'prayer' && <PrayerTimes lang={lang} pos={pos} notify={notify} />}
     </section>
   )
 }
@@ -9819,7 +10091,7 @@ function App() {
   /* ---------- Боргирии аудио/видео аз дастгоҳ (Supabase Storage, bucket «media») ---------- */
 
   const uploadMedia = async (file, kind, onChange) => {
-    if (!db || !admin) return
+    if (!db || !admin) { notify('Танҳо админи воридшуда метавонад файл бор кунад.', 'error'); return }
 
     const fileExt = (String(file.name || '').split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '')
     const typeOk = String(file.type || '').startsWith(`${kind}/`)
@@ -9856,6 +10128,53 @@ function App() {
       setUploading(current => ({ ...current, [kind]: false }))
     }
   }
+
+  const [diag, setDiag] = useState([])
+  const runStorageDiag = async () => {
+    const out = []
+    const add = (ok, text) => { out.push({ ok, text }); setDiag([...out]) }
+    setDiag([])
+    if (!db) { add(false, 'Supabase пайваст нест (db нест). VITE_SUPABASE_URL / KEY-ро санҷед.'); return }
+    try {
+      const { data, error } = await db.auth.getSession()
+      if (error) add(false, 'getSession: ' + error.message)
+      else if (!data.session) add(false, 'Дар Supabase воридшуда нестед. Боргирӣ танҳо барои админи воридшуда (почта+парол) кор мекунад. Бо «Вуруди админ» ворид шавед.')
+      else add(true, 'Сессия ҳаст: ' + (data.session.user.email || data.session.user.id))
+      if (data && data.session) {
+        const { data: prof, error: pe } = await db.from('profiles').select('role').eq('id', data.session.user.id).maybeSingle()
+        if (pe) add(false, 'profiles: ' + pe.message)
+        else if (!prof) add(false, 'Сатр дар profiles барои ин корбар нест. SQL-и supabase-storage.sql-ро иҷро кунед (он админро илова мекунад) ё сатрро дастӣ созед.')
+        else add(prof.role === 'admin', 'Нақш дар profiles: ' + prof.role + (prof.role === 'admin' ? '' : ' (бояд admin бошад)'))
+      }
+    } catch (error) { add(false, 'Санҷиши сессия: ' + (error.message || error)) }
+    try {
+      const { data: buckets, error } = await db.storage.listBuckets()
+      if (error) add(false, 'listBuckets: ' + error.message + ' (ин хато шояд муқаррарӣ бошад)')
+      else add(buckets.some(b => b.id === 'media'), buckets.some(b => b.id === 'media') ? 'Bucket «media» ҳаст.' : 'Bucket «media» нест! SQL-ро иҷро кунед.')
+    } catch (error) { add(false, 'listBuckets: ' + (error.message || error)) }
+    try {
+      const path = `diag/${Date.now()}.txt`
+      const blob = new Blob(['ok'], { type: 'text/plain' })
+      const { error } = await db.storage.from('media').upload(path, blob, { contentType: 'text/plain', upsert: false })
+      if (error) add(false, 'Боргирии санҷишӣ РАД ШУД: ' + error.message + (error.statusCode ? ' [' + error.statusCode + ']' : '') + ' — одатан маънояш: policy нест ё админ нестед.')
+      else {
+        add(true, 'Боргирии санҷишӣ муваффақ шуд.')
+        const { data } = db.storage.from('media').getPublicUrl(path)
+        try { const res = await fetch(data.publicUrl); add(res.ok, 'Хондани ҷамъиятӣ: HTTP ' + res.status) } catch (error) { add(false, 'Хондани ҷамъиятӣ: ' + error.message) }
+        await db.storage.from('media').remove([path])
+      }
+    } catch (error) { add(false, 'Боргирӣ: ' + (error.message || error)) }
+    add(true, 'Тамом.')
+  }
+
+  const renderAdminStorage = () => (
+    <div className="admin-card">
+      <h3>🛠 Санҷиши боргирии акс/аудио/видео</h3>
+      <p className="arb-note">Ин санҷиш сабаби дақиқи кор накардани боргириро нишон медиҳад.</p>
+      <button type="button" className="primary-button" onClick={runStorageDiag}>Санҷиш оғоз шавад</button>
+      {diag.map((row, i) => <p key={i} className="arb-note" style={{ color: row.ok ? 'inherit' : '#c0392b' }}>{row.ok ? '✅' : '❌'} {row.text}</p>)}
+    </div>
+  )
 
   const mediaField = (kind, label, value, onChange) => (
     <div className="form-group media-field">
@@ -11477,7 +11796,9 @@ function App() {
           {page === 'home' && (
             <div className="mecca-entry">
               <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('live'); setPage('mecca'); scrollToTop() }}>🕋<span>{lang === 'ru' ? 'Мекка онлайн' : 'Макка зинда'}</span></button>
+              <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('madina'); setPage('mecca'); scrollToTop() }}>🕌<span>{lang === 'ru' ? 'Медина онлайн' : 'Мадина зинда'}</span></button>
               <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('qibla'); setPage('mecca'); scrollToTop() }}>🧭<span>{lang === 'ru' ? 'Кибла' : 'Қибла'}</span></button>
+              <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('prayer'); setPage('mecca'); scrollToTop() }}>🕌<span>{lang === 'ru' ? 'Время намаза' : 'Вақти намоз'}</span></button>
             </div>
           )}
 
@@ -11848,6 +12169,10 @@ function App() {
                 <button className={adminTab === 'arabic' ? 'active' : ''} onClick={() => setAdminTab('arabic')}>
                   🔤 Забони арабӣ
                 </button>
+
+                <button className={adminTab === 'storage' ? 'active' : ''} onClick={() => setAdminTab('storage')}>
+                  🛠 Санҷиши Storage
+                </button>
               </div>
 
               {adminTab === 'hadith' && renderAdminHadith()}
@@ -11859,6 +12184,7 @@ function App() {
               {adminTab === 'questions' && renderAdminQuestions()}
               {adminTab === 'chapters' && renderAdminChapters()}
               {adminTab === 'translate' && renderAdminTranslate()}
+              {adminTab === 'storage' && renderAdminStorage()}
               {adminTab === 'arabic' && (
                 <ArabicAdmin rows={arabicRows} lang={lang} db={db} notify={notify} reload={reloadAll} />
               )}
