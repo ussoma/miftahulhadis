@@ -1554,3 +1554,7 @@ input[type='checkbox'] {
 .arb-badge { opacity: 0.7; font-size: 13px; font-weight: 400; }
 .arb-lesson-desc { white-space: pre-wrap; }
 .admin-item .arb-note { white-space: pre-wrap; }
+
+.sound-toggle { position: fixed; right: 10px; bottom: 76px; z-index: 900; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 20px; cursor: pointer; }
+.media-field .arb-file-wrap { display: block; }
+.media-field .arb-file-wrap .upload-button { display: block; text-align: center; }
