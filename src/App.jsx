@@ -913,7 +913,8 @@ const EMPTY_HADITH = {
   russian_text: '',
   explanation_ru: '',
   audio_url: '',
-  video_url: ''
+  video_url: '',
+  image_url: ''
 }
 
 const EMPTY_CONTENT = {
@@ -931,7 +932,8 @@ const EMPTY_CONTENT = {
   is_daily_sunnah: false,
   source_note: '',
   audio_url: '',
-  video_url: ''
+  video_url: '',
+  image_url: ''
 }
 
 const META_PREFIX = '__MIFTAH_META_V1__:'
@@ -5687,6 +5689,7 @@ function ArbWordEditor({ cat, initial, tt, busy, onSave, onCancel, onReset }) {
 
 const ARB_AUDIO_EXT = ['mp3', 'm4a', 'aac', 'ogg', 'oga', 'opus', 'wav', 'weba', 'amr', 'flac', 'mp4', '3gp']
 const ARB_VIDEO_EXT = ['mp4', 'webm', 'mov', 'm4v', 'mkv', '3gp', 'ogv']
+const ARB_IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'avif']
 const ARB_MEDIA_MAX = 50 * 1024 * 1024
 
 function arbFmtDuration(sec) {
@@ -7540,8 +7543,328 @@ function ArabicAdmin({ rows, lang, db, notify, reload }) {
 }
 
 
+/* =====================================================================
+   Макка зинда ва Қибла
+   ===================================================================== */
+
+const KAABA = { lat: 21.422487, lon: 39.826206 }
+
+/** Самти қибла аз нуқтаи (lat, lon) ба Каъба, дар дараҷа аз шимоли ҳақиқӣ (формулаи доираи калон) */
+function qiblaBearing(lat, lon) {
+  const r = Math.PI / 180
+  const f1 = lat * r
+  const f2 = KAABA.lat * r
+  const dl = (KAABA.lon - lon) * r
+  const y = Math.sin(dl) * Math.cos(f2)
+  const x = Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl)
+  return (Math.atan2(y, x) / r + 360) % 360
+}
+
+function qiblaDistanceKm(lat, lon) {
+  const r = Math.PI / 180
+  const dLat = (KAABA.lat - lat) * r
+  const dLon = (KAABA.lon - lon) * r
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat * r) * Math.cos(KAABA.lat * r) * Math.sin(dLon / 2) ** 2
+  return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+const QIBLA_CITIES = [
+  ['Душанбе', 38.5598, 68.787], ['Хуҷанд', 40.2826, 69.6222], ['Бохтар', 37.8363, 68.7803], ['Кӯлоб', 37.9146, 69.7845],
+  ['Тошкент', 41.2995, 69.2401], ['Кобул', 34.5553, 69.2075], ['Алмато', 43.2389, 76.8897], ['Атирау', 47.0945, 51.9238],
+  ['Москва', 55.7558, 37.6173], ['Истанбул', 41.0082, 28.9784]
+]
+
+function arbYouTubeId(url) {
+  const m = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|live\/|embed\/|shorts\/))([A-Za-z0-9_-]{11})/)
+  return m ? m[1] : ''
+}
+
+function arbStreamKind(url) {
+  const u = String(url || '').trim()
+  if (!u) return { kind: 'none' }
+  if (/^UC[A-Za-z0-9_-]{22}$/.test(u)) return { kind: 'iframe', src: `https://www.youtube.com/embed/live_stream?channel=${u}&autoplay=1&playsinline=1` }
+  const channel = u.match(/youtube\.com\/channel\/(UC[A-Za-z0-9_-]{22})/)
+  if (channel) return { kind: 'iframe', src: `https://www.youtube.com/embed/live_stream?channel=${channel[1]}&autoplay=1&playsinline=1` }
+  const id = arbYouTubeId(u)
+  if (id) return { kind: 'iframe', src: `https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0` }
+  if (/\.m3u8(\?|$)/i.test(u)) return { kind: 'hls', src: u }
+  if (/\.(mp4|webm|ogv)(\?|$)/i.test(u)) return { kind: 'video', src: u }
+  if (/^https:\/\//i.test(u)) return { kind: 'iframe', src: u }
+  return { kind: 'none' }
+}
+
+function ArbHlsVideo({ src }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const video = ref.current
+    if (!video) return undefined
+    let hls = null
+    let cancelled = false
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = src
+    } else {
+      const start = () => {
+        if (cancelled || !window.Hls || !window.Hls.isSupported()) return
+        hls = new window.Hls()
+        hls.loadSource(src)
+        hls.attachMedia(video)
+      }
+      if (window.Hls) start()
+      else {
+        const script = document.createElement('script')
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js'
+        script.onload = start
+        document.head.appendChild(script)
+      }
+    }
+    return () => { cancelled = true; if (hls) hls.destroy() }
+  }, [src])
+  return <video ref={ref} controls playsInline autoPlay className="mecca-video" />
+}
+
+function MeccaLive({ db, admin, notify, lang }) {
+  const ru = lang === 'ru'
+  const L = (tg, rus) => (ru ? rus : tg)
+  const [row, setRow] = useState(null)
+  const [loaded, setLoaded] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [editing, setEditing] = useState(false)
+
+  const load = useCallback(async () => {
+    if (!db) { setLoaded(true); return }
+    try {
+      const { data } = await db.from('content_items').select('id, tajik_text').eq('section_slug', '__settings').eq('title', 'makkah_live').limit(1)
+      setRow(data && data[0] ? data[0] : null)
+    } catch { /* ignore */ }
+    setLoaded(true)
+  }, [db])
+  useEffect(() => { load() }, [load])
+
+  const url = row ? row.tajik_text || '' : ''
+  const info = arbStreamKind(url)
+
+  const save = async () => {
+    const value = draft.trim()
+    if (value && arbStreamKind(value).kind === 'none') {
+      notify(L('Пайванд нодуруст аст (бояд https:// бошад).', 'Некорректная ссылка (нужен https://).'), 'error')
+      return
+    }
+    try {
+      const payload = { section_slug: '__settings', title: 'makkah_live', tajik_text: value, is_published: true, updated_at: new Date().toISOString() }
+      const result = row ? await db.from('content_items').update(payload).eq('id', row.id) : await db.from('content_items').insert(payload)
+      if (result.error) throw result.error
+      setEditing(false)
+      await load()
+      notify(L('Сабт шуд', 'Сохранено'))
+    } catch (error) {
+      notify((error && error.message) || 'Хато', 'error')
+    }
+  }
+
+  return (
+    <div className="mecca-live">
+      <h3>🕋 {L('Пахши мустақими Масҷидулҳаром', 'Прямая трансляция из Масджид аль-Харам')}</h3>
+      {info.kind === 'iframe' && (
+        <div className="mecca-frame"><iframe title="Makkah live" src={info.src} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /></div>
+      )}
+      {info.kind === 'hls' && <ArbHlsVideo src={info.src} />}
+      {info.kind === 'video' && <video className="mecca-video" src={info.src} controls playsInline autoPlay />}
+      {info.kind === 'none' && loaded && (
+        <p className="arb-note">{admin
+          ? L('Пайванди пахшро ворид кунед (YouTube-и расмии зинда, .m3u8 ё саҳифаи https), то барои ҳама намоён шавад.', 'Укажите ссылку на трансляцию (официальный YouTube live, .m3u8 или https-страницу), чтобы её видели все.')
+          : L('Пахши мустақим ҳанӯз танзим нашудааст.', 'Трансляция ещё не настроена.')}</p>
+      )}
+      {url && info.kind !== 'none' && (
+        <p className="arb-note"><a href={url} target="_blank" rel="noreferrer">{L('Кушодан дар браузер ↗', 'Открыть в браузере ↗')}</a></p>
+      )}
+      {admin && (
+        <div className="arb-copybar">
+          {!editing
+            ? <button type="button" className="secondary-button" onClick={() => { setDraft(url); setEditing(true) }}>⚙️ {L('Танзими пайванд', 'Настроить ссылку')}</button>
+            : (
+              <>
+                <input dir="ltr" className="arb-input" placeholder="https://www.youtube.com/watch?v=… | UC… | https://…m3u8" value={draft} onChange={event => setDraft(event.target.value)} />
+                <button type="button" className="primary-button" onClick={save}>{L('Сабт', 'Сохранить')}</button>
+                <button type="button" className="secondary-button" onClick={() => setEditing(false)}>{L('Бекор', 'Отмена')}</button>
+              </>
+            )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function QiblaFinder({ lang, notify }) {
+  const ru = lang === 'ru'
+  const L = (tg, rus) => (ru ? rus : tg)
+  const [pos, setPos] = useState(null) // { lat, lon, label }
+  const [status, setStatus] = useState('')
+  const [heading, setHeading] = useState(null)
+  const [compassOn, setCompassOn] = useState(false)
+  const [decl, setDecl] = useState(() => { try { return Number(window.localStorage.getItem('mh_decl')) || 0 } catch { return 0 } })
+  const [manual, setManual] = useState({ lat: '', lon: '' })
+  const wasAligned = useRef(false)
+
+  const bearing = pos ? qiblaBearing(pos.lat, pos.lon) : null
+  const dist = pos ? qiblaDistanceKm(pos.lat, pos.lon) : null
+
+  const locate = () => {
+    setStatus(L('Ҷойгиршавӣ ҷустуҷӯ мешавад…', 'Определяем местоположение…'))
+    const fromBrowser = () => {
+      if (!navigator.geolocation) { setStatus(L('Дастгоҳ ҷойгиршавиро дастгирӣ намекунад. Шаҳрро интихоб кунед.', 'Геолокация недоступна. Выберите город.')); return }
+      navigator.geolocation.getCurrentPosition(
+        p => { setPos({ lat: p.coords.latitude, lon: p.coords.longitude, label: L('Ҷойгиршавии шумо', 'Ваше местоположение'), acc: p.coords.accuracy }); setStatus('') },
+        () => setStatus(L('Иҷозати ҷойгиршавӣ дода нашуд. Шаҳрро интихоб кунед ё координатаро ворид намоед.', 'Нет доступа к геолокации. Выберите город или введите координаты.')),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      )
+    }
+    const lm = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.LocationManager
+    if (lm && typeof lm.init === 'function') {
+      try {
+        lm.init(() => {
+          lm.getLocation(data => {
+            if (data && typeof data.latitude === 'number') { setPos({ lat: data.latitude, lon: data.longitude, label: L('Ҷойгиршавии шумо', 'Ваше местоположение') }); setStatus('') }
+            else fromBrowser()
+          })
+        })
+        return
+      } catch { /* ба браузер мегузарем */ }
+    }
+    fromBrowser()
+  }
+
+  const startCompass = async () => {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const res = await DeviceOrientationEvent.requestPermission()
+        if (res !== 'granted') { setStatus(L('Иҷозати компас дода нашуд.', 'Нет доступа к компасу.')); return }
+      }
+      setCompassOn(true)
+    } catch {
+      setStatus(L('Компас дастгирӣ намешавад.', 'Компас не поддерживается.'))
+    }
+  }
+
+  useEffect(() => {
+    if (!compassOn) return undefined
+    const handler = event => {
+      let h = null
+      if (typeof event.webkitCompassHeading === 'number') h = event.webkitCompassHeading
+      else if (event.alpha !== null && event.alpha !== undefined && (event.absolute || event.type === 'deviceorientationabsolute')) h = (360 - event.alpha) % 360
+      if (h !== null) setHeading(h)
+    }
+    window.addEventListener('deviceorientationabsolute', handler, true)
+    window.addEventListener('deviceorientation', handler, true)
+    return () => {
+      window.removeEventListener('deviceorientationabsolute', handler, true)
+      window.removeEventListener('deviceorientation', handler, true)
+    }
+  }, [compassOn])
+
+  const trueHeading = heading === null ? null : (heading + decl + 360) % 360
+  const diff = bearing === null || trueHeading === null ? null : ((bearing - trueHeading + 540) % 360) - 180
+  const aligned = diff !== null && Math.abs(diff) <= 3
+
+  useEffect(() => {
+    if (aligned && !wasAligned.current) {
+      arbSound('ok')
+      try { if (navigator.vibrate) navigator.vibrate(60) } catch { /* ignore */ }
+    }
+    wasAligned.current = aligned
+  }, [aligned])
+
+  const setDeclination = value => {
+    const n = Math.max(-30, Math.min(30, Number(value) || 0))
+    setDecl(n)
+    try { window.localStorage.setItem('mh_decl', String(n)) } catch { /* ignore */ }
+  }
+
+  const applyManual = () => {
+    const lat = Number(String(manual.lat).replace(',', '.'))
+    const lon = Number(String(manual.lon).replace(',', '.'))
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      notify(L('Координата нодуруст аст.', 'Неверные координаты.'), 'error')
+      return
+    }
+    setPos({ lat, lon, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}` })
+    setStatus('')
+  }
+
+  const dial = trueHeading === null ? 0 : -trueHeading
+  const cardinal = b => (ru
+    ? ['север', 'северо-восток', 'восток', 'юго-восток', 'юг', 'юго-запад', 'запад', 'северо-запад']
+    : ['шимол', 'шимолу шарқ', 'шарқ', 'ҷанубу шарқ', 'ҷануб', 'ҷанубу ғарб', 'ғарб', 'шимолу ғарб'])[Math.round(b / 45) % 8]
+
+  return (
+    <div className="qibla">
+      <h3>🧭 {L('Ёфтани қибла', 'Определение киблы')}</h3>
+      <div className="arb-copybar">
+        <button type="button" className="primary-button" onClick={locate}>📍 {L('Ҷойгиршавии ман', 'Моё местоположение')}</button>
+      </div>
+      <div className="arb-seg">
+        {QIBLA_CITIES.map(([name, lat, lon]) => (
+          <button type="button" key={name} className={pos && pos.label === name ? 'active' : ''} onClick={() => { setPos({ lat, lon, label: name }); setStatus('') }}>{name}</button>
+        ))}
+      </div>
+      <div className="arb-copybar">
+        <input className="arb-input" inputMode="decimal" placeholder={L('Арз (масалан 38.56)', 'Широта (напр. 38.56)')} value={manual.lat} onChange={e => setManual({ ...manual, lat: e.target.value })} />
+        <input className="arb-input" inputMode="decimal" placeholder={L('Тӯл (масалан 68.79)', 'Долгота (напр. 68.79)')} value={manual.lon} onChange={e => setManual({ ...manual, lon: e.target.value })} />
+        <button type="button" className="secondary-button" onClick={applyManual}>OK</button>
+      </div>
+      {status && <p className="arb-note">{status}</p>}
+
+      {pos && bearing !== null && (
+        <div className="qibla-card">
+          <p className="qibla-main">{L('Самти қибла', 'Направление киблы')}: <b>{bearing.toFixed(1)}°</b> ({cardinal(bearing)})</p>
+          <p className="arb-note">{pos.label} · {pos.lat.toFixed(4)}, {pos.lon.toFixed(4)} · {L('То Каъба', 'До Каабы')}: {Math.round(dist).toLocaleString()} {L('км', 'км')}{pos.acc ? ` · ±${Math.round(pos.acc)} м` : ''}</p>
+
+          <div className={`qibla-compass ${aligned ? 'is-aligned' : ''}`}>
+            <div className="qibla-dial" style={{ transform: `rotate(${dial}deg)` }}>
+              <span className="qibla-n">N</span>
+              <span className="qibla-kaaba" style={{ transform: `rotate(${bearing}deg) translateY(-96px)` }}>🕋</span>
+            </div>
+            <div className="qibla-arrow" />
+          </div>
+
+          {!compassOn ? (
+            <button type="button" className="secondary-button" onClick={startCompass}>🧲 {L('Фаъол кардани компас', 'Включить компас')}</button>
+          ) : (
+            <p className="arb-note">
+              {heading === null
+                ? L('Телефонро ҳамвор нигоҳ дошта, каме ҳаракат диҳед (калибр кардан).', 'Держите телефон горизонтально и сделайте «восьмёрку» (калибровка).')
+                : aligned
+                  ? `✅ ${L('Шумо ба сӯи қибла истодаед', 'Вы смотрите в сторону киблы')}`
+                  : `${L('Бигардед', 'Повернитесь')}: ${diff > 0 ? '→' : '←'} ${Math.abs(Math.round(diff))}°`}
+            </p>
+          )}
+          <label className="qibla-decl">{L('Ислоҳи мағнотисӣ (дараҷа, + шарқ)', 'Магнитное склонение (градусы, + восток)')}:
+            <input type="number" step="0.5" value={decl} onChange={e => setDeclination(e.target.value)} />
+          </label>
+          <p className="arb-note">{L('Самти қибла аз координата дақиқ ҳисоб мешавад (шимоли ҳақиқӣ). Компаси телефон шимоли мағнотисиро нишон медиҳад; барои дақиқӣ ислоҳи мағнотисии шаҳратонро ворид кунед ва аз ашёи оҳанин дур бошед.', 'Направление рассчитано точно по координатам (истинный север). Компас телефона показывает магнитный север; для точности введите склонение вашего города и держитесь подальше от металла.')}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MeccaPage({ db, admin, notify, lang, initialTab, onBack, backLabel }) {
+  const [tab, setTab] = useState(initialTab || 'live')
+  const ru = lang === 'ru'
+  return (
+    <section className="content-page">
+      <button className="secondary-button back-button" type="button" onClick={onBack}>← {backLabel}</button>
+      <div className="arb-seg">
+        <button type="button" className={tab === 'live' ? 'active' : ''} onClick={() => setTab('live')}>🕋 {ru ? 'Мекка онлайн' : 'Макка зинда'}</button>
+        <button type="button" className={tab === 'qibla' ? 'active' : ''} onClick={() => setTab('qibla')}>🧭 {ru ? 'Кибла' : 'Қибла'}</button>
+      </div>
+      {tab === 'live' ? <MeccaLive db={db} admin={admin} notify={notify} lang={lang} /> : <QiblaFinder lang={lang} notify={notify} />}
+    </section>
+  )
+}
+
 function App() {
   const [soundOn, setSoundOn] = useState(arbSoundOn())
+  const [meccaTab, setMeccaTab] = useState('live')
   useEffect(() => {
     const onTap = event => {
       const el = event.target && event.target.closest ? event.target.closest('button, a, [role="button"], .tab, summary') : null
@@ -8178,7 +8501,8 @@ function App() {
         russian_text: clean(hadithForm.russian_text),
         explanation_ru: clean(hadithForm.explanation_ru),
         audio_url: clean(hadithForm.audio_url),
-        video_url: clean(hadithForm.video_url)
+        video_url: clean(hadithForm.video_url),
+        image_url: clean(hadithForm.image_url)
       }
 
       const payload = {
@@ -8227,7 +8551,8 @@ function App() {
       russian_text: stored.meta.russian_text || item.russian_text || '',
       explanation_ru: stored.meta.explanation_ru || '',
       audio_url: stored.meta.audio_url || '',
-      video_url: stored.meta.video_url || ''
+      video_url: stored.meta.video_url || '',
+      image_url: stored.meta.image_url || ''
     })
 
     setAdminTab('hadith')
@@ -8616,6 +8941,7 @@ function App() {
       !clean(contentForm.arabic_text) &&
       !clean(contentForm.russian_text) &&
       !clean(contentForm.audio_url) &&
+      !clean(contentForm.image_url) &&
       !clean(contentForm.video_url)
     ) {
       notify(t.contentRequired, 'error')
@@ -8639,7 +8965,8 @@ function App() {
         explanation_ru: clean(contentForm.explanation_ru),
         is_daily_sunnah: contentForm.section_slug === 'sunnah' && Boolean(contentForm.is_daily_sunnah),
         audio_url: clean(contentForm.audio_url),
-        video_url: clean(contentForm.video_url)
+        video_url: clean(contentForm.video_url),
+        image_url: clean(contentForm.image_url)
       }
 
       const tajik = clean(contentForm.tajik_text)
@@ -8693,7 +9020,8 @@ function App() {
       explanation_ru: stored.meta.explanation_ru || '',
       is_daily_sunnah: Boolean(stored.meta.is_daily_sunnah),
       audio_url: stored.meta.audio_url || '',
-      video_url: stored.meta.video_url || ''
+      video_url: stored.meta.video_url || '',
+      image_url: stored.meta.image_url || ''
     })
 
     setAdminTab('content')
@@ -9494,9 +9822,9 @@ function App() {
 
     const fileExt = (String(file.name || '').split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '')
     const typeOk = String(file.type || '').startsWith(`${kind}/`)
-    const extOk = (kind === 'audio' ? ARB_AUDIO_EXT : ARB_VIDEO_EXT).includes(fileExt)
+    const extOk = (kind === 'audio' ? ARB_AUDIO_EXT : kind === 'image' ? ARB_IMAGE_EXT : ARB_VIDEO_EXT).includes(fileExt)
     if (!typeOk && !extOk) {
-      notify((kind === 'audio' ? 'Танҳо файли аудио интихоб кунед.' : 'Танҳо файли видео интихоб кунед.') + (fileExt ? ` (.${fileExt})` : ''), 'error')
+      notify((kind === 'audio' ? 'Танҳо файли аудио интихоб кунед.' : kind === 'image' ? 'Танҳо акс (jpg, png, webp) интихоб кунед.' : 'Танҳо файли видео интихоб кунед.') + (fileExt ? ` (.${fileExt})` : ''), 'error')
       return
     }
     if (file.size > ARB_MEDIA_MAX) {
@@ -9511,7 +9839,7 @@ function App() {
       const path = `${kind}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
       const { error } = await db.storage.from('media').upload(path, file, {
-        contentType: typeOk ? file.type : (kind === 'audio' ? (fileExt === 'mp3' ? 'audio/mpeg' : `audio/${fileExt === 'm4a' ? 'mp4' : fileExt}`) : `video/${fileExt === 'mov' ? 'quicktime' : fileExt}`),
+        contentType: typeOk ? file.type : (kind === 'image' ? `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}` : kind === 'audio' ? (fileExt === 'mp3' ? 'audio/mpeg' : `audio/${fileExt === 'm4a' ? 'mp4' : fileExt}`) : `video/${fileExt === 'mov' ? 'quicktime' : fileExt}`),
         cacheControl: '31536000',
         upsert: false
       })
@@ -9557,11 +9885,11 @@ function App() {
           ? 'Бор шуда истодааст...'
           : (value
             ? 'Файли дигар интихоб кардан'
-            : (kind === 'audio' ? '🎧 Аудиоро аз телефон ё файл интихоб кунед' : '🎬 Видеоро аз галерея ё файл интихоб кунед'))}
+            : (kind === 'image' ? '🖼 Аксро аз галерея ё файл интихоб кунед' : kind === 'audio' ? '🎧 Аудиоро аз телефон ё файл интихоб кунед' : '🎬 Видеоро аз галерея ё файл интихоб кунед'))}
       </span>
         <input
           type="file"
-          accept={kind === 'audio' ? 'audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.amr,.flac' : 'video/*,.mp4,.webm,.mov,.m4v,.mkv,.3gp'}
+          accept={kind === 'audio' ? 'audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.amr,.flac' : kind === 'image' ? 'image/*,.jpg,.jpeg,.png,.webp,.heic' : 'video/*,.mp4,.webm,.mov,.m4v,.mkv,.3gp'}
           className="arb-file-input"
           disabled={uploading[kind]}
           onChange={event => {
@@ -10182,13 +10510,23 @@ function App() {
     )
   }
 
-  const renderMedia = item => {
+  const renderImage = item => {
+    const url = parseStoredNote(item.source_note).meta.image_url
+    return url ? (
+      <div className="daily-image-wrap">
+        <img className="daily-image" src={url} alt="" loading="lazy" />
+      </div>
+    ) : null
+  }
+
+  const renderMedia = (item, skipImage) => {
     const stored = parseStoredNote(item.source_note)
     const audio = stored.meta.audio_url
     const video = stored.meta.video_url
 
     return (
       <>
+        {!skipImage && renderImage(item)}
         {audio && (
           <div className="media-player">
             <audio controls preload="none" src={audio}>
@@ -10475,6 +10813,9 @@ function App() {
         {textarea(t.explanationAr, hadithForm.explanation_ar,
           value => setHadithForm({ ...hadithForm, explanation_ar: value }),
           '', true)}
+
+        {mediaField('image', '🖼 Акс (барои ҳадиси рӯз)', hadithForm.image_url,
+          value => setHadithForm(form => ({ ...form, image_url: value })))}
 
         {mediaField('audio', 'Аудио', hadithForm.audio_url,
           value => setHadithForm(form => ({ ...form, audio_url: value })))}
@@ -10824,6 +11165,9 @@ function App() {
           </div>
         )}
 
+        {mediaField('image', '🖼 Акс (барои суннати рӯз ва дигар)', contentForm.image_url,
+          value => setContentForm(form => ({ ...form, image_url: value })))}
+
         {mediaField('audio', 'Аудио', contentForm.audio_url,
           value => setContentForm(form => ({ ...form, audio_url: value })))}
 
@@ -11129,6 +11473,13 @@ function App() {
             </section>
           )}
 
+          {page === 'home' && (
+            <div className="mecca-entry">
+              <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('live'); setPage('mecca'); scrollToTop() }}>🕋<span>{lang === 'ru' ? 'Мекка онлайн' : 'Макка зинда'}</span></button>
+              <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('qibla'); setPage('mecca'); scrollToTop() }}>🧭<span>{lang === 'ru' ? 'Кибла' : 'Қибла'}</span></button>
+            </div>
+          )}
+
           {showSearch && (
             <div className="search-box">
               <button
@@ -11202,6 +11553,8 @@ function App() {
                     )}
                   </div>
 
+                  {renderImage(dailyHadith)}
+
                   {dailyHadith.arabic_text && (
                     <p className="arabic-text">{dailyHadith.arabic_text}</p>
                   )}
@@ -11232,6 +11585,8 @@ function App() {
                     <h2>{t.sunnahDailyTitle}</h2>
                     <span className="daily-heading-icon"><Icon name="speaker" /></span>
                   </div>
+
+                  {dailySunnah && renderImage(dailySunnah)}
 
                   <p className="daily-desc">{t.sunnahDailyDesc}</p>
 
@@ -11275,7 +11630,7 @@ function App() {
                         </div>
                       )}
 
-                      {renderMedia(dailySunnah)}
+                      {renderMedia(dailySunnah, true)}
 
                       {sunnahStored.source && (
                         <div className="source-note">{sunnahStored.source}</div>
@@ -11360,6 +11715,10 @@ function App() {
                 )}
               </div>
             </section>
+          )}
+
+          {page === 'mecca' && (
+            <MeccaPage key={meccaTab} db={db} admin={admin} notify={notify} lang={lang} initialTab={meccaTab} onBack={goHome} backLabel={t.back} />
           )}
 
           {page === 'favorites' && (
