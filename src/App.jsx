@@ -7541,6 +7541,16 @@ function ArabicAdmin({ rows, lang, db, notify, reload }) {
 
 
 function App() {
+  const [soundOn, setSoundOn] = useState(arbSoundOn())
+  useEffect(() => {
+    const onTap = event => {
+      const el = event.target && event.target.closest ? event.target.closest('button, a, [role="button"], .tab, summary') : null
+      if (el && !el.closest('audio, video')) arbSound('tap')
+    }
+    document.addEventListener('click', onTap)
+    return () => document.removeEventListener('click', onTap)
+  }, [])
+
   const [lang, setLang] = useState('tg')
   const [page, setPage] = useState('home')
   const [selectedSection, setSelectedSection] = useState(null)
@@ -11064,16 +11074,6 @@ function App() {
           )}
         </>
   )
-
-  const [soundOn, setSoundOn] = useState(arbSoundOn())
-  useEffect(() => {
-    const onTap = event => {
-      const el = event.target && event.target.closest ? event.target.closest('button, a, [role="button"], .tab, summary') : null
-      if (el && !el.closest('audio, video')) arbSound('tap')
-    }
-    document.addEventListener('click', onTap)
-    return () => document.removeEventListener('click', onTap)
-  }, [])
 
   return (
     <div className="app theme-green" dir={direction}>
