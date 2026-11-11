@@ -1580,3 +1580,10 @@ input[type='checkbox'] {
 .qibla-arrow { position: absolute; top: 8px; left: 50%; width: 0; height: 0; margin-left: -9px; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 22px solid #f5c542; }
 .qibla-decl { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 10px 0; }
 .qibla-decl input { width: 80px; }
+
+.loc-picker { display: grid; gap: 8px; margin: 10px 0; }
+.prayer-card { margin-top: 10px; }
+.prayer-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.prayer-table td { padding: 10px 8px; border-bottom: 1px solid rgba(128,128,128,.25); font-size: 1.05rem; }
+.prayer-table td:last-child { text-align: right; }
+.prayer-table tr.is-next { background: rgba(46,160,90,.18); font-weight: 700; }
