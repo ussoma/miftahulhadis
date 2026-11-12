@@ -10615,6 +10615,31 @@ function App() {
 
     const telegramUser = getTelegramUser()
 
+    // Як маротиба дар як боркунии саҳифа (ҳимоя аз React StrictMode ва такрори effect)
+    if (window.__mhVisitSent) return
+    window.__mhVisitSent = true
+
+    const initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || ''
+    const legacy = () => db.rpc('register_visit', {
+      p_key: currentUserKey(),
+      p_name: telegramUser?.name || '',
+      p_username: telegramUser?.username || '',
+      p_lang: lang
+    }).then(({ data, error }) => {
+      if (!error && data === true) setBlocked(true)
+    })
+
+    if (initData) {
+      // Telegram: сервер imzoi initData-ро месанҷад ва танҳо Telegram ID-и тасдиқшударо сабт мекунад
+      db.rpc('register_visit_tg', { p_init_data: initData, p_lang: lang }).then(({ data, error }) => {
+        if (!error) { if (data === true) setBlocked(true); return }
+        const text = String(error.message || '') + String(error.code || '')
+        // SQL ҳанӯз насб нашудааст ё токени бот гузошта нашудааст -- роҳи кӯҳна
+        if (/bot_token_missing|register_visit_tg|PGRST202|42883/i.test(text)) legacy()
+      })
+      return
+    }
+
     db.rpc('register_visit', {
       p_key: currentUserKey(),
       p_name: telegramUser?.name || '',
@@ -10655,6 +10680,12 @@ function App() {
       const month = monthStart.toISOString()
       const idle = new Date(Date.now() - 30 * 86400000).toISOString()
 
+      let tgUnique = null
+      try {
+        const tgRes = await db.from('app_users').select('id', { count: 'exact', head: true }).not('tg_id', 'is', null)
+        if (!tgRes.error) tgUnique = tgRes.count || 0
+      } catch { /* сутуни tg_id ҳанӯз нест */ }
+
       const [total, blockedCount, activeToday, newToday, activeWeek, activeNow, newMonth, inactive, list] = await Promise.all([
         count(query => query),
         count(query => query.eq('blocked', true)),
@@ -10674,7 +10705,7 @@ function App() {
         const rpc = await db.rpc('admin_count')
         if (!rpc.error && typeof rpc.data === 'number') adminCount = rpc.data
       } catch { /* RPC ҳанӯз сохта нашудааст */ }
-      setUserStats({ total, blocked: blockedCount, activeToday, newToday, activeWeek, activeNow, newMonth, inactive, adminCount })
+      setUserStats({ tgUnique, total, blocked: blockedCount, activeToday, newToday, activeWeek, activeNow, newMonth, inactive, adminCount })
       setAdminUsers(list.data || [])
       setUsersError('')
     } catch (error) {
@@ -10733,7 +10764,8 @@ function App() {
       !query ||
       String(user.display_name || '').toLowerCase().includes(query) ||
       String(user.username || '').toLowerCase().includes(query) ||
-      String(user.user_key || '').toLowerCase().includes(query)
+      String(user.user_key || '').toLowerCase().includes(query) ||
+      String(user.tg_id || '').includes(query)
       )
     )
 
@@ -10745,6 +10777,8 @@ function App() {
 
     const stats = userStats ? [
       ['Корбарони оддӣ', userStats.total],
+      ['Telegram ID-и ягона', userStats.tgUnique === null || userStats.tgUnique === undefined ? '—' : userStats.tgUnique],
+      ['Браузер (бе Telegram ID)', userStats.tgUnique === null || userStats.tgUnique === undefined ? '—' : userStats.total - userStats.tgUnique],
       ['Администраторҳо', userStats.adminCount === null || userStats.adminCount === undefined ? '—' : userStats.adminCount],
       ['Калимаҳои луғат', arbDictTotals().words.toLocaleString()],
       ['Феълҳои луғат', arbDictTotals().verbs.toLocaleString()],
@@ -10783,7 +10817,7 @@ function App() {
           <input
             value={userSearch}
             onChange={event => setUserSearch(event.target.value)}
-            placeholder="Ҷустуҷӯ: ном, @username ё рамз..."
+            placeholder="Ҷустуҷӯ: Telegram ID, ном, @username..."
           />
         </div>
 
