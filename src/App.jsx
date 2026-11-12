@@ -905,6 +905,8 @@ const EMPTY_HADITH = {
   chapter_id: '',
   daily_date: '',
   hadith_number: '',
+  title: '',
+  title_ru: '',
   tajik_text: '',
   arabic_text: '',
   source_note: '',
@@ -982,6 +984,18 @@ function slugify(value) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function ExplainToggle({ lang, children }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="explain-toggle">
+      <button type="button" className="secondary-button explain-btn" onClick={() => setOpen(v => !v)}>
+        {open ? '▲ ' : '📖 '}{open ? (lang === 'ru' ? 'Скрыть объяснение' : 'Пинҳон кардани шарҳ') : (lang === 'ru' ? 'Объяснение' : 'Шарҳ')}
+      </button>
+      {open && children}
+    </div>
+  )
 }
 
 function HighlightText({ text, query }) {
@@ -8769,6 +8783,8 @@ function App() {
         ...previousMeta,
         chapter_id: clean(hadithForm.chapter_id),
         daily_date: clean(hadithForm.daily_date),
+        title: clean(hadithForm.title),
+        title_ru: clean(hadithForm.title_ru),
         explanation_tg: clean(hadithForm.explanation_tg),
         explanation_ar: clean(hadithForm.explanation_ar),
         russian_text: clean(hadithForm.russian_text),
@@ -8816,6 +8832,8 @@ function App() {
       chapter_id: stored.meta.chapter_id || '',
       daily_date: stored.meta.daily_date || '',
       hadith_number: item.hadith_number ?? '',
+      title: stored.meta.title || '',
+      title_ru: stored.meta.title_ru || '',
       tajik_text: item.tajik_text || '',
       arabic_text: item.arabic_text || '',
       source_note: stored.source,
@@ -10910,6 +10928,12 @@ function App() {
           {item.hadith_number ? ` · ${t.hadithLabel}${item.hadith_number}` : ''}
         </div>
 
+        {(lang === 'ru' ? (stored.meta.title_ru || stored.meta.title) : stored.meta.title) && (
+          <h3 className="hadith-title">
+            <HighlightText text={lang === 'ru' ? (stored.meta.title_ru || stored.meta.title) : stored.meta.title} query={query} />
+          </h3>
+        )}
+
         {item.arabic_text && (
           <p className="arabic-text">
             <HighlightText text={item.arabic_text} query={query} />
@@ -10920,20 +10944,23 @@ function App() {
           <p><HighlightText text={translatedHadith} query={query} /></p>
         )}
 
-        {commentary && (
-          <div className="explanation">
-            <strong>{t.explanationHeading}</strong>
-            <p><HighlightText text={commentary} query={query} /></p>
-          </div>
-        )}
-
-        {stored.meta.explanation_ar && (
-          <div className="explanation" dir="rtl">
-            <strong>شرح الحديث:</strong>
-            <p className="arabic-text">
-              <HighlightText text={stored.meta.explanation_ar} query={query} />
-            </p>
-          </div>
+        {(commentary || stored.meta.explanation_ar) && (
+          <ExplainToggle lang={lang}>
+            {commentary && (
+              <div className="explanation">
+                <strong>{t.explanationHeading}</strong>
+                <p><HighlightText text={commentary} query={query} /></p>
+              </div>
+            )}
+            {stored.meta.explanation_ar && (
+              <div className="explanation" dir="rtl">
+                <strong>شرح الحديث:</strong>
+                <p className="arabic-text">
+                  <HighlightText text={stored.meta.explanation_ar} query={query} />
+                </p>
+              </div>
+            )}
+          </ExplainToggle>
         )}
 
         {renderMedia(item)}
@@ -11109,6 +11136,12 @@ function App() {
         {field(t.number, hadithForm.hadith_number,
           value => setHadithForm({ ...hadithForm, hadith_number: value }),
           t.exampleNumber, true)}
+
+        {field('Сарлавҳаи ҳадис (тоҷикӣ)', hadithForm.title,
+          value => setHadithForm({ ...hadithForm, title: value }))}
+
+        {field('Заголовок хадиса (русский)', hadithForm.title_ru,
+          value => setHadithForm({ ...hadithForm, title_ru: value }))}
 
         {textarea(t.tajik, hadithForm.tajik_text,
           value => setHadithForm({ ...hadithForm, tajik_text: value }),
@@ -11877,6 +11910,10 @@ function App() {
 
                   {renderImage(dailyHadith)}
 
+                  {(lang === 'ru' ? (parseStoredNote(dailyHadith.source_note).meta.title_ru || parseStoredNote(dailyHadith.source_note).meta.title) : parseStoredNote(dailyHadith.source_note).meta.title) && (
+                    <h3 className="hadith-title">{lang === 'ru' ? (parseStoredNote(dailyHadith.source_note).meta.title_ru || parseStoredNote(dailyHadith.source_note).meta.title) : parseStoredNote(dailyHadith.source_note).meta.title}</h3>
+                  )}
+
                   {dailyHadith.arabic_text && (
                     <p className="arabic-text">{dailyHadith.arabic_text}</p>
                   )}
@@ -11886,13 +11923,15 @@ function App() {
                     : (lang === 'ar' ? (dailyHadith.arabic_text || dailyHadith.tajik_text) : dailyHadith.tajik_text)}</p>
 
                   {(dailyHadith.commentary || parseStoredNote(dailyHadith.source_note).meta.explanation_tg) && (
-                    <div className="explanation">
-                      <strong>{t.dailyExplanation}</strong>
-                      <p>
-                        {dailyHadith.commentary ||
-                          parseStoredNote(dailyHadith.source_note).meta.explanation_tg}
-                      </p>
-                    </div>
+                    <ExplainToggle lang={lang}>
+                      <div className="explanation">
+                        <strong>{t.dailyExplanation}</strong>
+                        <p>
+                          {dailyHadith.commentary ||
+                            parseStoredNote(dailyHadith.source_note).meta.explanation_tg}
+                        </p>
+                      </div>
+                    </ExplainToggle>
                   )}
 
                   <div className="source-note">{hadithSourceLine(dailyHadith)}</div>
