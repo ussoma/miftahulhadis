@@ -1587,3 +1587,7 @@ input[type='checkbox'] {
 .prayer-table td { padding: 10px 8px; border-bottom: 1px solid rgba(128,128,128,.25); font-size: 1.05rem; }
 .prayer-table td:last-child { text-align: right; }
 .prayer-table tr.is-next { background: rgba(46,160,90,.18); font-weight: 700; }
+
+.hadith-title { margin: 6px 0; font-size: 1.1rem; }
+.explain-toggle { margin: 8px 0; }
+.explain-btn { width: 100%; }
