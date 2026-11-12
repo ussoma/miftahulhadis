@@ -554,6 +554,17 @@ function bookKey(book) {
   return found ? found[0] : `id-${book?.id}`
 }
 
+// Пешгуфтор: ҳадиси бе рақам (ё рақами 0) ё бо аломати is_preface
+function isPrefaceHadith(item) {
+  if (!item) return false
+  try {
+    const meta = parseStoredNote(item.source_note).meta
+    if (meta && meta.is_preface === true) return true
+  } catch { /* ignore */ }
+  const n = String(item.hadith_number ?? '').trim()
+  return n === '' || n === '0'
+}
+
 function numericValue(value) {
   const number = parseFloat(String(value ?? '').replace(/[^0-9.]/g, ''))
   return Number.isFinite(number) ? number : Number.MAX_SAFE_INTEGER
@@ -905,6 +916,7 @@ const EMPTY_HADITH = {
   chapter_id: '',
   daily_date: '',
   hadith_number: '',
+  is_preface: false,
   title: '',
   title_ru: '',
   tajik_text: '',
@@ -990,7 +1002,7 @@ function ExplainToggle({ lang, children }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="explain-toggle">
-      <button type="button" className="secondary-button explain-btn" onClick={() => setOpen(v => !v)}>
+      <button type="button" className="explain-btn" aria-expanded={open} onClick={() => setOpen(v => !v)}>
         {open ? '▲ ' : '📖 '}{open ? (lang === 'ru' ? 'Скрыть объяснение' : 'Пинҳон кардани шарҳ') : (lang === 'ru' ? 'Объяснение' : 'Шарҳ')}
       </button>
       {open && children}
@@ -3319,7 +3331,11 @@ const ARB_BIG_TR = [
   'مَاعُونٌ|ашёи рӯзгор|предметы обихода\nمِعَاءٌ|рӯда|кишка\nمِلْيُونٌ|миллион|миллион\nمَيْدَانٌ|майдон|площадь\nمِينَاءٌ|бандар, бандари киштӣ|порт\nهَبَاءٌ|гарду ғубор|пыль, прах\nهَاوُنٌ|ҳавончаи санги|ступка\nهَوًى|хоҳиш, ишқ|страсть, прихоть\nمِيزَانٌ|тарозу|весы\nوَصِيٌّ|васӣ|опекун, душеприказчик\nوِعَاءٌ|зарф, зарфи ҳифз|сосуд\nوَلِيٌّ|валӣ, дӯсти Худо; сарпараст|вали, друг Аллаха; опекун\nوَادِي|водӣ, дара|долина, вади\nمِقْيَاسٌ|андоза, меъёр|мерило, шкала\nمِكْيَالٌ|косаи андозагирӣ|мерка (ёмкость)\nمَلْبَسٌ|либос|одежда\nمَلْجَأٌ|паноҳгоҳ|убежище\nمِلْقَطٌ|кулбача, ангушт|щипцы, пинцет\nمَلاَذٌ|паноҳ|прибежище\nمَلِيكٌ|подшоҳ, малик|царь\nمُهْرٌ|чулон; маҳр|жеребёнок; махр\nنَاقُوسٌ|ноқус, зангӯла|било, колокол\nنِبْرَاسٌ|чароғ, машъал|светильник\nمَنْبَعٌ|манбаъ, чашма|источник\nمِنْجَلٌ|дос, хасдос|серп\nمَنْجَمٌ|кон|рудник\nمَنْخَرٌ|сӯрохи бинӣ|ноздря\nمَنْدِيلٌ|рӯймол, дастмол|платок, салфетка\nمَنْزِلٌ|хона, манзил|дом, жилище\nنَسْرٌ|укоб, уқоб|орёл, гриф',
   'مَنْصِبٌ|мансаб, вазифа|пост, должность\nنِصَابٌ|нисоб; даста|предел (нисаб); рукоять\nمِنْظَارٌ|дурбин|бинокль\nمَنْفَذٌ|роҳи гузар, баромадгоҳ|выход, проход\nنِقَابٌ|ниқоб, рӯбанд|покрывало, вуаль\nنَقِيبٌ|раис, сардор|староста, начальник\nمِنْهَاجٌ|роҳ, манҳаҷ, барнома|путь, метод, программа\nمِنْهَجٌ|манҳаҷ, равиш|метод, учебная программа\nهَيْكَلٌ|ҳайкал, пайкара|храм; каркас\nمِيثَاقٌ|паймон, аҳд|завет, договор\nمِيرَاثٌ|мерос|наследство\nمَوْرِدٌ|сарчашма, обшхӯр|источник, водопой\nمِيزَابٌ|новодон, ӯлӯк|водосток\nمَوْسِمٌ|мавсим, фасл|сезон\nمَوْضِعٌ|ҷой, мавзеъ|место\nمَوْطِنٌ|Ватан, зодгоҳ|родина\nمِيعَادٌ|мӯҳлат, қарор|срок, уговорённое время\nمَوْقِفٌ|истгоҳ; мавқеъ|остановка; позиция\nمَوْكِبٌ|корвон, раҳпаймоӣ|кортеж, процессия\nعَدَدٌ|шумора, адад|число, количество\nغُسْلٌ|ғусл, шустушӯ|омовение, мытьё\nمِحْرَاثٌ|плуг, омоч|плуг\nفَأْسٌ|табар|топор\nمِشْطٌ|шона|гребень\nضِلْعٌ|қабурға|ребро\nأَمْس|дирӯз|вчера\nجَوَادٌ|асп (нажод); саховатманд|скакун; щедрый\nجَبِينٌ|пешонӣ|лоб\nروحٌ|рӯҳ, ҷон|душа, дух\nسِكِّينٌ|корд|нож',
   'مِزْمَارٌ|най, сурнай|свирель\nذِراعٌ|бозу; зироъ (воҳиди дарозӣ)|рука; локоть (мера)\nحالٌ|ҳол, вазъият|состояние\nحانوتٌ|дукон|лавка\nدَرْعٌ|зиреҳ|доспех, кольчуга\nسَبِيلٌ|роҳ|путь\nسُلَّمٌ|нардбон, зина|лестница\nإِبْرِيقٌ|обдаста, кӯза|кувшин\nإِبْطٌ|зери бағал|подмышка\nإِبِلٌ|шутурон|верблюды\nإبْلِيسُ|Иблис|Иблис\nأثَرٌ|осор, нишона|след, влияние\nأَجْرٌ|музд, подош|награда, плата\nأَجَلٌ|мӯҳлати умр, ачал|срок (жизни)\nأحَدٌ|як, касе|один, кто-либо\nأخَادِيدُ|чуқурихо|борозды\nإِدَامٌ|чошни, нонхӯриш|приправа к хлебу\nأَدِيمٌ|пӯсти аҳобата|кожа, дублёная шкура\nتَارِيخٌ|таърих, сана|история, дата\nإِزَارٌ|изор, ридои камарбанд|набедренная повязка, изар\nأسَاسٌ|асос, бунёд|основа, фундамент\nأصْلٌ|реша, асл|корень, источник\nإِطارٌ|чорчуба; чархи мошин|рама; шина\nأفْعَى|мор (захрнок)|гадюка\nأُفُقٌ|уфуқ|горизонт\nأُكْلٌ|хӯрок; ҳосил|пища; плоды\nألْفٌ|ҳазор|тысяча\nإلَهٌ|худо, маъбуд|бог, божество\nإمْبراطُورٌ|император|император\nمَأْمَنٌ|ҷои амн|безопасное место',
-  'أُنْبوبٌ|най, қубур|труба\nإِنْجيلٌ|Инҷил|Евангелие\nأهْلٌ|аҳл; оила|семья; жители'
+  'أُنْبوبٌ|най, қубур|труба\nإِنْجيلٌ|Инҷил|Евангелие\nأهْلٌ|аҳл; оила|семья; жители\nمِنْحَاتٌ|теша, искана|тёсло, стамеска\nنَاظُورٌ|посбон, дидбон|сторож, наблюдатель\nأَخْدَعَانِ|ду раги гардан|две шейные вены\nغَزَاةٌ|ғазот, юриши ҷангӣ|военный поход\nمِحْمَصَةٌ|зарфи бирёнкунӣ|жаровня для обжарки\nمِخْرَطَةٌ|дастгоҳи харротӣ|токарный станок\nمِسْبَكَةٌ|хумчаи гудозиш|тигель\nمِسْحَاةٌ|бел|лопата\nحِرْباءةٌ|буқаламун|хамелеон\nشَذْرَةٌ|пораи тилло, мӯҳра|самородок, бусина\nإتَاوَةٌ|боҷ, хироҷ|дань\nأُثْفِيَّةٌ|санги деги, санги ошхона|камень очага\nأَجَمَةٌ|беша, наъзор|заросли, чаща\nأَرُومَةٌ|реша, асл|корень, происхождение\nمَأْسَدَةٌ|шерзор|место, где много львов\nآصِرَة|пайванд, робита|узы, связь\nأَكَمَةٌ|теппа|холм, пригорок\nأُهْبَةٌ|омодагӣ, сару бари сафар|готовность, снаряжение\nبُؤْرَةٌ|канун, марказ|очаг, фокус\nمِبْخَرَةٌ|оташдони бухур|кадильница\nبِديهَةٌ|зеҳни тез, ҷавоби фавриӣ|находчивость, импровизация\nبَرِيَّةٌ|махлуқот; биёбон|творение; пустыня\nمِبْرَاةٌ|қаламтарош|точилка\nبُسْرَةٌ|хурмои нопухта|незрелый финик\nبَطْحاءُ|водии васеъ|широкая долина\nبِطانَةٌ|астар|подкладка\nبَعَرَةٌ|пору (шутур, гӯсфанд)|помёт (верблюжий, овечий)',
+  'باقِيَةٌ|боқимонда|остаток, оставшаяся\nباكِرَةٌ|барвақт, аввалин|ранняя\nباكُورَةٌ|меваи нахуст|первый плод\nبالُوعَةٌ|обраҳ, чоҳи обрав|сток, водосточная яма\nمَبَاءةٌ|ҷойи истиқомат|пристанище\nباحَةٌ|ҳавлӣ, майдонча|двор, площадка\nتِكَّةٌ|банди эзор|шнурок для штанов\nتَمِيمَةٌ|тӯмор|амулет\nثُكْنَةٌ|казарма|казарма\nثُلَّةٌ|гурӯҳ, гала|группа, стадо\nثُمالَةٌ|таҳнишин, боқимонда|осадок, остаток\nثَنِيَّةٌ|теснои кӯҳ|горный перевал\nجَادَّةٌ|роҳи калон|большая дорога, тракт\nجَدِيلَةٌ|гесу|коса (волос)\nجَذْوَةٌ|ангишт, оташпора|уголёк\nجَارِحَةٌ|узви бадан; даранда|часть тела; хищник\nجِرَاحَةٌ|ҷарроҳӣ|хирургия\nجَرَّارَةٌ|трактор|трактор\nمِجَسَّةٌ|ҳисгар, асбоби санҷиш|щуп, зонд\nحَضِيرَةٌ|ҳисор, оғил|загон\nجُفْرَةٌ|чуқурӣ|яма\nجِلْدَةٌ|пӯст; ҷилд|кожа; переплёт\nجُمَّةٌ|мӯйи пурпушт|копна волос\nإِجَابَةٌ|ҷавоб|ответ\nمَجَازَةٌ|гузаргоҳ|проход, переход\nحِبالَةٌ|дом, домчин|силок, ловушка\nأُحْبُولَةٌ|дом; найранг|силок; уловка\nمَحَجَّةٌ|роҳи равшан|прямая дорога\nحُجُراتٌ|ҳуҷраҳо|комнаты\nحُجْزَةٌ|камарбанд|пояс',
+  'أُحْجِيَّةٌ|муаммо, чистон|загадка\nحَديدَةٌ|пораи оҳан|кусок железа\nمِحْدَلَةٌ|ғелонак|каток\nحَرْبَةٌ|найза|копьё\nحِرْفَةٌ|ҳунар, касб|ремесло, профессия\nحُرُمَةٌ|ҳурмат; ҳаромият|святость, неприкосновенность\nمَحْرَمَةٌ|рӯймол, дастмол|платок\nمَحْمَدَةٌ|кори писандида|достойное похвалы дело\nحَشِيَّةٌ|кӯрпача|матрас\nحاشِيَةٌ|ҳошия, канор; атрофиён|поле; окраина; свита\nحَطِيطَةٌ|тахфиф|скидка\nحَظِيرَةٌ|ҳисор, оғил|ограда, загон\nحَفِيرَةٌ|чоҳ, чуқурӣ|яма\nحَفِيظَةٌ|ғазаб, ранҷиш|гнев, обида\nمِحَفَّةٌ|тахтравон|паланкин, носилки\nحِقْبَةٌ|давра, замона|эпоха, период\nحُقَّةٌ|қуттича|шкатулка\nمِحْقَنَةٌ|шприс, сӯзандору|шприц\nحَلْبَةٌ|майдони пойга, арена|арена, ристалище\nحَلِيلَةٌ|ҳамсар, зан|жена, супруга\nمَحَلَّةٌ|маҳалла|квартал, местность\nحَمْأةٌ|лойи сиёҳ|ил, чёрная грязь\nحُمَّةٌ|заҳр (газанда)|яд, жало\nحَمَاةٌ|модаршав|свекровь, тёща\nحِيضَةٌ|ҳайз (як навбат)|менструация (однократная)\nخَابِيَةٌ|хум|большой кувшин\nخَبِيئَةٌ|чизи пинҳон, ганҷ|тайник, сокровище\nخُرْبَةٌ|вайрона|руина\nخَرَزَةٌ|мӯҳра|бусина\nخَسِيسَةٌ|пасттинатӣ, чизи паст|низость',
+  'مِخْصَرَةٌ|асо, чӯбдаст|жезл, трость\nخُصَاصَةٌ|камбағалӣ, ниёзмандӣ|нужда, бедность\nخَلِيَّةٌ|ҳуҷайра; лонаи занбӯр|клетка; улей\nمِخْلاَةٌ|хуржин, халта|торба, сумка\nمِخْنَقَةٌ|гарданбанд|ожерелье\nمَدْبَغَةٌ|чармгарӣ, коргоҳи чармсозӣ|дубильня\nدُجْنَةٌ|торикӣ|тьма\nدَاخِلَةٌ|қисми дарунӣ|внутренняя часть\nدَرِيئَةٌ|ҳадаф|мишень\nمَدْعَاةٌ|сабаб, баҳона|повод, причина\nدِكَّةٌ|суфа, нимкат|скамья, помост\nدَليلَةٌ|роҳнамои зан|проводница\nدَاليَةٌ|чархи об; токи ангур|водяное колесо; виноградная лоза\nدُمَّلَةٌ|фурункул, донаи чиркин|нарыв, фурункул\nدَهْماءُ|омма, мардуми бисёр|масса народа\nدَاهِيَةٌ|офат, мусибат|бедствие\nدَوْحَةٌ|дарахти калон|большое дерево\nدَواةٌ|сиёҳдон|чернильница\nديمَةٌ|борони паиҳам|затяжной дождь\nذُؤابَةٌ|кокул; қулла|чуб; вершина\nمَذْبَحَةٌ|забҳгоҳ, кушор|бойня, резня\nذَريعَةٌ|баҳона, восита|предлог, средство\nذُنَابَةٌ|дум, охир|хвост, конец\nرَبِيبَةٌ|духтари шавҳар (аз зани дигар)|падчерица\nرَابِيَةٌ|теппа|холм\nتَرْتِيلَةٌ|тартил, суруди динӣ|песнопение, гимн\nرُتَيْلاَءُ|тарантул|тарантул (паук)\nأُرْجُوحَةٌ|арғунчак, тоб|качели\nأُرْجُوزَةٌ|шеъри раҷаз|поэма размера раджаз\nأَرْجاءُ|атроф, гӯшаҳо|края, окрестности',
+  'رَحْبَةٌ|майдон, фазои кушод|площадь, простор\nرَاحِلَةٌ|шутури савор|верховой верблюд\nرَذِيلَةٌ|разилат, бадхӯӣ|порок\nرَزِيَّةٌ|мусибат|бедствие, несчастье\nرَزِيئَةٌ|мусибат|бедствие, несчастье\nرِزْمَةٌ|баста, ҷӯғӣ|связка, пачка\nمِرْسَاةٌ|лангар|якорь\nمِرَشَّةٌ|пошандаи об|опрыскиватель\nرَاضِعَةٌ|ширдиҳанда|кормящая (грудью)\nرَطْبَةٌ|нам, тар|влажная, свежая\nرَغْوَةٌ|кафк|пена\nرَافِعَةٌ|кран, асбоби бардоштан|подъёмный кран\nتَرْقُوَةٌ|устухони бандина|ключица'
 ].join('\n')
 let ARB_BIG_TR_MAP = null
 function arbBigTr(ar) {
@@ -8149,6 +8165,202 @@ function MeccaPage({ db, admin, notify, lang, initialTab, onBack, backLabel }) {
   )
 }
 
+/* ---------- Назари корбарон ---------- */
+
+function Stars({ value, onChange, size = '1.6rem', label }) {
+  return (
+    <span className="stars" role={onChange ? 'radiogroup' : 'img'} aria-label={label || `${value}/5`}>
+      {[1, 2, 3, 4, 5].map(n => (
+        onChange
+          ? <button type="button" key={n} className={`star ${n <= value ? 'on' : ''}`} style={{ fontSize: size }} onClick={() => onChange(n)} aria-label={`${n}`}>★</button>
+          : <span key={n} className={`star ${n <= value ? 'on' : ''}`} style={{ fontSize: size }}>★</span>
+      ))}
+    </span>
+  )
+}
+
+function reviewErrorText(error, ru) {
+  const m = String((error && error.message) || error || '')
+  const L = (tg, rus) => (ru ? rus : tg)
+  if (/too_fast/.test(m)) return L('Лутфан 30 сония интизор шавед.', 'Подождите 30 секунд.')
+  if (/spam_links/.test(m)) return L('Дар назар пайвандҳои зиёд нест кунед.', 'Уберите лишние ссылки из отзыва.')
+  if (/duplicate/.test(m)) return L('Чунин матн аллакай фиристода шудааст.', 'Такой текст уже отправлен.')
+  if (/blocked/.test(m)) return L('Шумо блок шудаед.', 'Вы заблокированы.')
+  if (/invalid_text/.test(m)) return L('Матн бояд аз 3 то 1000 ҳарф бошад.', 'Текст должен быть от 3 до 1000 символов.')
+  if (/invalid_rating/.test(m)) return L('Ситораро интихоб кунед.', 'Выберите оценку.')
+  if (/reviews|PGRST202|42883|42P01/i.test(m)) return L('Бахши назарҳо ҳанӯз насб нашудааст (supabase-reviews.sql).', 'Раздел отзывов ещё не установлен (supabase-reviews.sql).')
+  return m || 'Error'
+}
+
+function ReviewsPage({ db, notify, lang, onBack, backLabel, userName }) {
+  const ru = lang === 'ru'
+  const L = (tg, rus) => (ru ? rus : tg)
+  const [list, setList] = useState([])
+  const [mine, setMine] = useState(null)
+  const [rating, setRating] = useState(0)
+  const [body, setBody] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [unavailable, setUnavailable] = useState(false)
+
+  const load = useCallback(async () => {
+    if (!db) { setUnavailable(true); return }
+    try {
+      const { data, error } = await db.from('reviews').select('id, display_name, rating, body, created_at').eq('approved', true).order('created_at', { ascending: false }).limit(100)
+      if (error) throw error
+      setList(data || [])
+      setUnavailable(false)
+    } catch { setUnavailable(true) }
+    try {
+      const { data } = await db.rpc('my_review', { p_key: currentUserKey() })
+      setMine(data && data[0] ? data[0] : null)
+    } catch { /* ignore */ }
+  }, [db])
+  useEffect(() => { load() }, [load])
+
+  const average = list.length ? list.reduce((sum, item) => sum + item.rating, 0) / list.length : 0
+
+  const submit = async event => {
+    event.preventDefault()
+    if (busy) return
+    if (!rating) { notify(reviewErrorText('invalid_rating', ru), 'error'); return }
+    if (body.trim().length < 3) { notify(reviewErrorText('invalid_text', ru), 'error'); return }
+    setBusy(true)
+    try {
+      const tgUser = getTelegramUser()
+      const { error } = await db.rpc('submit_review', { p_key: currentUserKey(), p_name: (tgUser && tgUser.name) || userName || '', p_rating: rating, p_body: body })
+      if (error) throw error
+      notify(L('Ташаккур! Назари шумо баъд аз тасдиқи мудир нишон дода мешавад.', 'Спасибо! Ваш отзыв появится после проверки администратором.'))
+      setEditing(false); setBody(''); setRating(0)
+      await load()
+    } catch (error) {
+      notify(reviewErrorText(error, ru), 'error')
+    }
+    setBusy(false)
+  }
+
+  const removeMine = async () => {
+    if (!window.confirm(L('Назари шумо нест карда шавад?', 'Удалить ваш отзыв?'))) return
+    try {
+      const { error } = await db.rpc('delete_my_review', { p_key: currentUserKey() })
+      if (error) throw error
+      setMine(null); setEditing(false)
+      await load()
+    } catch (error) { notify(reviewErrorText(error, ru), 'error') }
+  }
+
+  const showForm = !mine || editing
+
+  return (
+    <section className="content-page reviews-page">
+      <button className="secondary-button back-button" type="button" onClick={onBack}>← {backLabel}</button>
+      <h2>⭐ {L('Назари корбарон', 'Отзывы пользователей')}</h2>
+
+      {unavailable && <p className="arb-note">{L('Бахш ҳоло дастнорас аст.', 'Раздел пока недоступен.')}</p>}
+
+      {!unavailable && list.length > 0 && (
+        <p className="reviews-avg"><Stars value={Math.round(average)} size="1.2rem" /> <b>{average.toFixed(1)}</b> · {list.length} {L('назар', 'отзывов')}</p>
+      )}
+
+      {!unavailable && mine && !editing && (
+        <div className="review-card review-mine">
+          <Stars value={mine.rating} size="1.1rem" />
+          <p>{mine.body}</p>
+          <p className="arb-note">{mine.approved ? '✅ ' + L('Нашр шудааст', 'Опубликован') : '⏳ ' + L('Дар интизори тасдиқ (ҳанӯз танҳо шумо мебинед)', 'На проверке (пока видите только вы)')}</p>
+          <div className="arb-copybar">
+            <button type="button" className="secondary-button" onClick={() => { setRating(mine.rating); setBody(mine.body); setEditing(true) }}>✏️ {L('Таҳрир', 'Изменить')}</button>
+            <button type="button" className="secondary-button" onClick={removeMine}>🗑 {L('Нест кардан', 'Удалить')}</button>
+          </div>
+        </div>
+      )}
+
+      {!unavailable && showForm && (
+        <form className="review-form" onSubmit={submit}>
+          <Stars value={rating} onChange={setRating} />
+          <textarea rows={4} maxLength={1000} value={body} onChange={event => setBody(event.target.value)} placeholder={L('Фикру мулоҳизаи худро нависед…', 'Напишите ваш отзыв…')} />
+          <div className="arb-copybar">
+            <button type="submit" className="primary-button" disabled={busy}>{busy ? '…' : L('Ирсоли назар', 'Отправить отзыв')}</button>
+            {editing && <button type="button" className="secondary-button" onClick={() => setEditing(false)}>{L('Бекор', 'Отмена')}</button>}
+          </div>
+          <p className="arb-note">{L('Назар пас аз санҷиши мудир нашр мешавад.', 'Отзыв публикуется после проверки администратором.')}</p>
+        </form>
+      )}
+
+      <div className="reviews-list">
+        {list.map(item => (
+          <article className="review-card" key={item.id}>
+            <div className="review-head"><b>{item.display_name || L('Корбар', 'Пользователь')}</b> <Stars value={item.rating} size="1rem" /></div>
+            <p>{item.body}</p>
+            <p className="arb-note">{new Date(item.created_at).toLocaleDateString(ru ? 'ru-RU' : 'tg-TJ')}</p>
+          </article>
+        ))}
+        {!unavailable && !list.length && <p className="arb-note">{L('Ҳанӯз назаре нест. Аввалин шавед!', 'Отзывов пока нет. Будьте первым!')}</p>}
+      </div>
+    </section>
+  )
+}
+
+function ReviewsAdmin({ db, notify }) {
+  const [rows, setRows] = useState([])
+  const [filter, setFilter] = useState('pending')
+  const [error, setError] = useState('')
+
+  const load = useCallback(async () => {
+    try {
+      const { data, error: err } = await db.from('reviews').select('*').order('created_at', { ascending: false }).limit(300)
+      if (err) throw err
+      setRows(data || [])
+      setError('')
+    } catch (err) { setError(err.message || 'error') }
+  }, [db])
+  useEffect(() => { load() }, [load])
+
+  const act = async (row, kind) => {
+    try {
+      if (kind === 'delete') {
+        if (!window.confirm('Нест карда шавад?')) return
+        const { error: err } = await db.from('reviews').delete().eq('id', row.id)
+        if (err) throw err
+      } else {
+        const { error: err } = await db.from('reviews').update({ approved: kind === 'approve' }).eq('id', row.id)
+        if (err) throw err
+      }
+      await load()
+    } catch (err) { notify(err.message || 'Error', 'error') }
+  }
+
+  const shown = rows.filter(row => filter === 'all' || (filter === 'pending' ? !row.approved : row.approved))
+  const pendingCount = rows.filter(row => !row.approved).length
+
+  return (
+    <div className="admin-card">
+      <h3>⭐ Назарҳо {pendingCount > 0 ? `(${pendingCount} нав)` : ''}</h3>
+      {error && <p className="admin-note">Хато: {error}. Файли supabase-reviews.sql-ро иҷро кунед.</p>}
+      <div className="arb-seg">
+        {[['pending', 'Интизор'], ['approved', 'Нашршуда'], ['all', 'Ҳама']].map(([key, label]) => (
+          <button type="button" key={key} className={filter === key ? 'active' : ''} onClick={() => setFilter(key)}>{label}</button>
+        ))}
+      </div>
+      <div className="admin-list">
+        {shown.map(row => (
+          <div className="admin-item" key={row.id}>
+            <h4>{row.display_name || 'Беном'} · <Stars value={row.rating} size="1rem" /></h4>
+            <p>{row.body}</p>
+            <p className="arb-note">{new Date(row.created_at).toLocaleString()} · {row.approved ? '✅ нашршуда' : '⏳ интизор'} · {String(row.user_key).slice(0, 10)}…</p>
+            <div className="admin-item-actions">
+              {!row.approved
+                ? <button className="primary-button" type="button" onClick={() => act(row, 'approve')}>Тасдиқ</button>
+                : <button className="secondary-button" type="button" onClick={() => act(row, 'hide')}>Пинҳон</button>}
+              <button className="danger-button" type="button" onClick={() => act(row, 'delete')}>Нест</button>
+            </div>
+          </div>
+        ))}
+        {!shown.length && !error && <div className="empty-state">Назаре нест.</div>}
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [soundOn, setSoundOn] = useState(arbSoundOn())
   const [meccaTab, setMeccaTab] = useState('live')
@@ -8653,6 +8865,7 @@ function App() {
 
   const hadithSourceLine = item => {
     const book = getBookName(item.book_id)
+    if (isPrefaceHadith(item)) return book
     if (!book && !item.hadith_number) return ''
     return `${book}${item.hadith_number ? ` — ${t.hadithWord} ${item.hadith_number}` : ''}`
   }
@@ -8763,7 +8976,7 @@ function App() {
 
     if (!db || !admin || saving) return
 
-    if (!clean(hadithForm.hadith_number) || !clean(hadithForm.tajik_text)) {
+    if ((!hadithForm.is_preface && !clean(hadithForm.hadith_number)) || !clean(hadithForm.tajik_text)) {
       notify(t.hadithRequired, 'error')
       return
     }
@@ -8783,6 +8996,7 @@ function App() {
         ...previousMeta,
         chapter_id: clean(hadithForm.chapter_id),
         daily_date: clean(hadithForm.daily_date),
+        is_preface: hadithForm.is_preface === true,
         title: clean(hadithForm.title),
         title_ru: clean(hadithForm.title_ru),
         explanation_tg: clean(hadithForm.explanation_tg),
@@ -8796,7 +9010,7 @@ function App() {
 
       const payload = {
         book_id: hadithForm.book_id,
-        hadith_number: clean(hadithForm.hadith_number),
+        hadith_number: hadithForm.is_preface ? '0' : clean(hadithForm.hadith_number),
         tajik_text: clean(hadithForm.tajik_text),
         arabic_text: clean(hadithForm.arabic_text) || null,
         source_note: makeStoredNote(hadithForm.source_note, meta),
@@ -8831,7 +9045,8 @@ function App() {
       book_id: item.book_id || '',
       chapter_id: stored.meta.chapter_id || '',
       daily_date: stored.meta.daily_date || '',
-      hadith_number: item.hadith_number ?? '',
+      hadith_number: isPrefaceHadith(item) ? '' : (item.hadith_number ?? ''),
+      is_preface: isPrefaceHadith(item),
       title: stored.meta.title || '',
       title_ru: stored.meta.title_ru || '',
       tajik_text: item.tajik_text || '',
@@ -9588,7 +9803,7 @@ function App() {
       return hadithRows
         .filter(item => selectedBook.ids.includes(String(item.book_id)))
         .map(item => ({ ...item, resultType: 'hadith' }))
-        .sort((a, b) => numericValue(a.hadith_number) - numericValue(b.hadith_number))
+        .sort((a, b) => (isPrefaceHadith(b) - isPrefaceHadith(a)) || (numericValue(a.hadith_number) - numericValue(b.hadith_number)))
     }
 
     const rows = contentRows
@@ -9636,7 +9851,11 @@ function App() {
 
   const chapterIdOf = item => String(parseStoredNote(item.source_note).meta.chapter_id || '')
   const validChapterIds = new Set(contextChapters.map(item => item.id))
-  const uncategorizedRows = contextRowsAll.filter(item => !validChapterIds.has(chapterIdOf(item)))
+  const isHadithBook = !!(selectedSection && selectedSection.slug === 'hadith')
+  const bookPrefaces = (isHadithBook && contextChapters.length)
+    ? contextRowsAll.filter(item => isPrefaceHadith(item) && !validChapterIds.has(chapterIdOf(item)))
+    : []
+  const uncategorizedRows = contextRowsAll.filter(item => !validChapterIds.has(chapterIdOf(item)) && !bookPrefaces.includes(item))
 
   let publicContent = contextRowsAll
   if (contextChapters.length) {
@@ -10522,7 +10741,7 @@ function App() {
     const upcoming = rows => rows.filter(item => dateOf(item) >= todayKey()).sort((a, b) => dateOf(a).localeCompare(dateOf(b)))
 
     const hadithLabel = item =>
-      `${getBookName(item.book_id)} · № ${item.hadith_number} — ${clean(item.tajik_text || item.arabic_text).slice(0, 45)}`
+      `${getBookName(item.book_id)} · ${isPrefaceHadith(item) ? (lang === 'ru' ? 'Предисловие' : 'Пешгуфтор') : '№ ' + item.hadith_number} — ${clean(item.tajik_text || item.arabic_text).slice(0, 45)}`
     const sunnahLabel = item =>
       item.title || clean(item.tajik_text || item.content_text || item.arabic_text).slice(0, 50) || String(item.id)
 
@@ -10959,7 +11178,7 @@ function App() {
       <article className="public-item" key={`hadith-${item.id}`}>
         <div className="item-number">
           {getBookName(item.book_id)}
-          {item.hadith_number ? ` · ${t.hadithLabel}${item.hadith_number}` : ''}
+          {isPrefaceHadith(item) ? ` · 📖 ${lang === 'ru' ? 'Предисловие' : 'Пешгуфтор'}` : (item.hadith_number ? ` · ${t.hadithLabel}${item.hadith_number}` : '')}
         </div>
 
         {(lang === 'ru' ? (stored.meta.title_ru || stored.meta.title) : stored.meta.title) && (
@@ -10976,6 +11195,14 @@ function App() {
 
         {translatedHadith && (
           <p><HighlightText text={translatedHadith} query={query} /></p>
+        )}
+
+        {renderMedia(item)}
+
+        {stored.source && (
+          <div className="source-note">
+            <HighlightText text={stored.source} query={query} />
+          </div>
         )}
 
         {(commentary || stored.meta.explanation_ar) && (
@@ -10995,14 +11222,6 @@ function App() {
               </div>
             )}
           </ExplainToggle>
-        )}
-
-        {renderMedia(item)}
-
-        {stored.source && (
-          <div className="source-note">
-            <HighlightText text={stored.source} query={query} />
-          </div>
         )}
 
         {renderActions(item)}
@@ -11167,7 +11386,12 @@ function App() {
           )
         })()}
 
-        {field(t.number, hadithForm.hadith_number,
+        <label className="check-row">
+          <input type="checkbox" checked={!!hadithForm.is_preface} onChange={event => setHadithForm({ ...hadithForm, is_preface: event.target.checked })} />
+          {' '}Ин пешгуфтор аст (бе рақам, ҳамеша дар боло) / Это предисловие (без номера, всегда сверху)
+        </label>
+
+        {!hadithForm.is_preface && field(t.number, hadithForm.hadith_number,
           value => setHadithForm({ ...hadithForm, hadith_number: value }),
           t.exampleNumber, true)}
 
@@ -11235,7 +11459,7 @@ function App() {
       <div className="admin-list">
         {hadithRows.map(item => (
           <div className="admin-item" key={item.id}>
-            <h4>{getBookName(item.book_id)} · № {item.hadith_number}</h4>
+            <h4>{getBookName(item.book_id)} · {isPrefaceHadith(item) ? (lang === 'ru' ? 'Предисловие' : 'Пешгуфтор') : '№ ' + item.hadith_number}</h4>
             <p>{item.tajik_text || item.arabic_text || t.textMissing}</p>
 
             <div className="admin-item-status">
@@ -11742,6 +11966,10 @@ function App() {
             </div>
           )}
     
+          {bookPrefaces.length > 0 && selectedChapter === null && (
+            <div className="public-list">{bookPrefaces.map(item => renderHadithCard(item))}</div>
+          )}
+
           {contextChapters.length > 0 && selectedChapter === null ? (
             <div className="menu menu-list">
               {contextChapters.map(chapter => (
@@ -11866,6 +12094,7 @@ function App() {
               <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('madina'); setPage('mecca'); scrollToTop() }}>🕌<span>{lang === 'ru' ? 'Медина онлайн' : 'Мадина зинда'}</span></button>
               <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('qibla'); setPage('mecca'); scrollToTop() }}>🧭<span>{lang === 'ru' ? 'Кибла' : 'Қибла'}</span></button>
               <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('prayer'); setPage('mecca'); scrollToTop() }}>🕌<span>{lang === 'ru' ? 'Время намаза' : 'Вақти намоз'}</span></button>
+              <button type="button" className="mecca-entry-btn" onClick={() => { setPage('reviews'); scrollToTop() }}>⭐<span>{lang === 'ru' ? 'Отзывы' : 'Назари корбарон'}</span></button>
             </div>
           )}
 
@@ -11937,7 +12166,7 @@ function App() {
                 <section className="daily-card">
                   <div className="daily-heading">
                     <h2>{t.daily}</h2>
-                    {dailyHadith.hadith_number && (
+                    {dailyHadith.hadith_number && !isPrefaceHadith(dailyHadith) && (
                       <span className="daily-badge">№ {dailyHadith.hadith_number}</span>
                     )}
                   </div>
@@ -11956,6 +12185,9 @@ function App() {
                     ? (parseStoredNote(dailyHadith.source_note).meta.russian_text || dailyHadith.tajik_text)
                     : (lang === 'ar' ? (dailyHadith.arabic_text || dailyHadith.tajik_text) : dailyHadith.tajik_text)}</p>
 
+
+                  <div className="source-note">{hadithSourceLine(dailyHadith)}</div>
+
                   {(dailyHadith.commentary || parseStoredNote(dailyHadith.source_note).meta.explanation_tg) && (
                     <ExplainToggle lang={lang}>
                       <div className="explanation">
@@ -11967,8 +12199,6 @@ function App() {
                       </div>
                     </ExplainToggle>
                   )}
-
-                  <div className="source-note">{hadithSourceLine(dailyHadith)}</div>
 
                   {renderActions(dailyHadith)}
                 </section>
@@ -12112,6 +12342,10 @@ function App() {
             </section>
           )}
 
+          {page === 'reviews' && (
+            <ReviewsPage db={db} notify={notify} lang={lang} onBack={goHome} backLabel={t.back} />
+          )}
+
           {page === 'mecca' && (
             <MeccaPage key={meccaTab} db={db} admin={admin} notify={notify} lang={lang} initialTab={meccaTab} onBack={goHome} backLabel={t.back} />
           )}
@@ -12243,6 +12477,10 @@ function App() {
                   🔤 Забони арабӣ
                 </button>
 
+                <button className={adminTab === 'reviews' ? 'active' : ''} onClick={() => setAdminTab('reviews')}>
+                  ⭐ Назарҳо
+                </button>
+
                 <button className={adminTab === 'storage' ? 'active' : ''} onClick={() => setAdminTab('storage')}>
                   🛠 Санҷиши Storage
                 </button>
@@ -12258,6 +12496,7 @@ function App() {
               {adminTab === 'chapters' && renderAdminChapters()}
               {adminTab === 'translate' && renderAdminTranslate()}
               {adminTab === 'storage' && renderAdminStorage()}
+              {adminTab === 'reviews' && <ReviewsAdmin db={db} notify={notify} />}
               {adminTab === 'arabic' && (
                 <ArabicAdmin rows={arabicRows} lang={lang} db={db} notify={notify} reload={reloadAll} />
               )}
