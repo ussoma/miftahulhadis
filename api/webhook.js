@@ -1,12 +1,14 @@
 
 export default async function handler(req, res) {
-  // Проверка работы сервера
+  // Санҷиши кори сервер
   if (req.method === 'GET') {
     return res.status(200).send('Miftahulhadis Bot is running');
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({
+      error: 'Method not allowed'
+    });
   }
 
   const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -14,6 +16,7 @@ export default async function handler(req, res) {
 
   if (!BOT_TOKEN || !WEB_APP_URL) {
     console.error('Missing BOT_TOKEN or WEB_APP_URL');
+
     return res.status(500).json({
       error: 'Environment variables are missing'
     });
@@ -28,27 +31,38 @@ export default async function handler(req, res) {
 
     const message = update?.message;
 
-    // Обрабатываем только сообщения
     if (!message) {
       return res.status(200).json({ ok: true });
     }
 
-    const text = message.text || '';
+    const messageText = message.text || '';
 
-    // Проверяем команду /start
-    if (!/^\/start(?:@\w+)?(?:\s|$)/i.test(text)) {
+    // Танҳо фармони /start коркард мешавад
+    if (!/^\/start(?:@\w+)?(?:\s|$)/i.test(messageText)) {
       return res.status(200).json({ ok: true });
     }
 
     const chatId = message.chat.id;
 
-    const welcomeText =
-      'Ассалому алайкум! 🤍\n\n' +
-      'Ба китобхонаи исломии Miftahulhadis хуш омадед!\n\n' +
-      'Дар ин ҷо шумо метавонед ҳадисҳо, дуоҳо, азкор ва дигар маводи исломиро омӯзед.\n\n' +
-      '📖 Илмро ҷустуҷӯ кун. Ба он амал намо.';
+    // Гирифтани номи корбар аз Telegram
+    const firstName = message.from?.first_name || '';
+    const lastName = message.from?.last_name || '';
 
-    // Отправляем приветствие и кнопку Mini App
+    const fullName = [firstName, lastName]
+      .filter(Boolean)
+      .join(' ');
+
+    const userName = fullName || 'أَخِي الْكَرِيمُ';
+
+    // Матни истиқбол
+    const welcomeText =
+      'السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ 🤍\n\n' +
+      'أَهْلًا وَسَهْلًا بِكَ يَا ' + userName + '!\n\n' +
+      'مَرْحَبًا بِكَ فِي مَكْتَبَةِ 𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔 الْإِسْلَامِيَّةِ.\n\n' +
+      'هُنَا يُمْكِنُكَ قِرَاءَةُ الْأَحَادِيثِ وَالْأَدْعِيَةِ وَالْأَذْكَارِ، وَالتَّعَرُّفُ عَلَى الْعُلُومِ الْإِسْلَامِيَّةِ.\n\n' +
+      '📖 اُطْلُبِ الْعِلْمَ وَاعْمَلْ بِهِ.';
+
+    // Фиристодани паём ба Telegram
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
       {
@@ -63,7 +77,7 @@ export default async function handler(req, res) {
             inline_keyboard: [
               [
                 {
-                  text: '📖 Открыть Miftahulhadis',
+                  text: '📖 Открыть 𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔',
                   web_app: {
                     url: WEB_APP_URL
                   }
@@ -77,9 +91,8 @@ export default async function handler(req, res) {
 
     const result = await telegramResponse.json();
 
-    // Проверяем настоящий ответ Telegram
     if (!telegramResponse.ok || !result.ok) {
-      console.error('Telegram sendMessage error:', result);
+      console.error('Telegram error:', result);
 
       return res.status(200).json({
         ok: false,
