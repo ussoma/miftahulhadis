@@ -1647,3 +1647,5 @@ button.star { cursor: pointer; }
 .ga-time { flex: 0 0 auto; font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; }
 .ga-bar { position: fixed; left: 8px; right: 62px; max-width: 480px; bottom: calc(var(--nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 6px); z-index: 950; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 14px; background: rgba(20, 24, 22, .92); color: #f4ecd8; border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(6px); }
 .ga-bar-title { flex: 1; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ga-error { flex-basis: 100%; font-size: 12px; color: #e0826f; }
+.ga-player { flex-wrap: wrap; }
