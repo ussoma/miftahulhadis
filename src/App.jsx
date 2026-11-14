@@ -991,6 +991,162 @@ function clean(value) {
   return String(value ?? '').trim()
 }
 
+
+/* =====================================================================
+   Плеери ЯГОНАИ умумии аудио (дар сатҳи модул, на дар дохили бахшҳо).
+   Як элементи <audio> ҳеҷ гоҳ нест намешавад: аудио ҳангоми гузариш байни
+   бахшҳо, саҳифаҳо ва ҷадвалҳо қатъ намегардад. Танҳо бо Pause/Stop ё
+   оғози аудиои дигар қатъ мешавад (ҳамон як элемент — пас аудиои қаблӣ худкор мемирад).
+   ===================================================================== */
+const GA = {
+  el: null,
+  owner: '',      // 'quran' | 'media'
+  srcRaw: '',
+  title: '',
+  ended: false,
+  version: 0,
+  listeners: new Set()
+}
+
+function gaEmit() {
+  GA.version += 1
+  GA.listeners.forEach(fn => { try { fn(GA.version) } catch { /* ignore */ } })
+}
+
+function gaEl() {
+  if (GA.el || typeof document === 'undefined') return GA.el
+  const el = document.createElement('audio')
+  el.preload = 'none'
+  el.setAttribute('playsinline', '')
+  el.style.display = 'none'
+  ;['play', 'pause', 'ended', 'timeupdate', 'loadedmetadata', 'durationchange', 'emptied', 'error'].forEach(name => {
+    el.addEventListener(name, () => {
+      if (name === 'ended') GA.ended = true
+      if (name === 'play') GA.ended = false
+      gaEmit()
+    })
+  })
+  try { document.body.appendChild(el) } catch { /* ignore */ }
+  GA.el = el
+  return el
+}
+
+function gaMediaSession() {
+  try {
+    if (!('mediaSession' in navigator)) return
+    navigator.mediaSession.metadata = new window.MediaMetadata({ title: GA.title || 'Miftahulhadis', artist: 'Miftahulhadis' })
+    navigator.mediaSession.setActionHandler('play', () => gaEl().play().catch(() => {}))
+    navigator.mediaSession.setActionHandler('pause', () => gaEl().pause())
+    navigator.mediaSession.setActionHandler('stop', () => gaStop())
+  } catch { /* ignore */ }
+}
+
+// Оғози аудиои нав: аудиои қаблӣ худ аз худ қатъ мешавад (як элемент).
+function gaPlay(src, title, owner = 'media') {
+  const el = gaEl()
+  if (!el || !src) return Promise.resolve()
+  GA.owner = owner
+  GA.srcRaw = src
+  GA.title = title || ''
+  GA.ended = false
+  el.loop = false
+  if (el.src !== new URL(src, window.location.href).href) el.src = src
+  gaMediaSession()
+  gaEmit()
+  return el.play().catch(() => {})
+}
+
+function gaToggle(src, title, owner = 'media') {
+  const el = gaEl()
+  if (!el) return
+  if (GA.srcRaw === src && !GA.ended) {
+    if (el.paused) el.play().catch(() => {})
+    else el.pause()
+  } else {
+    gaPlay(src, title, owner)
+  }
+}
+
+// Қатъи пурра (тугмаи Stop)
+function gaStop() {
+  const el = gaEl()
+  if (el) { el.pause(); el.loop = false; try { el.removeAttribute('src'); el.load() } catch { /* ignore */ } }
+  GA.srcRaw = ''
+  GA.title = ''
+  GA.owner = ''
+  GA.ended = false
+  gaEmit()
+}
+
+function useGlobalAudio() {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const fn = v => setTick(v)
+    GA.listeners.add(fn)
+    return () => { GA.listeners.delete(fn) }
+  }, [])
+  const el = gaEl()
+  return {
+    src: GA.srcRaw,
+    title: GA.title,
+    owner: GA.owner,
+    ended: GA.ended,
+    playing: !!el && !el.paused && !GA.ended && !!GA.srcRaw,
+    time: el ? el.currentTime || 0 : 0,
+    duration: el && Number.isFinite(el.duration) ? el.duration : 0
+  }
+}
+
+function gaFmt(sec) {
+  const s = Math.max(0, Math.floor(sec || 0))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+
+// Плеери хурд барои ҳар файли аудио дар барнома (ба плеери умумӣ пайваст аст).
+// Бе src — ҳамон аудиоеро, ки ҳоло дар плеери умумӣ аст, идора мекунад.
+function GAudio({ src, title }) {
+  const g = useGlobalAudio()
+  const mine = src ? g.src === src && !g.ended : !!g.src
+  const target = src || g.src
+  const playing = mine && g.playing
+  const dur = mine ? g.duration : 0
+  const time = mine ? g.time : 0
+  return (
+    <div className="ga-player">
+      <button type="button" className="ga-btn" aria-label={playing ? 'Pause' : 'Play'} onClick={() => gaToggle(target, title || g.title, src ? 'media' : g.owner || 'media')}>
+        {playing ? '⏸' : '▶'}
+      </button>
+      <input
+        className="ga-seek"
+        type="range"
+        min="0"
+        max={dur || 0}
+        step="0.5"
+        value={Math.min(time, dur || 0)}
+        disabled={!dur}
+        onChange={event => { const el = gaEl(); if (el && mine) el.currentTime = Number(event.target.value) }}
+      />
+      <span className="ga-time">{gaFmt(time)}{dur ? ` / ${gaFmt(dur)}` : ''}</span>
+      {mine && g.src && (
+        <button type="button" className="ga-btn ga-stop" aria-label="Stop" onClick={gaStop}>⏹</button>
+      )}
+    </div>
+  )
+}
+
+// Навори паёмдори умумӣ дар болои тамоми бахшҳо: аудио дар ҳама ҷо идора мешавад.
+function GlobalAudioBar() {
+  const g = useGlobalAudio()
+  if (!g.src || g.ended) return null
+  return (
+    <div className="ga-bar" role="region" aria-label="Audio">
+      <span className="ga-bar-title">🎧 {g.title || 'Аудио'}</span>
+      <button type="button" className="ga-btn" aria-label={g.playing ? 'Pause' : 'Play'} onClick={() => gaToggle(g.src, g.title, g.owner)}>{g.playing ? '⏸' : '▶'}</button>
+      <button type="button" className="ga-btn ga-stop" aria-label="Stop" onClick={gaStop}>⏹</button>
+    </div>
+  )
+}
+
 const MEDIA_KINDS = ['audio', 'video', 'image', 'pdf']
 
 function cleanFiles(list) {
@@ -7125,12 +7281,12 @@ function ArbLessons({ rows, lang, admin, db, notify, reload }) {
             {item.duration ? <span>⏱ {arbFmtDuration(item.duration)}</span> : null}
           </p>
           {((ru && item.descRu) || item.desc) && <p className="arb-lesson-desc">{(ru && item.descRu) || item.desc}</p>}
-          {item.audio && <div className="media-player"><audio controls preload="none" src={item.audio}>{L('Браузер аудиоро дастгирӣ намекунад.', 'Браузер не поддерживает аудио.')}</audio></div>}
+          {item.audio && <div className="media-player"><GAudio src={item.audio} title={(ru && item.titleRu) || item.title} /></div>}
           {item.video && <div className="media-player"><video controls playsInline preload="metadata" src={item.video}>{L('Браузер видеоро дастгирӣ намекунад.', 'Браузер не поддерживает видео.')}</video></div>}
           {(item.files || []).map((f, i) => (
             <div className="media-player" key={`lf-${i}`}>
               {f.n && f.k !== 'image' && <div className="media-name">{f.n}</div>}
-              {f.k === 'audio' && <audio controls preload="none" src={f.u} />}
+              {f.k === 'audio' && <GAudio src={f.u} title={f.n || item.title} />}
               {f.k === 'video' && (youtubeId(f.u)
                 ? <iframe className="yt-frame" src={`https://www.youtube.com/embed/${youtubeId(f.u)}`} title="video" allowFullScreen loading="lazy" />
                 : <video controls playsInline preload="metadata" src={f.u} />)}
@@ -9549,6 +9705,7 @@ function App() {
   const [playing, setPlaying] = useState({ index: -1, mode: 'idle' })
   const [quranFavs, setQuranFavs] = useState(loadQuranFavorites)
   const audioRef = useRef(null)
+  if (!audioRef.current) audioRef.current = gaEl()
   const cancelRef = useRef(false)
   const [today, setToday] = useState(todayKey)
   const [uploading, setUploading] = useState({ audio: false, video: false, image: false, pdf: false })
@@ -9566,6 +9723,7 @@ function App() {
   const [usersError, setUsersError] = useState('')
   const [usersLoading, setUsersLoading] = useState(false)
   const [usersLimit, setUsersLimit] = useState(50)
+  const [userScope, setUserScope] = useState('start') // start = /start дар бот, tg = ҳама Telegram, browser = браузер
   const [userSearch, setUserSearch] = useState('')
   const [userFilter, setUserFilter] = useState('all')
   const [userSort, setUserSort] = useState('last')
@@ -11000,11 +11158,8 @@ function App() {
   /* ---------- Қуръони Карим: ҳамаи 114 сура аз интернет ---------- */
 
   const stopAudio = useCallback(() => {
-    const audio = audioRef.current
-    if (audio) {
-      audio.pause()
-      audio.loop = false
-    }
+    if (GA.owner === 'quran') gaStop()
+    else if (audioRef.current) audioRef.current.loop = false
     setPlaying({ index: -1, mode: 'idle' })
   }, [])
 
@@ -11090,11 +11245,23 @@ function App() {
   }, [selectedSurah, reciter, surahRetry])
 
   // Аудио танҳо дар саҳифаи сура кор мекунад.
+  // Аудио ҳангоми гузариш байни бахшҳо қатъ намешавад — танҳо бо Stop/Pause ё аудиои дигар.
+  const quranHandlersRef = useRef({})
   useEffect(() => {
-    if (page !== 'section' || !selectedSurah) stopAudio()
-  }, [page, selectedSurah, stopAudio])
-
-  useEffect(() => () => stopAudio(), [stopAudio])
+    const el = gaEl()
+    if (!el) return undefined
+    const onEnded = () => { if (GA.owner === 'quran' && quranHandlersRef.current.ended) quranHandlersRef.current.ended() }
+    const onError = () => { if (GA.owner === 'quran' && quranHandlersRef.current.error) quranHandlersRef.current.error() }
+    el.addEventListener('ended', onEnded)
+    el.addEventListener('error', onError)
+    return () => { el.removeEventListener('ended', onEnded); el.removeEventListener('error', onError) }
+  }, [])
+  // Агар аудиои дигар оғоз шуд ё Stop пахш шуд, ҳолати Қуръонро аз нав танзим мекунем
+  useEffect(() => {
+    const fn = () => { if (GA.owner !== 'quran') setPlaying(cur => (cur.mode === 'idle' ? cur : { index: -1, mode: 'idle' })) }
+    GA.listeners.add(fn)
+    return () => { GA.listeners.delete(fn) }
+  }, [])
 
   // Сураи пурра: як файли яклухт, бе танаффус (CDN-и alquran.cloud; захира: cdn.islamic.app).
   const surahSources = number => [
@@ -11107,8 +11274,8 @@ function App() {
     if (!audio || !selectedSurah) return
 
     audio.loop = false
-    audio.src = surahSources(selectedSurah)[0]
-    audio.play().catch(() => {})
+    gaPlay(surahSources(selectedSurah)[0], `${t.surah || 'Сура'} ${selectedSurah}`, 'quran')
+    audio.loop = false
     setPlaying({ index: -1, mode: 'surah', file: 0 })
   }
 
@@ -11123,9 +11290,8 @@ function App() {
       return
     }
 
+    gaPlay(ayah.audio, `${t.surah || 'Сура'} ${selectedSurah}:${index + 1}`, 'quran')
     audio.loop = mode === 'loop'
-    audio.src = ayah.audio
-    audio.play().catch(() => notify(t.audioUnavailable, 'error'))
     setPlaying({ index, mode })
 
     setTimeout(() => {
@@ -11149,8 +11315,7 @@ function App() {
     if (playing.mode === 'surah') {
       const sources = surahSources(selectedSurah)
       if (playing.file < sources.length - 1) {
-        audio.src = sources[playing.file + 1]
-        audio.play().catch(() => {})
+        gaPlay(sources[playing.file + 1], `${t.surah || 'Сура'} ${selectedSurah}`, 'quran')
         setPlaying({ index: -1, mode: 'surah', file: playing.file + 1 })
       } else {
         notify(t.playAllFailed, 'error')
@@ -11162,6 +11327,8 @@ function App() {
     notify(t.audioUnavailable, 'error')
     setPlaying({ index: -1, mode: 'idle' })
   }
+
+  quranHandlersRef.current = { ended: handleAudioEnded, error: handleAudioError }
 
   const changeArabicSize = delta => {
     setArabicSize(current => {
@@ -11377,14 +11544,7 @@ function App() {
             {fullPlaying ? `■ ${t.stopAudio}` : `▶ ${t.playAll}`}
           </button>
 
-          <audio
-            ref={audioRef}
-            className={`surah-audio ${playing.mode === 'surah' ? 'show' : ''}`}
-            controls
-            preload="none"
-            onEnded={handleAudioEnded}
-            onError={handleAudioError}
-          />
+          {playing.mode === 'surah' && <GAudio />}
 
           <div className="reader-tools">
             <button className="play-chip" type="button" onClick={() => changeArabicSize(-2)}>A−</button>
@@ -12085,7 +12245,7 @@ function App() {
     db.from('app_users').delete().eq('user_key', currentUserKey()).then(() => {}, () => {})
   }, [db, admin])
 
-  const loadUsers = useCallback(async (limit = 50) => {
+  const loadUsers = useCallback(async (limit = 50, scope = 'start') => {
     if (!db) return
 
     setUsersLoading(true)
@@ -12122,17 +12282,33 @@ function App() {
         count(query => query.gte('last_seen', online)),
         count(query => query.gte('first_seen', month)),
         count(query => query.lt('last_seen', idle)),
-        db.from('app_users').select('*').order('last_seen', { ascending: false }).limit(limit)
+        (async () => {
+          const base = () => db.from('app_users').select('*').order('last_seen', { ascending: false }).limit(limit)
+          let q = base()
+          if (scope === 'start') q = q.not('bot_started_at', 'is', null)
+          else if (scope === 'tg') q = q.not('tg_id', 'is', null)
+          else if (scope === 'browser') q = q.is('tg_id', null)
+          let res = await q
+          // SQL-и нав (supabase-bot-users.sql) ҳанӯз иҷро нашудааст: ба Telegram-ҳо бармегардем
+          if (res.error && scope === 'start') res = await base().not('tg_id', 'is', null)
+          return res
+        })()
       ])
 
       if (list.error) throw list.error
+
+      let startedCount = null
+      try {
+        const sr = await db.from('app_users').select('id', { count: 'exact', head: true }).not('bot_started_at', 'is', null)
+        if (!sr.error) startedCount = sr.count || 0
+      } catch { /* сутуни bot_started_at ҳанӯз нест */ }
 
       let adminCount = null
       try {
         const rpc = await db.rpc('admin_count')
         if (!rpc.error && typeof rpc.data === 'number') adminCount = rpc.data
       } catch { /* RPC ҳанӯз сохта нашудааст */ }
-      setUserStats({ tgUnique, total, blocked: blockedCount, activeToday, newToday, activeWeek, activeNow, newMonth, inactive, adminCount })
+      setUserStats({ tgUnique, startedCount, total, blocked: blockedCount, activeToday, newToday, activeWeek, activeNow, newMonth, inactive, adminCount })
       setAdminUsers(list.data || [])
       setUsersError('')
     } catch (error) {
@@ -12143,8 +12319,12 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (admin && adminTab === 'users') loadUsers(usersLimit)
-  }, [admin, adminTab, usersLimit, loadUsers])
+    if (!(admin && adminTab === 'users')) return undefined
+    loadUsers(usersLimit, userScope)
+    // корбари нав худкор дар рӯйхат пайдо мешавад (ҳар 30 сония)
+    const timer = setInterval(() => loadUsers(usersLimit, userScope), 30000)
+    return () => clearInterval(timer)
+  }, [admin, adminTab, usersLimit, userScope, loadUsers])
 
   const toggleBlockUser = async user => {
     if (!db || !admin) return
@@ -12175,7 +12355,7 @@ function App() {
       }
       if (error) throw error
 
-      await loadUsers(usersLimit)
+      await loadUsers(usersLimit, userScope)
       notify(willBlock ? 'Корбар блок шуд.' : 'Блок бардошта шуд.')
     } catch (error) {
       notify(t.error + error.message, 'error')
@@ -12204,6 +12384,7 @@ function App() {
 
     const stats = userStats ? [
       ['Корбарони оддӣ', userStats.total],
+      ['Бо /start дар бот', userStats.startedCount === null || userStats.startedCount === undefined ? '—' : userStats.startedCount],
       ['Telegram ID-и ягона', userStats.tgUnique === null || userStats.tgUnique === undefined ? '—' : userStats.tgUnique],
       ['Браузер (бе Telegram ID)', userStats.tgUnique === null || userStats.tgUnique === undefined ? '—' : userStats.total - userStats.tgUnique],
       ['Администраторҳо', userStats.adminCount === null || userStats.adminCount === undefined ? '—' : userStats.adminCount],
@@ -12246,6 +12427,12 @@ function App() {
             onChange={event => setUserSearch(event.target.value)}
             placeholder="Ҷустуҷӯ: Telegram ID, ном, @username..."
           />
+        </div>
+
+        <div className="arb-seg">
+          {[['start', 'Бо /start'], ['tg', 'Ҳама Telegram'], ['browser', 'Браузер']].map(([key, label]) => (
+            <button type="button" key={key} className={userScope === key ? 'active' : ''} onClick={() => setUserScope(key)}>{label}</button>
+          ))}
         </div>
 
         <div className="arb-seg">
@@ -12342,9 +12529,7 @@ function App() {
         {!skipImage && renderImage(item)}
         {audio && (
           <div className="media-player">
-            <audio controls preload="none" src={audio}>
-              {t.browserNoAudio}
-            </audio>
+            <GAudio src={audio} title={item.title || ''} />
           </div>
         )}
 
@@ -12353,7 +12538,7 @@ function App() {
         {cleanFiles(stored.meta.files).map((f, i) => (
           <div className="media-player" key={`mf-${i}`}>
             {f.n && f.k !== 'image' && <div className="media-name">{f.n}</div>}
-            {f.k === 'audio' && <audio controls preload="none" src={f.u}>{t.browserNoAudio}</audio>}
+            {f.k === 'audio' && <GAudio src={f.u} title={f.n || item.title || ''} />}
             {f.k === 'video' && renderVideoEl(f.u, true)}
             {f.k === 'image' && <img className="daily-image" src={f.u} alt={f.n || ''} loading="lazy" />}
             {f.k === 'pdf' && (
@@ -13753,6 +13938,8 @@ function App() {
           )}
         </main>
       )}
+
+      <GlobalAudioBar />
 
       <nav className="bottom-nav" aria-label="Navigation">
         <button className={`nav-item ${navActive.home ? 'active' : ''}`} type="button" onClick={goHome}>
