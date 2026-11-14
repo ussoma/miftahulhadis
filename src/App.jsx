@@ -960,7 +960,8 @@ const EMPTY_HADITH = {
   explanation_ru: '',
   audio_url: '',
   video_url: '',
-  image_url: ''
+  image_url: '',
+  files: []
 }
 
 const EMPTY_CONTENT = {
@@ -980,13 +981,28 @@ const EMPTY_CONTENT = {
   source_note: '',
   audio_url: '',
   video_url: '',
-  image_url: ''
+  image_url: '',
+  files: []
 }
 
 const META_PREFIX = '__MIFTAH_META_V1__:'
 
 function clean(value) {
   return String(value ?? '').trim()
+}
+
+const MEDIA_KINDS = ['audio', 'video', 'image', 'pdf']
+
+function cleanFiles(list) {
+  if (!Array.isArray(list)) return []
+  return list
+    .map(f => ({ k: MEDIA_KINDS.includes(f && f.k) ? f.k : '', u: clean(f && f.u), n: clean(f && f.n) }))
+    .filter(f => f.k && f.u)
+}
+
+function youtubeId(url) {
+  const m = String(url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{6,})/)
+  return m ? m[1] : ''
 }
 
 function parseStoredNote(value) {
@@ -4236,11 +4252,14 @@ const ARB_BIG_TR = [
   'مَزَادَةٌ|машки об|бурдюк\nمِزْوَدَةٌ|халтаи тӯша|дорожная сумка\nمِزْوَلَةٌ|соати офтобӣ|солнечные часы\nسَبِخَةٌ|шӯразор|солончак\nسَبَلَةٌ|бурут|усы\nمَسْخَرَةٌ|масхара|посмешище\nسُدَّةٌ|остона, дарвоза|порог, ворота\nسُرْبَةٌ|ғун, гурӯҳи паррандагон|стая\nمِسْطَبَةٌ|суфа|скамья, возвышение\nأسَاطِينُ|сутунҳо|колонны\nمَسْعَاةٌ|кӯшиш, талош|усилие, стремление\nمَسْغَبَةٌ|гуруснагӣ|голод\nسَاقِيَةٌ|ҷӯй, ариқ|оросительный канал\nمِسْقَاةٌ|зарфи об|сосуд для воды\nمَسْلَحَةٌ|посгоҳи ҳарбӣ|военный пост\nسُلْفَةٌ|қарз, пешпардохт|заём, аванс\nسَلِيقَةٌ|табиат, фитрат|природная склонность\nسوسَةٌ|кирм, куя|жучок, моль\nسَائِمَةٌ|чорвои чаранда|пасущийся скот\nمَشْتَاةٌ|зимистон, ҷойи зимистон|зимовье\nشَظِيَّةٌ|шилдирма, порча|осколок, щепка\nشَكِيمَةٌ|лаҷом; иродаи қавӣ|удила; твёрдая воля\nأَشْلاءٌ|пораҳои ҷасад|останки, части тела\nشَمْلَةٌ|ҷома, чодари пашмин|плащ, накидка\nشِيمَةٌ|хислат|свойство характера\nمَصْبَغَةٌ|ранггарӣ|красильня\nصَحْفَةٌ|табақ, лаганд|большое блюдо\nصَدِيرَةٌ|нимтанаи бе остин|жилет\nصَرِيمَةٌ|азми қатъӣ|решимость\nمِصْفَاةٌ|ғалбер|сито, дуршлаг',
   'صُمْتَةٌ|хомӯшӣ|молчание\nصِمَامَةٌ|сарпӯш, клапан|пробка, клапан\nصَنِيعَةٌ|некӣ, эҳсон|благодеяние\nصَهْوَةٌ|пушти асп|круп коня\nأُضْحُوكَةٌ|масхара|посмешище\nضَرَّةٌ|ҳамшавҳар (зани дигари шавҳар)|соперница (другая жена мужа)\nطَابُونٌ|танӯр|печь, тандыр\nطُرَّةٌ|кокул, ҳошия|чёлка, кайма\nطُرْفَةٌ|чизи нодир, ҳайратовар|редкость, диковина\nطِعْمَةٌ|хӯрок, рӯзӣ|пища, пропитание\nطَلْبَةٌ|дархост, талаб|просьба\nمَطْهَرَةٌ|обдастаи таҳорат|сосуд для омовения\nطَوِيَّةٌ|нияти дарунӣ; чоҳи сангин|сокровенное намерение; колодец\nظِنَّةٌ|гумон|подозрение\nمَظَنَّةٌ|ҷойи эҳтимолӣ|вероятное место\nظِهارَةٌ|рӯи либос|верхняя ткань\nعَتَلَةٌ|лом|лом\nعَرِيشَةٌ|чорчӯбаи ангур, айвон|беседка, шатёр из лозы\nعَرِيكَةٌ|табиат, хӯ|нрав\nمَعْصَرَةٌ|пресс, обғундор|давильня, пресс\nعَصِيدَةٌ|ош (хӯроки ордӣ)|каша\nعَظَاءةٌ|калтакалос|ящерица\nعُقْبَةٌ|навбат; роҳи савор|очередь; подъём\nعَقِيقَةٌ|ақиқа (қурбонии навзод)|акика (жертва за новорождённого)\nعَقِيلَةٌ|хонуми шариф|знатная женщина\nعِلاَوَةٌ|илова, мукофот|надбавка, прибавка\nعِمَادَةٌ|деканӣ|деканат\nعَنَزَةٌ|найзаи кӯтоҳ|короткое копьё\nعَارِيَةٌ|ориятӣ, қарзи ашё|заём (вещи)\nغَدِيرَةٌ|гесу|коса',
   'غِرَارَةٌ|халта, ҷувол|большой мешок\nغُرَّةٌ|нахустин рӯзи моҳ; доғи сафед|первый день месяца; белая отметина\nغَرِيزَةٌ|ғариза|инстинкт\nغَرِيسَةٌ|ниҳол|саженец\nغُمَّةٌ|ғам, андӯҳ|горе, скорбь\nغِلاَلَةٌ|курта; ҳосил|нижняя рубашка; доход\nفَاجِعَةٌ|мусибат|бедствие\nفَجِيعَةٌ|фоҷиа|трагедия\nفَخَّارَةٌ|кӯзаи сафолин|глиняный сосуд\nمَفْخَرَةٌ|ифтихор|предмет гордости\nمَفْرَزَةٌ|дастаи ҳарбӣ|отряд\nمِفْرَشَةٌ|рӯйпӯш|покрывало\nفُرْضَةٌ|бандар|гавань\nفِرْيَةٌ|туҳмат, дурӯғ|клевета\nمَفْسَدَةٌ|зарар, фасод|вред, порча\nفَسِيلَةٌ|ниҳоли хурмо|отросток пальмы\nفَصِيلَةٌ|оила (дар биология); взвод|семейство; взвод\nفَطِيرَةٌ|фатир, нони бехамиртурш|пресная лепёшка\nفَقَارَةٌ|мӯҳраи сутунмӯҳра|позвонок\nفِلْذَةٌ|пора, ҳиссаи калон|кусок\nفِلْقَةٌ|нимпора|половинка, ломоть\nفُوقَةٌ|чуқури тир|выемка стрелы\nفَيْفَاءُ|биёбон|пустыня\nقَبِيعَةٌ|дастаи шамшер|рукоять меча\nقُذَّةٌ|пари тир|оперение стрелы\nقَرِيحَةٌ|истеъдод, илҳом|дар, вдохновение\nقُرْصَةٌ|гирдаи нон; нешгир|лепёшка; щипок\nمِقْرَعَةٌ|тозиёна|кнут\nقُرْنَةٌ|гӯша, кунҷ|угол\nأُقْصُوصَةٌ|ҳикояи кӯтоҳ|рассказ, новелла',
-  'قَطِيعَةٌ|бурриши муносибат|разрыв отношений\nقَطَاةٌ|қата (парранда)|рябок\nقُفَّةٌ|сабад|корзина\nقُلَّةٌ|кӯза; қулла|кувшин; вершина\nمِقْلَى|тоба барои бирён кардан|сковорода\nقُنَّةٌ|қулла|вершина\nكُبَّةٌ|тӯдаи ресмон|клубок\nمُكْحُلَةٌ|сурмадон|сурьмянка\nأُكْذُوبَةٌ|дурӯғ|ложь\nأُكْرُومَةٌ|кори бузург, карам|благородный поступок\nكَرِيهَةٌ|чизи нохуш|неприятная вещь\nكُفَّةٌ|палаи тарозу|чаша весов\nتَكْلِفَةٌ|хароҷот, арзиш|стоимость\nكِنَانَةٌ|тирдон|колчан\nكَنَّةٌ|келин|невестка\nلَبَّةٌ|гулӯгоҳ|ямка у основания шеи\nأُلْعُوبَةٌ|бозича|игрушка\nمَلْعَنَةٌ|чизи лаънатӣ|предмет проклятия\nلُفَاظَةٌ|боқимонда, партов|остатки, отбросы\nلُقَاطَةٌ|чизи ёфтшуда|находка\nلَهَاةٌ|кокили гулӯ|язычок (нёбный)\nلاَئِحَةٌ|рӯйхат, низомнома|список, положение\nمَؤُونَةٌ|захира, хӯрок|провизия\nأُمْثولَةٌ|мисол, ибрат|пример, урок\nمَحَارَةٌ|садаф|раковина\nمِمْخَضَةٌ|дастгоҳи равған задан|маслобойка\nغَائِلَةٌ|офат, бало|беда\nمِمْسَحَةٌ|масҳкунак, пойандоз|тряпка, швабра\nأُمْسِيَّةٌ|шабнишинӣ|вечер (мероприятие)\nمَمْشًى|пиёдагузар|проход',
-  'مَطِيَّةٌ|ҳайвони саворӣ|верховое животное\nمُلاَءةٌ|чодар|простыня, покрывало\nمُلْحَةٌ|нукта, латифа|острота\nمُنَّةٌ|қувват|сила\nمُهْجَةٌ|ҷон, дил|душа, сердце\nمُونَةٌ|захира|запасы\nنُتْفَةٌ|пора|клочок\nنُجْعَةٌ|ҷустуҷӯи чарогоҳ|поиск пастбища\nمَنْجَاةٌ|наҷот, паноҳгоҳ|спасение, убежище\nنَحِيزَةٌ|табиат|природа, нрав\nمَنْحًى|самт, равиш|направление\nنُدْفَةٌ|пора (барф, пахта)|клочок, хлопья\nنَسِيكَةٌ|қурбонӣ|жертвенное животное\nنُشْرَةٌ|нашрия, варақа|бюллетень\nأُنْشوطَةٌ|гиреҳи тез кушода|скользящий узел\nمِنْشَفَةٌ|дастпоккунак, сачоқ|полотенце\nمِنْضَحَةٌ|пошандаи об|опрыскиватель\nنُطْفَةٌ|қатра; нутфа|капля; семя\nمِنْطَقَةٌ|минтақа; камарбанд|район; пояс\nمُنَظِّفَاتٌ|воситаҳои тозакунӣ|моющие средства\nأُنْظومَةٌ|низом; назм|система; стихотворение\nنَاعُورَةٌ|чархи об|водяное колесо\nنُعَرَةٌ|пашшаи гов|овод\nنُفَسَاءُ|зани дар давраи нифос|роженица (в послеродовой период)\nمَنْفَعَةٌ|манфиат, фоида|польза\nمَنْقَبَةٌ|фазилат|достоинство\nنَقِيصَةٌ|айб, камбуд|недостаток\nنُقْطَةٌ|нуқта|точка\nمِنْقَعَةٌ|зарфи хӯлондан|ёмкость для замачивания\nنُقْلَةٌ|гузариш, интиқол|переход, перемещение',
-  'نُكْتَةٌ|нукта, латифа|шутка, замечание\nنُمْرَةٌ|рақам; доғ|номер; пятно\nأُنْمُلَةٌ|нӯги ангушт|кончик пальца\nنَمْلَةٌ|мӯрча|муравей\nنَائِبَةٌ|мусибат, ҳодисаи ногувор|бедствие\nنُوبَةٌ|навбат; ҳамла (бемор)|очередь; приступ\nنُوَّارَةٌ|шукуфа, гул|цветок, цвет\nنَوَاةٌ|ҳаста|косточка, ядро\nهَجْعَةٌ|хоби кӯтоҳ|короткий сон\nأُهْجِيَّةٌ|шеъри ҳаҷв|сатирическое стихотворение\nهُدْبَةٌ|мижа; ҳошия|ресница; бахрома\nهُدْنَةٌ|оташбас|перемирие\nهَدِيَّةٌ|ҳадя, тӯҳфа|подарок\nهِرَاوَةٌ|чӯбдаст, гурз|дубинка\nأُهْزُوجَةٌ|суруд, навои шодӣ|песня, напев\nمَهْزَلَةٌ|масхарабозӣ|фарс, посмешище\nمَهْلَكَةٌ|ҳалокатгоҳ|гибельное место\nهِمَّةٌ|ҳиммат, азм|рвение, стремление\nمَهْوَاةٌ|варта, пастӣ|пропасть\nوَتِيرَةٌ|тарзи кор, суръат|темп, ритм\nتُخَمَةٌ|бемории ҳозима|несварение\nوَدِيعَةٌ|амонат|вклад, депозит\nوَسِيلَةٌ|восита|средство\nوُصْلَةٌ|пайванд|соединение\nوِصَايَةٌ|васоят, сарпарастӣ|опека\nوَصِيَّةٌ|васият|завещание\nوَظِيفَةٌ|вазифа, кор|должность, обязанность\nمَوْعِظَةٌ|панд, насиҳат|наставление, проповедь\nوَفَاةٌ|вафот|кончина\nوَاقِعَةٌ|воқеа|событие',
-  'أَوقِيَةٌ|вақия (воҳиди вазн)|унция\nوَلِيمَةٌ|зиёфат, тӯй|пир, свадебный пир\nمَوْهِبَةٌ|истеъдод|талант\nوَهْدَةٌ|пастӣ, чуқурӣ|впадина\nمَيْسَرَةٌ|осонӣ, фаровонӣ|достаток\nمَارَّةٌ|роҳгузарон|прохожие\nأَتُونٌ|кӯра|печь, горн\nمَبْكىً|ҷойи гиря|место плача\nمَثْوًى|манзил, ҷойи истиқомат|обитель, пристанище\nمَجْرىً|маҷро, ҷараён|русло, течение\nحَسَاءٌ|шӯрбо|похлёбка\nمُنْحَنىً|хам, каҷӣ|кривая\nحَوْلِيٌّ|яксола|годовалый\nحَيٌّ|зинда; маҳалла|живой; квартал\nرَجاء|умед|надежда\nرُزْءٌ|мусибат|несчастье\nرِشاءٌ|ресмони сатил|верёвка колодезная\nزِيٌّ|либос, сару либос|одежда, облик\nمَسْقًى|обгоҳ|водопой\nمَشْتًى|зимистон|зимовье\nصَدَى|акси садо|эхо\nصُوَانٌ|санги чахмоқ|кремень\nصِيوَانٌ|хаймаи калон|большой шатёр\nعِبْءٌ|бор, вазн|бремя\nعَرَاءٌ|фазои кушод|открытое место\nمَغْزًى|маънӣ, мақсад|смысл\nأُقْحُوَانٌ|гули бобуна|ромашка\nكَانُونٌ|оташдон|жаровня\nمَلْهًى|ҷойи вақтхушӣ|место развлечений\nنُوتِيٌّ|маллоҳ|матрос',
-  'مِقْوَدٌ|рул|руль\nمِكْبَحٌ|тормоз|тормоз\nمَكْسَبٌ|даромад, фоида|заработок\nمَكْمَنٌ|камингоҳ|засада\nمَلْعَبٌ|майдони бозӣ, варзишгоҳ|игровая площадка, стадион\nمَلْمَحٌ|хусусият, нишон|черта, признак\nمَكُّوكٌ|мокуи бофандагӣ|челнок (ткацкий)\nمِلاَطٌ|қоришмаи сохтмонӣ|строительный раствор\nمَنْبِتٌ|ҷойи рӯидан|место произрастания\nنَبَّالٌ|тирандоз; тирсоз|лучник; изготовитель стрел'
+  'قَطِيعَةٌ|бурриши муносибат|разрыв отношений\nقَطَاةٌ|қата (парранда)|рябок\nقُفَّةٌ|сабад|корзина\nقُلَّةٌ|кӯза; қулла|кувшин; вершина\nمِقْلَى|тоба барои бирён кардан|сковорода\nقُنَّةٌ|қулла|вершина\nكُبَّةٌ|тӯдаи ресмон|клубок\nمُكْحُلَةٌ|сурмадон|сурьмянка\nأُكْذُوبَةٌ|дурӯғ|ложь\nأُكْرُومَةٌ|кори бузург, карам|благородный поступок\nكَرِيهَةٌ|чизи нохуш|неприятная вещь\nكُفَّةٌ|палаи тарозу|чаша весов\nتَكْلِفَةٌ|хароҷот, арзиш|стоимость\nكِنَانَةٌ|тирдон|колчан\nكَنَّةٌ|келин|невестка\nلَبَّةٌ|гулӯгоҳ|ямка у основания шеи\nأُلْعُوبَةٌ|бозича|игрушка\nمَلْعَنَةٌ|чизи лаънатӣ|предмет проклятия\nلُفَاظَةٌ|боқимонда, партов|остатки, отбросы\nلُقَاطَةٌ|чизи ёфтшуда|находка\nلَهَاةٌ|кокили гулӯ|язычок (нёбный)\nلاَئِحَةٌ|рӯйхат, низомнома|список, положение\nمَؤُونَةٌ|захира, хӯрок|провизия\nأُمْثولَةٌ|мисол, ибрат|пример, урок\nمَحَارَةٌ|садаф, морчаи баҳрӣ|ракушка, раковина\nمِمْخَضَةٌ|мешкаи равғанкашӣ|маслобойка, бурдюк для сбивания масла\nغَائِلَةٌ|офат, бало|беда\nمِمْسَحَةٌ|латта, дастмол барои тоза кардан|тряпка, швабра\nأُمْسِيَّةٌ|шабнишинӣ|вечер (мероприятие)\nمَمْشًى|роҳ, мавзеи гаштугузор|путь, место прогулки',
+  'مَطِيَّةٌ|ҳайвони савор (асп, шутур)|верховое животное\nمُلاَءةٌ|рӯймол, чодар|покрывало, накидка\nمُلْحَةٌ|латифа, ҳикояти хандаовар|острота, анекдот\nمُنَّةٌ|қувват, тавоноӣ|сила, мощь\nمُهْجَةٌ|ҷон, хуни дил|душа, сердце\nمُونَةٌ|захира|запасы\nنُتْفَةٌ|пораи кандашуда, андак|вырванный клочок, малость\nنُجْعَةٌ|ҷустуҷӯи чарогоҳ|поиск пастбища\nمَنْجَاةٌ|роҳи наҷот, наҷот|спасение, место спасения\nنَحِيزَةٌ|табиат, хислати зотӣ|природа, врождённое свойство\nمَنْحًى|самт, равия|направление, манера\nنُدْفَةٌ|пораи пахта, барфпора|клочок ваты, снежинка\nنَسِيكَةٌ|қурбонӣ|жертвенное животное\nنُشْرَةٌ|варақа, ҷазва, хабарнома|бюллетень, листок\nأُنْشوطَةٌ|гиреҳи тез кушода|скользящий узел\nمِنْشَفَةٌ|дастмол|полотенце\nمِنْضَحَةٌ|пошандаи об|опрыскиватель\nنُطْفَةٌ|қатра, нутфа|капля, семя\nمِنْطَقَةٌ|минтақа, камар|район, пояс\nمُنَظِّفَاتٌ|воситаҳои тозакунӣ|моющие средства\nأُنْظومَةٌ|низом, шеъри мунтазам|система, поэма\nنَاعُورَةٌ|чархи об, обкашак|водяное колесо\nنُعَرَةٌ|пашшаи гов|овод\nنُفَسَاءُ|зани дар давраи нифос|роженица (в послеродовой период)\nمَنْفَعَةٌ|манфиат, фоида|польза\nمَنْقَبَةٌ|фазилат|достоинство\nنَقِيصَةٌ|айб, камбуд|недостаток\nنُقْطَةٌ|нуқта|точка\nمِنْقَعَةٌ|зарфи хӯлондан|ёмкость для замачивания\nنُقْلَةٌ|гузариш, интиқол|переход, перемещение',
+  'نُكْتَةٌ|нуқта, нукта, латифа|тонкость, шутка\nنُمْرَةٌ|рақам; доғ|номер; пятно\nأُنْمُلَةٌ|нӯги ангушт|кончик пальца\nنَمْلَةٌ|мӯрча|муравей\nنَائِبَةٌ|мусибат, офат|невзгода, беда\nنُوبَةٌ|навбат|очередь, смена\nنُوَّارَةٌ|шукуфа, гул|цветок, цвет\nنَوَاةٌ|донаи хурмо, ҳаста|косточка, ядро\nهَجْعَةٌ|хоби кӯтоҳ|короткий сон\nأُهْجِيَّةٌ|шеъри ҳаҷв|сатирическое стихотворение\nهُدْبَةٌ|мижа, ришта|ресница, бахрома\nهُدْنَةٌ|оташбас, сулҳи муваққатӣ|перемирие\nهَدِيَّةٌ|тӯҳфа, ҳадя|подарок\nهِرَاوَةٌ|чӯб, таёқ|дубинка, палка\nأُهْزُوجَةٌ|суруд, навои шодӣ|песня, напев\nمَهْزَلَةٌ|масхарабозӣ|фарс, посмешище\nمَهْلَكَةٌ|ҷои ҳалокат|гибельное место\nهِمَّةٌ|ҳимматӣ, азми қавӣ|стремление, решимость\nمَهْوَاةٌ|варта, харсанг|пропасть, бездна\nوَتِيرَةٌ|тарзи кор, суръат|темп, ритм\nتُخَمَةٌ|бемории ҳозима|несварение\nوَدِيعَةٌ|амонат|вклад, залог\nوَسِيلَةٌ|восита, василаи наздикшавӣ|средство, способ\nوُصْلَةٌ|пайванд, васла|соединение, связь\nوِصَايَةٌ|васият, сарпарастӣ|завещание, опека\nوَصِيَّةٌ|васият|завещание, наказ\nوَظِيفَةٌ|вазифа, кор|должность, обязанность\nمَوْعِظَةٌ|панд, ваъз|наставление, проповедь\nوَفَاةٌ|вафот, марг|кончина, смерть\nوَاقِعَةٌ|ҳодиса, воқеа|событие, происшествие',
+  'أَوقِيَةٌ|уқия (воҳиди вазн)|унция, мера веса\nوَلِيمَةٌ|зиёфат, тӯй|пир, свадебный пир\nمَوْهِبَةٌ|истеъдод, тӯҳфаи Худо|дар, талант\nوَهْدَةٌ|пастӣ, гав|низина, впадина\nمَيْسَرَةٌ|фаровонӣ, даромади нағз|достаток, зажиточность\nمَارَّةٌ|роҳгузар|прохожий\nأَتُونٌ|танӯр, оташдони калон|печь, топка\nمَبْكىً|ҷои гиря|место плача\nمَثْوًى|манзил, ҷойи иқомат|жилище, пристанище\nمَجْرىً|ҷараён, маҷро|русло, течение\nحَسَاءٌ|шӯрбои ғализ|похлёбка, жидкая каша\nمُنْحَنىً|хам, каҷӣ|кривая\nحَوْلِيٌّ|солона|годовалый\nحَيٌّ|зинда; маҳалла|живой; квартал\nرَجاء|умед|надежда\nرُزْءٌ|мусибат, талафот|бедствие, утрата\nرِشاءٌ|арғамчин, ресмони чоҳ|верёвка для колодца\nزِيٌّ|либос, намуди зоҳирӣ|одеяние, облик\nمَسْقًى|ҷои обдиҳӣ|место водопоя\nمَشْتًى|ҷои зимистон|зимовье\nصَدَى|садо, акс|эхо\nصُوَانٌ|санги чахмоқ|кремень\nصِيوَانٌ|хайма|шатёр\nعِبْءٌ|бор, сарборӣ|ноша, бремя\nعَرَاءٌ|кушод, биёбон|открытое место, пустошь\nمَغْزًى|маъно, мақсад|смысл, значение\nأُقْحُوَانٌ|бобуна (гул)|ромашка\nكَانُونٌ|тандур, ҷои оташ; номи моҳ|очаг; название месяца\nمَلْهًى|ҷои шодӣ, бозича|место развлечения\nنُوتِيٌّ|маллоҳ, киштибон|матрос, лодочник',
+  'مِقْوَدٌ|ҷилав, лаҷом|узда, поводья\nمِكْبَحٌ|тормоз|тормоз\nمَكْسَبٌ|даромад, ҷои пул ёфтан|заработок, прибыль\nمَكْمَنٌ|камингоҳ, ҷои пинҳонӣ|засада, укрытие\nمَلْعَبٌ|майдони бозӣ|площадка для игр, стадион\nمَلْمَحٌ|аломат, хусусият|черта, признак\nمَكُّوكٌ|мокуи бофандагӣ|челнок (ткацкий)\nمِلاَطٌ|қоришмаи сохтмонӣ|строительный раствор\nمَنْبِتٌ|ҷои рӯидан, решагоҳ|место произрастания\nنَبَّالٌ|тирандоз; тирсоз|лучник; изготовитель стрел\nمُسْكَةٌ|чизи нигоҳдоранда, андак|то, что удерживает; малость\nمِعْزَاةٌ|буз, бузи мода|коза\nمَهَاةٌ|гови ваҳшӣ (оракс)|дикая корова (орикс)\nمَهْبَطَةٌ|ҷои фуромадан|место спуска\nمَوْلَاةٌ|ходима, соҳибаи ғуломон|клиентка, рабыня-мавла\nبَتَاتٌ|матои хона, ашё|домашний скарб\nبِطَانٌ|астар, чизи зери рӯй|подкладка\nجَوْنٌ|сиёҳ, сафеди хира|чёрный, тёмный\nرِواءٌ|сероб шудан, обсерӣ|утоление жажды\nمَغْنًى|манзил, маскан|жильё, местопребывание\nقَوَاءٌ|даштҳои холӣ|пустынная местность\nمَنِيٌّ|нутфа|семя\nنَوْءٌ|тулӯи ситора, борон|восход звезды; дождь\nثَلاثَةٌ|се|три\nنُخَاعٌ|мағзи сутунмӯҳра|спинной мозг\nمَنْزَهٌ|ҷои сайр, боғ|место прогулки, парк\nمِنْسَفٌ|бодкаш, хирмонбод|веялка\nمَنْشَرٌ|ҷои паҳн кардан|место раскладки\nمَنْصَفٌ|мобайн, нисф|середина\nنَاطُورٌ|посбон, боғбон|сторож, смотритель сада',
+  'نِطْعٌ|чарми дастарх, назъ|кожаная скатерть\nنِطَاقٌ|камар, ҳудуд|пояс, рамки\nمِنْفَاخٌ|дамбон, кӯраи оҳангарӣ|кузнечные мехи\nنَامُوسٌ|қонун, ҷосус|закон, шпион\nنَهْدٌ|синаи духтар, баландӣ|грудь; возвышенность\nمِنْوَالٌ|дастгоҳи бофандагӣ, равиш|ткацкий станок, образец\nمَهَبٌّ|ҷои вазидани бод|место дуновения ветра\nمَهْبِطٌ|ҷои фуруд омадан|место спуска\nهَوْدَجٌ|ҳавда (кабина бар рӯи шутур)|паланкин на верблюде\nمَوْحِلٌ|ботлоқ, лой|топь, грязь\nمِيسَمٌ|доғ (барои ҳайвон), нишона|клеймо, знак\nمَوْطِئٌ|ҷои пой ниҳодан|место, где ступает нога\nمَيْتَمٌ|ҷои азо|место траура\nحَرِيقٌ|сӯхтор, оташ|пожар\nمِثْقَابٌ|парма|бур, сверло\nمِثْقَبٌ|асбоби сӯрох кардан|инструмент для проделывания отверстий\nمِجْرَفٌ|бел, хоканда|лопата, совок\nمِحْجَمٌ|шохи ҳиҷома|банка для кровопускания\nمِحْصَدٌ|дос, ҳосилгир|серп\nمِحْطَبٌ|табар барои ҳезум|топор для дров\nمِحْقَنٌ|сӯзандору|шприц\nمِرْقَبٌ|нигаҳбонгоҳ|наблюдательный пункт\nمِقَصٌّ|қайчӣ|ножницы\nخُلٌّ|дӯсти наздик|близкий друг\nمِعًى|рӯда|кишка\nمِزْهَرٌ|уд, тор|уд (инструмент)\nمَصَبٌّ|ҷои рехтан, дарёча|устье, место впадения\nمَأْتَمٌ|мотам, ҷои азо|траур, поминки\nمَأْتًى|роҳи омадан|путь, подход\nأُخْرَى|дигар, охирин (муаннас)|другая, последняя',
+  'آدابٌ|одоб, расму русум|воспитанность, нормы поведения\nإِرْبٌ|ниёз, ҳоҷат|надобность, цель\nمَأْزِقٌ|ҷои танг, бунбаст|тупик, затруднение\nمَأْكَلٌ|ҷои хӯрок, хӯрокворӣ|пища, место еды\nإِنْسٌ|одамон|люди, человечество\nأُوَارٌ|ҳарорат, тафт|жар, зной\nأيِّمٌ|бевазан, бемуҳсар|вдова, незамужняя\nبَازٌ|боз (паранда)|сокол, ястреб\nمَبْحَثٌ|мавзӯи баҳс, боб|предмет исследования, раздел\nبُخارٌ|буғ|пар\nمَبْدَأٌ|оғоз, принсип|начало, принцип\nبَيْدَرٌ|хирман|гумно, ток\nبِدْعٌ|навоварӣ, бидъат|нововведение, ересь\nبَدَنٌ|бадан, тан|тело\nبُرْجٌ|бурҷ, манора|башня, созвездие\nبُرْدٌ|ридо, ҷомаи рахдор|плащ, полосатое одеяние\nبَريدٌ|почта, паёмрасон|почта, гонец\nمِبْرَدٌ|суфта|напильник\nبَرْقٌ|барқ, раъду барқ|молния\nبِزْرٌ|тухм|семя\nبُسْرٌ|хурмои нопухта|неспелый финик\nبِساطٌ|гилем, фарш|ковёр, подстилка\nمِبْضَعٌ|ништар, кордчаи ҷарроҳӣ|скальпель\nبَيْطارٌ|дорогари ҳайвон, наълбанд|ветеринар, кузнец-коваль\nبَاطن|ботин, дарун|внутренний, скрытый\nبَعْثٌ|эҳё, фиристодан|воскрешение, отправка\nمَبْعَثٌ|ҷои фиристодан, мабъас|место отправки, миссия\nبَعيرٌ|шутур|верблюд\nبَعْضٌ|баъзе, қисм|некоторые, часть\nبَعْلٌ|шавҳар, соҳиб|муж, хозяин',
+  'بَغْلٌ|хачир|мул\nبَقْلٌ|сабзавот, сабзӣ|зелень, овощ\nبِكْرٌ|духтари покдоман, аввалин|девственница, первенец\nمَبْلَغٌ|андоза, маблағ|сумма, размер\nبَنْدٌ|банд, моддаи ҳуқуқӣ|пункт, статья\nبَنْكٌ|бонк|банк\nبَهْوٌ|толор, дарғоҳ|зал, холл\nبُوقٌ|карнай, шох|труба, рожок\nبَاعٌ|баъ (воҳиди дарозӣ), тавоноӣ|сажень, умение\nتَاجٌ|тоҷ|корона\nمُتْحَفٌ|осорхона, музей|музей\nتَخْتٌ|тахт, кат|кровать, трон\nتِرْبٌ|ҳамсол, ҳамсина|ровесник\nتُرْسٌ|сипар|щит\nتَلِيدٌ|қадим, мерос|старинный, унаследованный\nتِلْوٌ|пайрав, пайи|следующий за\nتَيسٌ|буз-нар|козёл\nثُؤْلُولٌ|ҳӯли, нӯкӯл|бородавка\nثَرِيدٌ|сирид (хӯроки нони реза бо шӯрбо)|тарид (блюдо из хлеба и бульона)'
 ].join('\n')
 let ARB_BIG_TR_MAP = null
 function arbBigTr(ar) {
@@ -6725,6 +6744,7 @@ function ArbWordEditor({ cat, initial, tt, busy, onSave, onCancel, onReset }) {
 
 const ARB_AUDIO_EXT = ['mp3', 'm4a', 'aac', 'ogg', 'oga', 'opus', 'wav', 'weba', 'amr', 'flac', 'mp4', '3gp']
 const ARB_VIDEO_EXT = ['mp4', 'webm', 'mov', 'm4v', 'mkv', '3gp', 'ogv']
+const ARB_PDF_EXT = ['pdf']
 const ARB_IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'avif']
 const ARB_MEDIA_MAX = 50 * 1024 * 1024
 
@@ -6768,11 +6788,12 @@ function arbLessonOf(row) {
     audio: m.audio_url || '',
     video: m.video_url || '',
     duration: Number(m.duration) || 0,
+    files: cleanFiles(m.files),
     created: row.created_at || ''
   }
 }
 
-const ARB_LESSON_EMPTY = { title: '', titleRu: '', desc: '', descRu: '', category: '', audio: '', video: '', duration: 0, published: true }
+const ARB_LESSON_EMPTY = { title: '', titleRu: '', desc: '', descRu: '', category: '', audio: '', video: '', files: [], duration: 0, published: true }
 
 function ArbLessons({ rows, lang, admin, db, notify, reload }) {
   const ru = lang === 'ru'
@@ -6814,6 +6835,7 @@ function ArbLessons({ rows, lang, admin, db, notify, reload }) {
       order: order || '',
       audio_url: f.audio.trim(),
       video_url: f.video.trim(),
+      files: cleanFiles(f.files),
       duration: f.duration || ''
     }),
     is_published: f.published !== false,
@@ -6823,7 +6845,7 @@ function ArbLessons({ rows, lang, admin, db, notify, reload }) {
   const save = async event => {
     event.preventDefault()
     if (!db || !admin || busy || !form) return
-    if (!form.title.trim() && !form.audio.trim() && !form.video.trim()) {
+    if (!form.title.trim() && !form.audio.trim() && !form.video.trim() && !cleanFiles(form.files).length) {
       notify(L('Номи дарс ё файли аудио/видео лозим аст.', 'Нужно название урока или аудио/видео.'), 'error')
       return
     }
@@ -6896,7 +6918,7 @@ function ArbLessons({ rows, lang, admin, db, notify, reload }) {
       const res = await db.from('content_items').delete().eq('id', item.id)
       if (res.error) throw res.error
       // файлҳои худи мо дар Storage -- кӯшиши беҳатар
-      const paths = [item.audio, item.video]
+      const paths = [item.audio, item.video, ...((item.files || []).map(f => f.u))]
         .map(url => { const k = String(url || '').split('/object/public/media/')[1]; return k ? decodeURIComponent(k.split('?')[0]) : '' })
         .filter(Boolean)
       if (paths.length) { try { await db.storage.from('media').remove(paths) } catch { /* ignore */ } }
@@ -6982,6 +7004,78 @@ function ArbLessons({ rows, lang, admin, db, notify, reload }) {
     </div>
   )
 
+  const addLessonFiles = async (fileList, kind) => {
+    if (!db || !admin) return
+    for (const file of fileList) {
+      const ext = extOf(file.name)
+      const okType = kind === 'pdf' ? file.type === 'application/pdf' : String(file.type || '').startsWith(`${kind}/`)
+      const okExt = (kind === 'audio' ? ARB_AUDIO_EXT : kind === 'video' ? ARB_VIDEO_EXT : kind === 'pdf' ? ARB_PDF_EXT : ARB_IMAGE_EXT).includes(ext)
+      if (!okType && !okExt) { notify(L('Формати файл дастгирӣ намешавад: ', 'Формат не поддерживается: ') + file.name, 'error'); continue }
+      if (file.size > ARB_MEDIA_MAX) {
+        notify(L(`«${file.name}» ${(file.size / 1048576).toFixed(0)} МБ аст, ҳад 50 МБ. Видеоро дар YouTube гузоред ва URL ворид кунед.`, `«${file.name}» ${(file.size / 1048576).toFixed(0)} МБ, лимит 50 МБ. Загрузите видео на YouTube и вставьте URL.`), 'error')
+        continue
+      }
+      setUploading(kind)
+      try {
+        const path = `${kind}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || kind}`
+        const contentType = kind === 'pdf' ? 'application/pdf' : okType ? file.type : (kind === 'audio' ? (ext === 'mp3' ? 'audio/mpeg' : `audio/${ext === 'm4a' ? 'mp4' : ext}`) : kind === 'image' ? `image/${ext === 'jpg' ? 'jpeg' : ext}` : `video/${ext === 'mov' ? 'quicktime' : ext}`)
+        const { error } = await db.storage.from('media').upload(path, file, { contentType, cacheControl: '31536000', upsert: false })
+        if (error) throw error
+        const { data } = db.storage.from('media').getPublicUrl(path)
+        setForm(current => ({ ...current, files: [...(current.files || []), { k: kind, u: data.publicUrl, n: file.name.replace(/\.[^.]+$/, '') }] }))
+      } catch (error) {
+        console.error(error)
+        notify((error && error.message) || L('Боргирӣ нашуд', 'Не загружено'), 'error')
+      } finally {
+        setUploading('')
+      }
+    }
+  }
+
+  const lessonFilesField = () => {
+    const list = form.files || []
+    const setList = next => setForm(current => ({ ...current, files: next }))
+    const pick = (k, label, accept) => (
+      <span className="arb-file-wrap mini-add">
+        <span className="upload-button mini">{uploading === k ? '⏳ …' : label}</span>
+        <input type="file" multiple accept={accept} className="arb-file-input" disabled={!!uploading}
+          onChange={event => { const picked = Array.from(event.target.files || []); event.target.value = ''; addLessonFiles(picked, k) }} />
+      </span>
+    )
+    return (
+      <div className="form-group media-field files-field">
+        <label>{L('📎 Файлҳои иловагӣ (якчанд аудио, видео, акс, PDF-китоб)', '📎 Дополнительные файлы (несколько аудио, видео, фото, PDF-книги)')}</label>
+        {!list.length && <div className="media-empty">{L('Ҳоло файл нест', 'Файлов пока нет')}</div>}
+        {list.map((f, i) => (
+          <div className="file-row" key={`lff-${i}`}>
+            <span className="file-kind">{f.k === 'audio' ? '🎧' : f.k === 'video' ? '🎬' : f.k === 'image' ? '🖼' : '📄'}</span>
+            <input className="arb-input file-name" value={f.n || ''} placeholder={L('Ном', 'Название')} onChange={e => setList(list.map((x, j) => (j === i ? { ...x, n: e.target.value } : x)))} />
+            <button type="button" className="mini-btn" onClick={() => { if (i > 0) { const n = [...list]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setList(n) } }}>↑</button>
+            <button type="button" className="mini-btn" onClick={() => { if (i < list.length - 1) { const n = [...list]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; setList(n) } }}>↓</button>
+            <button type="button" className="mini-btn danger" onClick={() => setList(list.filter((_, j) => j !== i))}>✕</button>
+          </div>
+        ))}
+        <div className="mini-add-row">
+          {pick('audio', '🎧 Аудио', 'audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.amr,.flac')}
+          {pick('video', '🎬 Видео', 'video/*,.mp4,.webm,.mov,.m4v,.mkv,.3gp')}
+          {pick('image', '🖼 Акс', 'image/*,.jpg,.jpeg,.png,.webp,.heic')}
+          {pick('pdf', '📄 PDF', 'application/pdf,.pdf')}
+        </div>
+        <input dir="ltr" className="arb-input" placeholder="https://… URL (YouTube, mp3, mp4, pdf) + Enter"
+          onKeyDown={event => {
+            if (event.key !== 'Enter') return
+            event.preventDefault()
+            const url = event.currentTarget.value.trim()
+            if (!/^https?:\/\//i.test(url)) return
+            const low = url.split('?')[0].toLowerCase()
+            const k = /\.pdf$/.test(low) ? 'pdf' : /\.(mp3|m4a|aac|ogg|opus|wav|flac)$/.test(low) ? 'audio' : /\.(jpg|jpeg|png|webp|gif)$/.test(low) ? 'image' : 'video'
+            setList([...list, { k, u: url, n: '' }])
+            event.currentTarget.value = ''
+          }} />
+      </div>
+    )
+  }
+
   return (
     <div className="arb-lessons-box">
       {admin && !form && (
@@ -7004,6 +7098,7 @@ function ArbLessons({ rows, lang, admin, db, notify, reload }) {
           </div>
           {mediaInput('audio', L('🎧 Аудио (URL ё файл)', '🎧 Аудио (URL или файл)'), 'audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.amr,.flac')}
           {mediaInput('video', L('🎬 Видео (URL ё файл)', '🎬 Видео (URL или файл)'), 'video/*,.mp4,.webm,.mov,.m4v,.mkv,.3gp')}
+          {lessonFilesField()}
           {form.duration ? <p className="arb-note">⏱ {L('Давомнокӣ', 'Длительность')}: {arbFmtDuration(form.duration)}</p> : null}
           <label className="arb-check"><input type="checkbox" checked={form.published !== false} onChange={e => setForm({ ...form, published: e.target.checked })} /> {L('Нашр шавад (барои корбарон намоён)', 'Опубликовать (видно пользователям)')}</label>
           <div className="arb-edit-actions">
@@ -7032,9 +7127,27 @@ function ArbLessons({ rows, lang, admin, db, notify, reload }) {
           {((ru && item.descRu) || item.desc) && <p className="arb-lesson-desc">{(ru && item.descRu) || item.desc}</p>}
           {item.audio && <div className="media-player"><audio controls preload="none" src={item.audio}>{L('Браузер аудиоро дастгирӣ намекунад.', 'Браузер не поддерживает аудио.')}</audio></div>}
           {item.video && <div className="media-player"><video controls playsInline preload="metadata" src={item.video}>{L('Браузер видеоро дастгирӣ намекунад.', 'Браузер не поддерживает видео.')}</video></div>}
+          {(item.files || []).map((f, i) => (
+            <div className="media-player" key={`lf-${i}`}>
+              {f.n && f.k !== 'image' && <div className="media-name">{f.n}</div>}
+              {f.k === 'audio' && <audio controls preload="none" src={f.u} />}
+              {f.k === 'video' && (youtubeId(f.u)
+                ? <iframe className="yt-frame" src={`https://www.youtube.com/embed/${youtubeId(f.u)}`} title="video" allowFullScreen loading="lazy" />
+                : <video controls playsInline preload="metadata" src={f.u} />)}
+              {f.k === 'image' && <img className="daily-image" src={f.u} alt={f.n || ''} loading="lazy" />}
+              {f.k === 'pdf' && (
+                <div className="pdf-card">
+                  <span className="pdf-icon">📄</span>
+                  <span className="pdf-title">{f.n || 'PDF'}</span>
+                  <a className="pdf-btn" href={f.u} target="_blank" rel="noopener noreferrer">{L('Кушодан', 'Открыть')}</a>
+                  <a className="pdf-btn" href={f.u} download>{L('Боргирӣ', 'Скачать')}</a>
+                </div>
+              )}
+            </div>
+          ))}
           {admin && (
             <div className="arb-edit-actions">
-              <button type="button" className="secondary-button" onClick={() => setForm({ id: item.id, title: item.title, titleRu: item.titleRu, desc: item.desc, descRu: item.descRu, category: item.category, audio: item.audio, video: item.video, duration: item.duration, published: item.published })}>✏️ {L('Таҳрир', 'Изменить')}</button>
+              <button type="button" className="secondary-button" onClick={() => setForm({ id: item.id, title: item.title, titleRu: item.titleRu, desc: item.desc, descRu: item.descRu, category: item.category, audio: item.audio, video: item.video, files: item.files || [], duration: item.duration, published: item.published })}>✏️ {L('Таҳрир', 'Изменить')}</button>
               <button type="button" className="secondary-button" onClick={() => patch(item, { published: !item.published }, item.published ? L('Пинҳон шуд', 'Скрыто') : L('Нашр шуд', 'Опубликовано'))}>{item.published ? L('🙈 Пинҳон', '🙈 Скрыть') : L('👁 Нашр', '👁 Опубликовать')}</button>
               <button type="button" className="secondary-button" disabled={index === 0 || !!cat} onClick={() => move(item, -1)}>↑</button>
               <button type="button" className="secondary-button" disabled={index === shown.length - 1 || !!cat} onClick={() => move(item, 1)}>↓</button>
@@ -9438,7 +9551,7 @@ function App() {
   const audioRef = useRef(null)
   const cancelRef = useRef(false)
   const [today, setToday] = useState(todayKey)
-  const [uploading, setUploading] = useState({ audio: false, video: false })
+  const [uploading, setUploading] = useState({ audio: false, video: false, image: false, pdf: false })
   const [askForm, setAskForm] = useState({ name: '', question: '' })
   const [myQuestions, setMyQuestions] = useState([])
   const [askBusy, setAskBusy] = useState(false)
@@ -10011,7 +10124,8 @@ function App() {
         explanation_ru: clean(hadithForm.explanation_ru),
         audio_url: clean(hadithForm.audio_url),
         video_url: clean(hadithForm.video_url),
-        image_url: clean(hadithForm.image_url)
+        image_url: clean(hadithForm.image_url),
+        files: cleanFiles(hadithForm.files)
       }
 
       const payload = {
@@ -10064,7 +10178,8 @@ function App() {
       explanation_ru: stored.meta.explanation_ru || '',
       audio_url: stored.meta.audio_url || '',
       video_url: stored.meta.video_url || '',
-      image_url: stored.meta.image_url || ''
+      image_url: stored.meta.image_url || '',
+      files: cleanFiles(stored.meta.files)
     })
 
     setAdminTab('hadith')
@@ -10454,7 +10569,8 @@ function App() {
       !clean(contentForm.russian_text) &&
       !clean(contentForm.audio_url) &&
       !clean(contentForm.image_url) &&
-      !clean(contentForm.video_url)
+      !clean(contentForm.video_url) &&
+      !cleanFiles(contentForm.files).length
     ) {
       notify(t.contentRequired, 'error')
       return
@@ -10479,7 +10595,8 @@ function App() {
         is_preface: contentForm.is_preface === true,
         audio_url: clean(contentForm.audio_url),
         video_url: clean(contentForm.video_url),
-        image_url: clean(contentForm.image_url)
+        image_url: clean(contentForm.image_url),
+        files: cleanFiles(contentForm.files)
       }
 
       const tajik = clean(contentForm.tajik_text)
@@ -10535,7 +10652,8 @@ function App() {
       is_preface: stored.meta.is_preface === true,
       audio_url: stored.meta.audio_url || '',
       video_url: stored.meta.video_url || '',
-      image_url: stored.meta.image_url || ''
+      image_url: stored.meta.image_url || '',
+      files: cleanFiles(stored.meta.files)
     })
 
     setAdminTab('content')
@@ -11342,13 +11460,13 @@ function App() {
 
     const fileExt = (String(file.name || '').split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '')
     const typeOk = String(file.type || '').startsWith(`${kind}/`)
-    const extOk = (kind === 'audio' ? ARB_AUDIO_EXT : kind === 'image' ? ARB_IMAGE_EXT : ARB_VIDEO_EXT).includes(fileExt)
-    if (!typeOk && !extOk) {
-      notify((kind === 'audio' ? 'Танҳо файли аудио интихоб кунед.' : kind === 'image' ? 'Танҳо акс (jpg, png, webp) интихоб кунед.' : 'Танҳо файли видео интихоб кунед.') + (fileExt ? ` (.${fileExt})` : ''), 'error')
+    const extOk = (kind === 'audio' ? ARB_AUDIO_EXT : kind === 'image' ? ARB_IMAGE_EXT : kind === 'pdf' ? ARB_PDF_EXT : ARB_VIDEO_EXT).includes(fileExt)
+    if (kind === 'pdf' ? !(extOk || file.type === 'application/pdf') : (!typeOk && !extOk)) {
+      notify((kind === 'audio' ? 'Танҳо файли аудио интихоб кунед.' : kind === 'image' ? 'Танҳо акс (jpg, png, webp) интихоб кунед.' : kind === 'pdf' ? 'Танҳо файли PDF интихоб кунед.' : 'Танҳо файли видео интихоб кунед.') + (fileExt ? ` (.${fileExt})` : ''), 'error')
       return
     }
     if (file.size > ARB_MEDIA_MAX) {
-      notify('Файл аз 50 МБ калон аст. Онро фишурда кунед ё URL ворид намоед.', 'error')
+      notify(`Файл ${(file.size / 1048576).toFixed(0)} МБ аст ва аз ҳадди 50 МБ калон. Онро фишурда кунед ё сайти дигар (масалан YouTube) гузошта, URL-ро ворид намоед.`, 'error')
       return
     }
 
@@ -11359,14 +11477,14 @@ function App() {
       const path = `${kind}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
       const { error } = await db.storage.from('media').upload(path, file, {
-        contentType: typeOk ? file.type : (kind === 'image' ? `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}` : kind === 'audio' ? (fileExt === 'mp3' ? 'audio/mpeg' : `audio/${fileExt === 'm4a' ? 'mp4' : fileExt}`) : `video/${fileExt === 'mov' ? 'quicktime' : fileExt}`),
+        contentType: kind === 'pdf' ? 'application/pdf' : typeOk ? file.type : (kind === 'image' ? `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}` : kind === 'audio' ? (fileExt === 'mp3' ? 'audio/mpeg' : `audio/${fileExt === 'm4a' ? 'mp4' : fileExt}`) : `video/${fileExt === 'mov' ? 'quicktime' : fileExt}`),
         cacheControl: '31536000',
         upsert: false
       })
       if (error) throw error
 
       const { data } = db.storage.from('media').getPublicUrl(path)
-      onChange(data.publicUrl)
+      onChange(data.publicUrl, file.name)
       notify('Файл бор шуд. Ҳоло «Сабт кардан»-ро пахш кунед.')
     } catch (error) {
       console.error(error)
@@ -11422,6 +11540,75 @@ function App() {
       {diag.map((row, i) => <p key={i} className="arb-note" style={{ color: row.ok ? 'inherit' : '#c0392b' }}>{row.ok ? '✅' : '❌'} {row.text}</p>)}
     </div>
   )
+
+  const filesField = (files, setFiles) => {
+    const list = Array.isArray(files) ? files : []
+    const add = (k, u, n) => setFiles([...list, { k, u, n: n || '' }])
+    const patch = (i, obj) => setFiles(list.map((f, j) => (j === i ? { ...f, ...obj } : f)))
+    const move = (i, d) => {
+      const j = i + d
+      if (j < 0 || j >= list.length) return
+      const next = [...list]; [next[i], next[j]] = [next[j], next[i]]
+      setFiles(next)
+    }
+    const picker = (k, label, accept) => (
+      <span className="arb-file-wrap mini-add">
+        <span className="upload-button mini">{uploading[k] ? '⏳ …' : label}</span>
+        <input
+          type="file"
+          multiple
+          accept={accept}
+          className="arb-file-input"
+          disabled={uploading[k]}
+          onChange={async event => {
+            const picked = Array.from(event.target.files || [])
+            event.target.value = ''
+            let acc = list
+            for (const file of picked) {
+              await uploadMedia(file, k, (url, name) => { acc = [...acc, { k, u: url, n: name || file.name }]; setFiles(acc) })
+            }
+          }}
+        />
+      </span>
+    )
+    return (
+      <div className="form-group media-field files-field">
+        <label>📎 Файлҳо (якчанд аудио, видео, акс ё PDF-китоб)</label>
+        {list.length === 0 && <div className="media-empty">Ҳоло файл нест</div>}
+        {list.map((f, i) => (
+          <div className="file-row" key={`ff-${i}`}>
+            <span className="file-kind">{f.k === 'audio' ? '🎧' : f.k === 'video' ? '🎬' : f.k === 'image' ? '🖼' : '📄'}</span>
+            <input className="arb-input file-name" placeholder="Ном" value={f.n || ''} onChange={event => patch(i, { n: event.target.value })} />
+            <button type="button" className="mini-btn" onClick={() => move(i, -1)} aria-label="боло">↑</button>
+            <button type="button" className="mini-btn" onClick={() => move(i, 1)} aria-label="поён">↓</button>
+            <button type="button" className="mini-btn danger" onClick={() => setFiles(list.filter((_, j) => j !== i))} aria-label="нест">✕</button>
+          </div>
+        ))}
+        <div className="mini-add-row">
+          {picker('audio', '🎧 Аудио', 'audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.amr,.flac')}
+          {picker('video', '🎬 Видео', 'video/*,.mp4,.webm,.mov,.m4v,.mkv,.3gp')}
+          {picker('image', '🖼 Акс', 'image/*,.jpg,.jpeg,.png,.webp,.heic')}
+          {picker('pdf', '📄 PDF', 'application/pdf,.pdf')}
+        </div>
+        <input
+          dir="ltr"
+          className="arb-input"
+          placeholder="https://… URL (YouTube, mp3, mp4, pdf…) ва Enter"
+          onKeyDown={event => {
+            if (event.key !== 'Enter') return
+            event.preventDefault()
+            const url = event.currentTarget.value.trim()
+            if (!/^https?:\/\//i.test(url)) { notify('URL бояд бо https:// оғоз шавад.', 'error'); return }
+            const low = url.split('?')[0].toLowerCase()
+            const k = /\.pdf$/.test(low) ? 'pdf' : /\.(mp3|m4a|aac|ogg|opus|wav|flac)$/.test(low) ? 'audio' : /\.(jpg|jpeg|png|webp|gif)$/.test(low) ? 'image' : 'video'
+            add(k, url, '')
+            event.currentTarget.value = ''
+          }}
+        />
+        <span className="arb-note">Ҳадди файл: 50 МБ. Видеои калонтар аз ин → дар YouTube гузоред ва URL-ро дар боло ворид кунед.</span>
+      </div>
+    )
+  }
 
   const mediaField = (kind, label, value, onChange) => (
     <div className="form-group media-field">
@@ -12131,6 +12318,20 @@ function App() {
     ) : null
   }
 
+  const renderVideoEl = (url, inList) => {
+    const yt = youtubeId(url)
+    if (yt) {
+      return (
+        <div className={inList ? '' : 'media-player'}>
+          <iframe className="yt-frame" src={`https://www.youtube.com/embed/${yt}`} title="video" allowFullScreen loading="lazy" />
+        </div>
+      )
+    }
+    return inList
+      ? <video controls preload="metadata" src={url}>{t.browserNoVideo}</video>
+      : <div className="media-player"><video controls preload="metadata" src={url}>{t.browserNoVideo}</video></div>
+  }
+
   const renderMedia = (item, skipImage) => {
     const stored = parseStoredNote(item.source_note)
     const audio = stored.meta.audio_url
@@ -12147,13 +12348,24 @@ function App() {
           </div>
         )}
 
-        {video && (
-          <div className="media-player">
-            <video controls preload="metadata" src={video}>
-              {t.browserNoVideo}
-            </video>
+        {video && renderVideoEl(video)}
+
+        {cleanFiles(stored.meta.files).map((f, i) => (
+          <div className="media-player" key={`mf-${i}`}>
+            {f.n && f.k !== 'image' && <div className="media-name">{f.n}</div>}
+            {f.k === 'audio' && <audio controls preload="none" src={f.u}>{t.browserNoAudio}</audio>}
+            {f.k === 'video' && renderVideoEl(f.u, true)}
+            {f.k === 'image' && <img className="daily-image" src={f.u} alt={f.n || ''} loading="lazy" />}
+            {f.k === 'pdf' && (
+              <div className="pdf-card">
+                <span className="pdf-icon">📄</span>
+                <span className="pdf-title">{f.n || 'PDF'}</span>
+                <a className="pdf-btn" href={f.u} target="_blank" rel="noopener noreferrer">{lang === 'ru' ? 'Открыть' : 'Кушодан'}</a>
+                <a className="pdf-btn" href={f.u} download>{lang === 'ru' ? 'Скачать' : 'Боргирӣ'}</a>
+              </div>
+            )}
           </div>
-        )}
+        ))}
       </>
     )
   }
@@ -12455,6 +12667,8 @@ function App() {
 
         {mediaField('video', 'Видео', hadithForm.video_url,
           value => setHadithForm(form => ({ ...form, video_url: value })))}
+
+        {filesField(hadithForm.files, list => setHadithForm(form => ({ ...form, files: list })))}
 
         <div className="form-group">
           <label>Ҳадиси рӯз барои сана (ихтиёрӣ)</label>
@@ -12817,6 +13031,8 @@ function App() {
 
         {mediaField('video', 'Видео', contentForm.video_url,
           value => setContentForm(form => ({ ...form, video_url: value })))}
+
+        {filesField(contentForm.files, list => setContentForm(form => ({ ...form, files: list })))}
 
         <div className="form-actions">
           <button className="primary-button" type="submit" disabled={saving}>
