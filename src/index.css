@@ -1638,3 +1638,12 @@ button.star { cursor: pointer; }
 }
 .arabic-text { font-size: 1.28em; font-weight: 400; }
 .ayah-card .arabic-text, .quran-view .arabic-text { font-family: 'Amiri Quran', 'Amiri', serif !important; line-height: 2.3; }
+
+/* --- плеери ягонаи умумии аудио --- */
+.ga-player { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border-radius: 12px; border: 1px solid var(--line, rgba(255,255,255,.18)); }
+.ga-btn { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid currentColor; background: transparent; color: inherit; font-size: 15px; cursor: pointer; line-height: 1; }
+.ga-stop { width: 30px; height: 30px; font-size: 13px; }
+.ga-seek { flex: 1; min-width: 0; accent-color: var(--gold, #c9a45c); }
+.ga-time { flex: 0 0 auto; font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; }
+.ga-bar { position: fixed; left: 8px; right: 62px; max-width: 480px; bottom: calc(var(--nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 6px); z-index: 950; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 14px; background: rgba(20, 24, 22, .92); color: #f4ecd8; border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(6px); }
+.ga-bar-title { flex: 1; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
