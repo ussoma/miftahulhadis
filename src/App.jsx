@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './index.css'
 
-const URL = String(import.meta.env.VITE_SUPABASE_URL || '').trim()
+const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL || '').trim()
 const KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
 
-const db = URL && KEY
-  ? createClient(URL, KEY, {
+const db = SUPABASE_URL && KEY
+  ? createClient(SUPABASE_URL, KEY, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -1055,7 +1055,7 @@ function gaPlay(src, title, owner = 'media') {
   GA.ended = false
   el.loop = false
   GA.error = ''
-  if (el.src !== new URL(src, window.location.href).href) {
+  if (el.src !== new window.URL(src, window.location.href).href) {
     el.src = src
     try { el.load() } catch { /* ignore */ }
   }
