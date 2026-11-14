@@ -1,11 +1,14 @@
 
 export default async function handler(req, res) {
+  // Санҷиши кори сервер
   if (req.method === 'GET') {
     return res.status(200).send('Miftahulhadis Bot is running');
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({
+      error: 'Method not allowed'
+    });
   }
 
   const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -13,6 +16,7 @@ export default async function handler(req, res) {
 
   if (!BOT_TOKEN || !WEB_APP_URL) {
     console.error('Missing BOT_TOKEN or WEB_APP_URL');
+
     return res.status(500).json({
       error: 'Environment variables are missing'
     });
@@ -33,28 +37,30 @@ export default async function handler(req, res) {
 
     const messageText = message.text || '';
 
+    // Коркард танҳо барои фармони /start
     if (!/^\/start(?:@\w+)?(?:\s|$)/i.test(messageText)) {
       return res.status(200).json({ ok: true });
     }
 
     const chatId = message.chat.id;
 
-    // Гирифтани номи корбар
+    // Гирифтани номи корбар аз Telegram
     const firstName = message.from?.first_name || '';
     const lastName = message.from?.last_name || '';
 
     const userName = [firstName, lastName]
       .filter(Boolean)
-      .join(' ') || 'дӯстам';
+      .join(' ') || 'أبو أُسامة';
 
     // Матни истиқбол
     const welcomeText =
       'السلام عليكم ورحمة الله وبركاته 🤍\n\n' +
-      'Ассалому алайкум, ' + userName + '!\n\n' +
+      userName + '!\n\n' +
       'Ба китобхонаи исломии 𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔 хуш омадед!\n\n' +
       'Дар ин ҷо шумо метавонед ҳадисҳо, дуоҳо, азкор ва дигар маводи исломиро омӯзед.\n\n' +
       '📖 Илмро ҷустуҷӯ кун. Ба он амал намо.';
 
+    // Фиристодани паём ба Telegram
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
       {
