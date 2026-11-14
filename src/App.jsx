@@ -1004,6 +1004,7 @@ const GA = {
   srcRaw: '',
   title: '',
   ended: false,
+  error: '',
   version: 0,
   listeners: new Set()
 }
@@ -1015,18 +1016,21 @@ function gaEmit() {
 
 function gaEl() {
   if (GA.el || typeof document === 'undefined') return GA.el
-  const el = document.createElement('audio')
-  el.preload = 'none'
+  // new Audio() — шакли классикӣ ва боэътимод дар Telegram WebView (бе ҷойгир кардан дар DOM)
+  const el = new window.Audio()
+  el.preload = 'auto'
   el.setAttribute('playsinline', '')
-  el.style.display = 'none'
-  ;['play', 'pause', 'ended', 'timeupdate', 'loadedmetadata', 'durationchange', 'emptied', 'error'].forEach(name => {
+  ;['play', 'playing', 'waiting', 'pause', 'ended', 'timeupdate', 'loadedmetadata', 'durationchange', 'emptied', 'error'].forEach(name => {
     el.addEventListener(name, () => {
       if (name === 'ended') GA.ended = true
-      if (name === 'play') GA.ended = false
+      if (name === 'play') { GA.ended = false; GA.error = '' }
+      if (name === 'error' && GA.srcRaw) {
+        const code = el.error ? el.error.code : 0
+        GA.error = code === 4 ? 'Формати файл дастгирӣ намешавад ё файл ёфт нашуд' : code === 2 ? 'Хатои шабака' : code === 3 ? 'Файл вайрон аст' : 'Аудио кушода нашуд'
+      }
       gaEmit()
     })
   })
-  try { document.body.appendChild(el) } catch { /* ignore */ }
   GA.el = el
   return el
 }
@@ -1050,10 +1054,19 @@ function gaPlay(src, title, owner = 'media') {
   GA.title = title || ''
   GA.ended = false
   el.loop = false
-  if (el.src !== new URL(src, window.location.href).href) el.src = src
+  GA.error = ''
+  if (el.src !== new URL(src, window.location.href).href) {
+    el.src = src
+    try { el.load() } catch { /* ignore */ }
+  }
   gaMediaSession()
   gaEmit()
-  return el.play().catch(() => {})
+  const pr = el.play()
+  return (pr && pr.catch ? pr : Promise.resolve()).catch(err => {
+    // NotAllowedError ва ғайра: хато ба корбар нишон дода мешавад, на хомӯшона
+    GA.error = (err && err.name === 'NotAllowedError') ? 'Браузер пахшро иҷозат надод — боз як маротиба ▶-ро пахш кунед' : `Пахш нашуд: ${(err && (err.message || err.name)) || ''}`
+    gaEmit()
+  })
 }
 
 function gaToggle(src, title, owner = 'media') {
@@ -1090,6 +1103,7 @@ function useGlobalAudio() {
     src: GA.srcRaw,
     title: GA.title,
     owner: GA.owner,
+    error: GA.error,
     ended: GA.ended,
     playing: !!el && !el.paused && !GA.ended && !!GA.srcRaw,
     time: el ? el.currentTime || 0 : 0,
@@ -1130,6 +1144,7 @@ function GAudio({ src, title }) {
       {mine && g.src && (
         <button type="button" className="ga-btn ga-stop" aria-label="Stop" onClick={gaStop}>⏹</button>
       )}
+      {mine && g.error && <span className="ga-error">⚠ {g.error}</span>}
     </div>
   )
 }
@@ -1140,7 +1155,7 @@ function GlobalAudioBar() {
   if (!g.src || g.ended) return null
   return (
     <div className="ga-bar" role="region" aria-label="Audio">
-      <span className="ga-bar-title">🎧 {g.title || 'Аудио'}</span>
+      <span className="ga-bar-title">{g.error ? `⚠ ${g.error}` : `🎧 ${g.title || 'Аудио'}`}</span>
       <button type="button" className="ga-btn" aria-label={g.playing ? 'Pause' : 'Play'} onClick={() => gaToggle(g.src, g.title, g.owner)}>{g.playing ? '⏸' : '▶'}</button>
       <button type="button" className="ga-btn ga-stop" aria-label="Stop" onClick={gaStop}>⏹</button>
     </div>
