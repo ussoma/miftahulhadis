@@ -5,9 +5,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      error: 'Method not allowed'
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -17,28 +15,18 @@ export default async function handler(req, res) {
     process.env.SUPABASE_SERVICE_ROLE_KEY;
   const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID;
 
-  if (
-    !BOT_TOKEN ||
-    !WEB_APP_URL ||
-    !SUPABASE_URL ||
-    !SUPABASE_SERVICE_ROLE_KEY ||
-    !ADMIN_TELEGRAM_ID
-  ) {
-    console.error('Missing environment variables');
-
-    return res.status(500).json({
-      error: 'Environment variables are missing'
-    });
+  if (!BOT_TOKEN || !WEB_APP_URL) {
+    console.error('Missing BOT_TOKEN or WEB_APP_URL');
+    return res.status(500).json({ error: 'Bot configuration missing' });
   }
 
-  // Фиристодани паём ба Telegram
   async function sendTelegramMessage(chatId, text, replyMarkup) {
     const response = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json; charset=utf-8'
         },
         body: JSON.stringify({
           chat_id: chatId,
@@ -48,33 +36,39 @@ export default async function handler(req, res) {
       }
     );
 
-    return await response.json();
+    return response.json();
   }
 
-  // Сабти корбар дар Supabase
   async function saveUser(user) {
-    const response = await fetch(
-      `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/bot_users?on_conflict=telegram_id`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          Prefer: 'resolution=merge-duplicates,return=minimal'
-        },
-        body: JSON.stringify({
-          telegram_id: user.id,
-          first_name: user.first_name || '',
-          last_name: user.last_name || ''
-        })
-      }
-    );
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Supabase environment variables are missing');
+      return;
+    }
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Supabase save error:', error);
-      throw new Error('Could not save user');
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/bot_users?on_conflict=telegram_id`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            Prefer: 'resolution=merge-duplicates,return=minimal'
+          },
+          body: JSON.stringify({
+            telegram_id: user.id,
+            first_name: user.first_name || '',
+            last_name: user.last_name || ''
+          })
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Supabase save error:', await response.text());
+      }
+    } catch (error) {
+      console.error('Supabase connection error:', error.message);
     }
   }
 
@@ -95,17 +89,16 @@ export default async function handler(req, res) {
     const chatId = message.chat.id;
     const messageText = message.text || '';
 
-    // Сабти корбар
+    // Сабти корбар бе қатъ кардани кори бот
     await saveUser(user);
 
-    // Фармони рассылка
+    // Фармони /broadcast
     const broadcastMatch = messageText.match(
       /^\/broadcast(?:@\w+)?(?:\s+([\s\S]+))?$/i
     );
 
     if (broadcastMatch) {
-      // Санҷиши администратор
-      if (String(user.id) !== String(ADMIN_TELEGRAM_ID)) {
+      if (!ADMIN_TELEGRAM_ID || String(user.id) !== String(ADMIN_TELEGRAM_ID)) {
         return res.status(200).json({ ok: true });
       }
 
@@ -114,13 +107,17 @@ export default async function handler(req, res) {
       if (!broadcastText) {
         await sendTelegramMessage(
           chatId,
-          'Матни рассылкаро чунин фирист:\n\n/broadcast Матни паёми шумо'
+          'Матни рассалкаро чунин фирист:\n\n/broadcast Матни паёми шумо'
         );
 
         return res.status(200).json({ ok: true });
       }
 
-      // Гирифтани ҳамаи корбарон аз Supabase
+      if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+        await sendTelegramMessage(chatId, 'Хатогӣ: Supabase танзим нашудааст.');
+        return res.status(200).json({ ok: true });
+      }
+
       const usersResponse = await fetch(
         `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/bot_users?select=telegram_id`,
         {
@@ -132,15 +129,15 @@ export default async function handler(req, res) {
       );
 
       if (!usersResponse.ok) {
-        throw new Error('Could not get users from Supabase');
+        console.error('Supabase users error:', await usersResponse.text());
+        await sendTelegramMessage(chatId, 'Хатогӣ ҳангоми гирифтани рӯйхати корбарон.');
+        return res.status(200).json({ ok: true });
       }
 
       const users = await usersResponse.json();
-
       let sent = 0;
       let failed = 0;
 
-      // Фиристодани паём ба ҳамаи корбарон
       for (const recipient of users) {
         try {
           const result = await sendTelegramMessage(
@@ -152,18 +149,13 @@ export default async function handler(req, res) {
             sent++;
           } else {
             failed++;
-            console.error(
-              'Broadcast failed:',
-              recipient.telegram_id,
-              result.description
-            );
+            console.error('Broadcast failed:', result.description);
           }
         } catch (error) {
           failed++;
-          console.error('Send error:', error);
+          console.error('Broadcast send error:', error.message);
         }
 
-        // Каме таваққуф барои риояи маҳдудияти Telegram
         await new Promise(resolve => setTimeout(resolve, 50));
       }
 
@@ -180,12 +172,10 @@ export default async function handler(req, res) {
 
     // Фармони /start
     if (/^\/start(?:@\w+)?(?:\s|$)/i.test(messageText)) {
-      const firstName = user.first_name || '';
-      const lastName = user.last_name || '';
-
-      const userName = [firstName, lastName]
-        .filter(Boolean)
-        .join(' ') || 'дӯстам';
+      const userName = [
+        user.first_name || '',
+        user.last_name || ''
+      ].filter(Boolean).join(' ') || 'дӯстам';
 
       const welcomeText =
         'السلام عليكم ورحمة الله وبركاته 🤍\n\n' +
@@ -212,14 +202,14 @@ export default async function handler(req, res) {
       );
 
       if (!result.ok) {
-        console.error('Telegram error:', result);
+        console.error('Telegram send error:', result);
       }
     }
 
     return res.status(200).json({ ok: true });
 
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('Webhook error:', error.message);
 
     return res.status(500).json({
       ok: false,
