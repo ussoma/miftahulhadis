@@ -20,6 +20,20 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Bot configuration missing' });
   }
 
+  const MINI_APP_BUTTON = {
+    inline_keyboard: [
+      [
+        {
+          text: '📖 Открыть 𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔',
+          web_app: {
+            url: WEB_APP_URL
+          }
+        }
+      ]
+    ]
+  };
+
+  // Фиристодани паём ба Telegram
   async function sendTelegramMessage(chatId, text, replyMarkup) {
     const response = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
@@ -39,6 +53,7 @@ export default async function handler(req, res) {
     return response.json();
   }
 
+  // Сабти корбар дар Supabase
   async function saveUser(user) {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error('Supabase environment variables are missing');
@@ -89,16 +104,20 @@ export default async function handler(req, res) {
     const chatId = message.chat.id;
     const messageText = message.text || '';
 
-    // Сабти корбар бе қатъ кардани кори бот
+    // Сабти корбар
     await saveUser(user);
 
-    // Фармони /broadcast
+    // Фармони рассылка
     const broadcastMatch = messageText.match(
       /^\/broadcast(?:@\w+)?(?:\s+([\s\S]+))?$/i
     );
 
     if (broadcastMatch) {
-      if (!ADMIN_TELEGRAM_ID || String(user.id) !== String(ADMIN_TELEGRAM_ID)) {
+      // Танҳо администратор метавонад рассылка кунад
+      if (
+        !ADMIN_TELEGRAM_ID ||
+        String(user.id) !== String(ADMIN_TELEGRAM_ID)
+      ) {
         return res.status(200).json({ ok: true });
       }
 
@@ -114,10 +133,15 @@ export default async function handler(req, res) {
       }
 
       if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-        await sendTelegramMessage(chatId, 'Хатогӣ: Supabase танзим нашудааст.');
+        await sendTelegramMessage(
+          chatId,
+          'Хатогӣ: Supabase танзим нашудааст.'
+        );
+
         return res.status(200).json({ ok: true });
       }
 
+      // Гирифтани рӯйхати корбарон
       const usersResponse = await fetch(
         `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/bot_users?select=telegram_id`,
         {
@@ -129,27 +153,42 @@ export default async function handler(req, res) {
       );
 
       if (!usersResponse.ok) {
-        console.error('Supabase users error:', await usersResponse.text());
-        await sendTelegramMessage(chatId, 'Хатогӣ ҳангоми гирифтани рӯйхати корбарон.');
+        console.error(
+          'Supabase users error:',
+          await usersResponse.text()
+        );
+
+        await sendTelegramMessage(
+          chatId,
+          'Хатогӣ ҳангоми гирифтани рӯйхати корбарон.'
+        );
+
         return res.status(200).json({ ok: true });
       }
 
       const users = await usersResponse.json();
+
       let sent = 0;
       let failed = 0;
 
+      // Фиристодани матн бо тугмаи Mini App
       for (const recipient of users) {
         try {
           const result = await sendTelegramMessage(
             recipient.telegram_id,
-            broadcastText
+            broadcastText,
+            MINI_APP_BUTTON
           );
 
           if (result.ok) {
             sent++;
           } else {
             failed++;
-            console.error('Broadcast failed:', result.description);
+            console.error(
+              'Broadcast failed:',
+              recipient.telegram_id,
+              result.description
+            );
           }
         } catch (error) {
           failed++;
@@ -187,18 +226,7 @@ export default async function handler(req, res) {
       const result = await sendTelegramMessage(
         chatId,
         welcomeText,
-        {
-          inline_keyboard: [
-            [
-              {
-                text: '📖 Открыть 𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔',
-                web_app: {
-                  url: WEB_APP_URL
-                }
-              }
-            ]
-          ]
-        }
+        MINI_APP_BUTTON
       );
 
       if (!result.ok) {
