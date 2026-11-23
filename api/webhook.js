@@ -1,3 +1,4 @@
+import { handleStart, handleMessage, handleCallback } from './_lib/router.js'
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -6,6 +7,12 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Ихтиёрӣ: агар TELEGRAM_WEBHOOK_SECRET танзим шуда бошад, танҳо дархостҳои худи Telegram қабул мешаванд
+  if (process.env.TELEGRAM_WEBHOOK_SECRET &&
+      req.headers['x-telegram-bot-api-secret-token'] !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -107,6 +114,12 @@ export default async function handler(req, res) {
 
     if (typeof update === 'string') {
       update = JSON.parse(update);
+    }
+
+    // Тугмаҳои inline (callback_query): китобхонаи пурраи бот
+    if (update?.callback_query) {
+      await handleCallback(update.callback_query);
+      return res.status(200).json({ ok: true });
     }
 
     const message = update?.message;
@@ -232,41 +245,26 @@ export default async function handler(req, res) {
 
     if (/^\/start(?:@\w+)?(?:\s|$)/i.test(messageText)) {
 
-      // Сабти корбар бо Telegram ID-и ягона
+      // Сабти корбар бо Telegram ID-и ягона (бетағйир)
       await registerTelegramUser(user);
 
-      const userName = [
-        user.first_name || '',
-        user.last_name || ''
-      ].filter(Boolean).join(' ') || 'дӯстам';
-
-      const welcomeText =
-        'السلام عليكم ورحمة الله وبركاته 🤍\n\n' +
-        userName + '!\n\n' +
-        'Ба китобхонаи исломии 𝑴𝒊𝒇𝒕𝒂𝒉𝒖𝒍𝒉𝒂𝒅𝒊𝒔 хуш омадед!\n\n' +
-        'Дар ин ҷо шумо метавонед ҳадисҳо, дуоҳо, азкор ва дигар маводи исломиро омӯзед.\n\n' +
-        '📖 Илмро ҷустуҷӯ кун. Ба он амал намо.';
-
-      const result = await sendTelegramMessage(
-        chatId,
-        welcomeText,
-        MINI_APP_BUTTON
-      );
-
-      if (!result.ok) {
-        console.error('Telegram send error:', result);
-      }
+      const payload = (messageText.split(/\s+/)[1] || '').trim();
+      await handleStart(message, payload);
 
       return res.status(200).json({ ok: true });
     }
 
-    // Паёмҳои дигар шумораи корбаронро зиёд намекунанд
+    // =====================================
+    // 3. МЕНЮ, ҶУСТУҶӮ, ДӮСТДОШТАҲО (аз ҳамон Supabase)
+    // =====================================
+    await handleMessage(message);
     return res.status(200).json({ ok: true });
 
   } catch (error) {
     console.error('Webhook error:', error.message);
 
-    return res.status(500).json({
+    // 200, на 500: дар акси ҳол Telegram ҳамон дархостро борҳо такрор мекунад
+    return res.status(200).json({
       ok: false,
       error: 'Internal server error'
     });

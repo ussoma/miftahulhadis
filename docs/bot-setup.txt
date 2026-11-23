@@ -1,0 +1,77 @@
+MIFTAHULHADIS — БОТИ ПУРРА ДАР TELEGRAM: ДАСТУРИ ГУЗОШТАН (қадам ба қадам)
+================================================================================
+
+ЧӢ ТАҒЙИР МЕЁБАД
+- Mini App (src/App.jsx) ва Supabase-и мавҷуда тағйир намеёбанд.
+- Webhook-и кунунӣ (api/webhook.js) нигоҳ дошта шуд: /start (сабт бо register_bot_start) ва /broadcast
+  айнан ҳамон тавр кор мекунанд. Танҳо менюи нав ва callback_query илова шуд.
+- Бот аз ҳамон ҷадвалҳо мехонад: hadith_books, hadiths, content_items, sections (танҳо is_published/is_active).
+  Ҳар чизе ки админ дар Mini App илова/таҳрир/нест кунад, дар бот ҳамон лаҳза пайдо мешавад (нусхаи алоҳида нест).
+- Ҷадвалҳои нав (танҳо 2): bot_user_prefs (забон, ҳолати ҷустуҷӯ) ва bot_favorites (дӯстдоштаҳо бо Telegram ID).
+  RLS фаъол, policy нест: танҳо сервер (service_role) мебинад. RLS хомӯш нашудааст.
+
+ҚАДАМИ 0 — САНҶИШИ ХАТАР (60 сония)
+Webhook шумо функсияи register_bot_start-ро занг мезанад ва /broadcast ҷадвали bot_users-ро мехонад.
+Дар Supabase -> SQL Editor иҷро кунед ва натиҷаро бубинед:
+   select pg_get_functiondef('public.register_bot_start(bigint,text,text,text,text)'::regprocedure);
+Агар дар матн "bot_users" бошад, пас supabase-bot-users.sql-и қаблиро (ки ман дода будам) иҷро НАКУНЕД
+(он ин функсияро ба app_users иваз мекунад). Ба ман ин матнро фиристед, ман ҳардуро ҳамоҳанг мекунам.
+
+ҚАДАМИ 1 — SQL
+Supabase -> SQL Editor -> New query -> тамоми supabase-bot-library.sql.txt -> Run.
+(Мавҷудро намебарад: create ... if not exists / create or replace.)
+
+ҚАДАМИ 2 — ФАЙЛҲО ДАР GITHUB (ussoma/miftahulhadis)
+Файлҳои ин папка бо ин номҳо (дар GitHub: Add file -> Create new file, ном бо роҳ):
+   api-webhook.js.txt        -> api/webhook.js              (ИВАЗ КУНЕД — ҳамаи матн)
+   api-_lib-tg.js.txt        -> api/_lib/tg.js              (нав)
+   api-_lib-db.js.txt        -> api/_lib/db.js              (нав)
+   api-_lib-i18n.js.txt      -> api/_lib/i18n.js            (нав)
+   api-_lib-data.js.txt      -> api/_lib/data.js            (нав)
+   api-_lib-views.js.txt     -> api/_lib/views.js           (нав)
+   api-_lib-router.js.txt    -> api/_lib/router.js          (нав)
+   api-_lib-surahs.js.txt    -> api/_lib/surahs.js          (нав)
+Папкаи api/_lib бо "_" функсияи Vercel намешавад (маҳдудияти функсияҳоро намебарад).
+
+ҚАДАМИ 3 — ТАҒЙИРЁБАНДАҲОИ VERCEL
+Ҳозира: BOT_TOKEN, WEB_APP_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ADMIN_TELEGRAM_ID — ҳамаро истифода мебарад.
+Ихтиёрӣ:
+   BOT_USERNAME=Miftahulhadis_bot      (барои тугмаи «Улашиш» — пешфарз ҳамин аст)
+   TELEGRAM_WEBHOOK_SECRET=<сатри тасодуфӣ>   (танҳо дархостҳои худи Telegram қабул мешаванд)
+Баъд Vercel -> Redeploy.
+
+ҚАДАМИ 4 — WEBHOOK: callback_query БОЯД иҷозат бошад
+Агар webhook қаблан бо allowed_updates маҳдуд (танҳо message) гузошта шуда бошад, тугмаҳо кор намекунанд.
+Дар браузер (ё curl) ин суроғаро кушоед (<TOKEN>-ро иваз кунед; secret_token-ро агар қадами 3 кардед илова кунед):
+https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://miftahulhadis.vercel.app/api/webhook&allowed_updates=["message","callback_query"]&secret_token=<ҲАМОН SECRET>
+Санҷиш: https://api.telegram.org/bot<TOKEN>/getWebhookInfo  (url дуруст, last_error_message холӣ)
+
+ҚАДАМИ 5 (ихтиёрӣ) — фармонҳо
+https://api.telegram.org/bot<TOKEN>/setMyCommands?commands=[{"command":"menu","description":"Меню"},{"command":"search","description":"Ҷустуҷӯ"},{"command":"favorites","description":"Дӯстдоштаҳо"},{"command":"lang","description":"Забон / Язык"}]
+
+ЧӢ ТАВР КОР МЕКУНАД
+- /start: салом + меню (13 тугма + бахшҳои нави админ). Забон: 🌐 (Тоҷикӣ пешфарз / Русский), барои ҳар корбар нигоҳ дошта мешавад.
+- 📚 Ҳадисҳо: китобҳо (аз hadith_books, номҳои такрорӣ якҷоя) -> бобҳо -> ҳадисҳо бо рақами дуруст
+  (1,2,...,10 — на матнӣ), муқаддима дар боло. Корт: рақам, арабӣ, тоҷикӣ/русӣ, манба, шарҳ (кушодашаванда).
+  Тугмаҳо: 📋 Нусха, ⭐ Дӯстдошта, 🔗 Улашиш, ⬅️ Бозгашт, 📱 Mini App; 🎧/🎬/🖼/📄 танҳо агар пайванд бошад.
+- Бахшҳои дигар (Дуо, Азкор, Суннат, Солеҳин, Паёмбарон, Сират, Саҳоба, Дарсҳо, Саволҳо ва бахшҳои нави админ):
+  бобҳо ва маводи нашршуда, саҳифабандӣ. «Дуоҳо» = дуоҳои пештараи section_slug='duas'; «Азкор» = adhkar (дар Mini App якҷоя нишон дода мешаванд).
+- 📖 Қуръон: 114 сура, оят бо тарҷумаи тоҷикӣ (Оятӣ) / русӣ (Кулиев) аз api.alquran.cloud (мисли Mini App), 🎧 аудио.
+- 🔍 Ҷустуҷӯ: тугма ё ҳар матни оддӣ. Арабӣ бе ҳаракот, тоҷикӣ, русӣ, номи китоб, рақами ҳадис, номи бахш.
+- ⭐ Дӯстдоштаҳо: барои ҳар корбар алоҳида (Telegram ID). Эзоҳ: дӯстдоштаҳои Mini App дар дастгоҳ (localStorage) ҳастанд ва бо бот ҳамоҳанг НЕСТАНД.
+- Дар поёни ҳар мавод: «📱 Барои мутолиаи қулайтар…» ва тугмаи воқеии web_app «📱 Кушодани Miftahulhadis».
+- Нусха: Telegram ба бот иҷозати clipboard намедиҳад, бинобар ин матн дар блоки моноширинӣ меояд — бо пахш нусха мешавад.
+- «Улашиш»: пайванди чуқур t.me/<бот>?start=h_<id> — гирандаи пайванд худи ҳамон ҳадисро мебинад.
+
+МАҲДУДИЯТҲО (ростӣ)
+- Файлҳои аудио/видео >20 МБ-ро Telegram аз URL намегирад — бот пайванд мефиристад.
+- Тугмаи web_app танҳо дар чати шахсӣ кор мекунад (дар гурӯҳ ба URL иваз мешавад). Бот танҳо дар чати шахсӣ кор мекунад.
+- Бахши «Забони арабӣ» (сарф) танҳо дар Mini App мемонад. Саволҳои корбарон (ҷадвали questions) дар бот нест; танҳо маводи content_items.
+
+--------------------------------------------------------------
+НАВСОЗИИ v2 (ислоҳи SQL ва ду файли JS)
+--------------------------------------------------------------
+1) Дар Supabase supabase-bot-library.sql.txt-и НАВро ҳамагӣ иҷро кунед (бехатар аст, такроран низ мешавад).
+   Танҳо як «drop function if exists» дорад — танҳо барои 3 функсияи ҳамин бот (на ҷадвал). Ба маълумот даст намезанад.
+2) Файлҳои api-_lib-data.js.txt ва api-_lib-views.js.txt-ро иваз кунед (api/_lib/data.js, api/_lib/views.js).
+3) Ихтиёрӣ: supabase-bot-check.sql.txt — танҳо SELECT, ҳолати воқеии саволҳо, media_url ва бахшҳои ғайрифаъолро нишон медиҳад.
