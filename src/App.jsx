@@ -14811,10 +14811,6 @@ function App() {
           )}
 
           {page === 'home' && (
-            <HomeDashboard lang={lang} />
-          )}
-
-          {page === 'home' && (
             <div className="mecca-entry">
               <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('live'); setPage('mecca'); scrollToTop() }}>🕋<span>{lang === 'ru' ? 'Мекка онлайн' : 'Макка зинда'}</span></button>
               <button type="button" className="mecca-entry-btn" onClick={() => { setMeccaTab('madina'); setPage('mecca'); scrollToTop() }}>🕌<span>{lang === 'ru' ? 'Медина онлайн' : 'Мадина зинда'}</span></button>
