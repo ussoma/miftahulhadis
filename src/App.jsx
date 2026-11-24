@@ -6790,16 +6790,55 @@ function arbDlgLoad() {
 function arbDlgSave(state) {
   try { localStorage.setItem(ARB_DLG_KEY, JSON.stringify(state)) } catch { /* хотира дастнорас */ }
 }
-function arbSpeak(text) {
+function arbToast(message) {
   try {
-    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return false
-    window.speechSynthesis.cancel()
-    const u = new window.SpeechSynthesisUtterance(String(text).replace(/[ً-ْٰـ]/g, ''))
-    u.lang = 'ar-SA'
-    u.rate = 0.85
-    window.speechSynthesis.speak(u)
+    const old = document.getElementById('arb-toast')
+    if (old) old.remove()
+    const el = document.createElement('div')
+    el.id = 'arb-toast'
+    el.className = 'arb-toast'
+    el.textContent = message
+    document.body.appendChild(el)
+    setTimeout(() => { try { el.remove() } catch { /* ҳазф шуд */ } }, 5000)
+  } catch { /* DOM дастнорас */ }
+}
+function arbPickVoice() {
+  try {
+    const voices = window.speechSynthesis.getVoices() || []
+    const ar = voices.filter(v => /^ar([-_]|$)/i.test(v.lang || ''))
+    return ar.find(v => /^ar[-_]SA$/i.test(v.lang)) || ar[0] || null
+  } catch { return null }
+}
+/** Хондани матни арабӣ. Агар дастгоҳ овози арабӣ надошта бошад, ба корбар паём медиҳад (на хомӯшӣ). */
+function arbSpeak(text, lang = 'tg') {
+  const noVoice = lang === 'ru'
+    ? 'На этом устройстве нет арабского голоса. Включите арабский язык в настройках телефона: Универсальный доступ / Речь / Голоса.'
+    : 'Дар ин дастгоҳ овози арабӣ нест. Дар танзимоти телефон овози арабиро фаъол кунед: Махсус имкониятҳо / Нутқ / Овозҳо.'
+  try {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { arbToast(noVoice); return false }
+    const clean = String(text).replace(/[\u064B-\u065F\u0670\u0640]/g, '').replace(/[^\u0621-\u064A\u0671 ]+/g, ' ').replace(/\s+/g, ' ').trim()
+    if (!clean) return false
+    const speak = voice => {
+      window.speechSynthesis.cancel()
+      const u = new window.SpeechSynthesisUtterance(clean)
+      u.lang = voice ? voice.lang : 'ar-SA'
+      if (voice) u.voice = voice
+      u.rate = 0.85
+      window.speechSynthesis.speak(u)
+    }
+    const voice = arbPickVoice()
+    if (voice) { speak(voice); return true }
+    // овозҳо баъзан дер бор мешаванд
+    let spoke = false
+    const retry = () => {
+      if (spoke) return
+      const v = arbPickVoice()
+      if (v) { spoke = true; speak(v) }
+    }
+    try { window.speechSynthesis.addEventListener('voiceschanged', retry, { once: true }) } catch { /* ҳодиса нест */ }
+    setTimeout(() => { retry(); if (!spoke) { spoke = true; arbToast(noVoice) } }, 700)
     return true
-  } catch { return false }
+  } catch { arbToast(noVoice); return false }
 }
 
 /* =====================================================================
@@ -6973,7 +7012,7 @@ function ArbReview({ tt, lang }) {
               <div className="srs-ar">{card.ar}</div>
               {card.sub && <div className="srs-sub">{card.sub}</div>}
               {shown ? <div className="srs-back">{back(card)}</div> : <div className="srs-hint">{L('Барои дидани тарҷума пахш кунед', 'Нажмите, чтобы увидеть перевод')}</div>}
-              <button type="button" className="icon-button srs-speak" aria-label="speak" onClick={e => { e.stopPropagation(); arbSpeak(card.ar) }}><Icon name="speaker" /></button>
+              <button type="button" className="icon-button srs-speak" aria-label="speak" onClick={e => { e.stopPropagation(); arbSpeak(card.ar, lang) }}><Icon name="speaker" /></button>
             </div>
             {shown ? (
               <div className="srs-rate">
@@ -7030,7 +7069,7 @@ function ArbReview({ tt, lang }) {
             <div key={c.id} className="srs-daily-row">
               <span className="srs-daily-ar">{c.ar}{c.sub ? ` · ${c.sub}` : ''}</span>
               <span>{back(c)}</span>
-              <button type="button" className="icon-button" aria-label="speak" onClick={() => arbSpeak(c.ar)}><Icon name="speaker" /></button>
+              <button type="button" className="icon-button" aria-label="speak" onClick={() => arbSpeak(c.ar, lang)}><Icon name="speaker" /></button>
             </div>
           ))}
         </div>
@@ -7128,7 +7167,7 @@ function ArbDialogs({ tt, lang, admin }) {
             <div key={i} className={`dlg-bubble ${i % 2 ? 'right' : 'left'}`}>
               <div className="dlg-ar" dir="rtl">{line.ar}</div>
               <div className="dlg-tr">{ru ? line.ru : line.tg}</div>
-              <button type="button" className="mini-btn dlg-speak" onClick={() => arbSpeak(line.ar)} aria-label="🔊">🔊</button>
+              <button type="button" className="mini-btn dlg-speak" onClick={() => arbSpeak(line.ar, lang)} aria-label="🔊">🔊</button>
             </div>
           ))}
         </div>
@@ -7140,7 +7179,7 @@ function ArbDialogs({ tt, lang, admin }) {
             <div className="arb-row" key={i}>
               <div className="arb-person"><span className="arb-person-tr">{ru ? word.ru : word.tg}</span></div>
               <div className="arb-forms">
-                <button type="button" className="arb-cell" onClick={() => arbSpeak(word.ar)}>
+                <button type="button" className="arb-cell" onClick={() => arbSpeak(word.ar, lang)}>
                   <span className="arb-word" dir="rtl">{word.ar}</span>
                 </button>
               </div>
