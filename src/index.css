@@ -1667,7 +1667,17 @@ button.star { cursor: pointer; }
 .dlg-topic { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 12px; border-radius: 12px; border: 1px solid rgba(128,128,128,.3); background: var(--card-bg, rgba(255,255,255,.06)); color: inherit; font-size: 15px; cursor: pointer; }
 .dlg-topic.locked { opacity: .5; cursor: not-allowed; }
 .dlg-topic.passed { border-color: rgba(60,180,100,.6); }
-.dlg-icon { font-size: 22px; }
+.dlg-icon { display: inline-grid; vertical-align: middle; width: 30px; height: 30px; }
+.dlg-icon .icon { width: 26px; height: 26px; }
+.dlg-topic { background: var(--surface); border-color: transparent; border-radius: 16px; padding: 14px 15px; gap: 13px; }
+.dlg-topic:hover:not(.locked), .dlg-topic:active:not(.locked) { background: var(--surface-soft); border-color: rgba(211, 185, 127, .35); }
+.dlg-topic.passed { border-color: rgba(211, 185, 127, .55); }
+.dlg-topic.locked .dlg-icon { color: var(--muted); }
+.dlg-state { display: inline-flex; align-items: center; gap: 4px; color: var(--gold); }
+.dlg-state .icon { width: 20px; height: 20px; }
+.dlg-tabs button { display: inline-flex; align-items: center; gap: 6px; }
+.dlg-tabs button .icon { width: 18px; height: 18px; }
+.dlg-tabs button.active { background: var(--gold); color: var(--text-dark); border-color: var(--gold); }
 .dlg-name { flex: 1; }
 .dlg-state { font-size: 13px; opacity: .85; }
 .dlg-title { margin: 8px 0; }
@@ -1695,3 +1705,4 @@ button.star { cursor: pointer; }
 .dlg-result.ok { border-color: rgba(60,180,100,.8); }
 .dlg-result.no { border-color: rgba(220,70,70,.7); }
 
+.arb-note .icon { display: inline-block; width: 16px; height: 16px; vertical-align: -3px; }

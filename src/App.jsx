@@ -120,7 +120,24 @@ const ICONS = {
   share: `${circ(18, 5, 3)}${circ(6, 12, 3)}${circ(18, 19, 3)}M8.6 13.5l6.8 4M15.4 6.5l-6.8 4`,
   play: 'M8 5v14l11-7z',
   speaker: 'M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13',
-  utensils: 'M6 3v7a2 2 0 0 0 4 0V3M8 3v18M17 3c-2 2-3 5-3 8h3v10'
+  utensils: 'M6 3v7a2 2 0 0 0 4 0V3M8 3v18M17 3c-2 2-3 5-3 8h3v10',
+  dlg_intro: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM20 20v-1.5a3.5 3.5 0 0 0-2.5-3.3M15.5 4.2a3.5 3.5 0 0 1 0 6.6',
+  dlg_greet: 'M4 5h16v11H9l-5 4zM8 9.5h8M8 12.5h5',
+  dlg_family: 'M12 4a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM5.5 10.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM18.5 10.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM8 20v-3.5a4 4 0 0 1 8 0V20zM2.5 20v-2a3 3 0 0 1 3-3M21.5 20v-2a3 3 0 0 0-3-3',
+  dlg_market: 'M5 8h14l-1 12H6zM9 8V6.5a3 3 0 0 1 6 0V8',
+  dlg_mosque: 'M3 21h18M5 21v-7h14v7M12 5c-3 2-4.5 4-4.5 7v2h9v-2c0-3-1.5-5-4.5-7zM12 2.5V5',
+  dlg_restaurant: 'M6 3v7a2 2 0 0 0 4 0V3M8 3v18M17 3c-2 2-3 5-3 8h3v10',
+  dlg_way: `${circ(12, 12, 9)}M15.5 8.5l-2 5-5 2 2-5z`,
+  dlg_school: 'M2 9l10-5 10 5-10 5zM6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5M22 9v6',
+  dlg_doctor: `${circ(12, 12, 9)}M12 8v8M8 12h8`,
+  dlg_time: `${circ(12, 12, 9)}M12 7v5l3 2`,
+  dlg_travel: 'M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z',
+  dlg_hotel: 'M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 10h4a1 1 0 0 1 1 1v10M3 21h18M8 8h3M8 12h3M8 16h3',
+  lock: 'M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3',
+  check: `${circ(12, 12, 9)}M8 12.5l3 3 5-6`,
+  chat: 'M4 5h16v11H9l-5 4z',
+  vocab: 'M4 6h16M4 12h10M4 18h7',
+  quiz: 'M9 4h6l1 2h3v15H5V6h3zM9 13l2 2 4-4'
 }
 
 function Icon({ name, filled = false }) {
@@ -5974,7 +5991,7 @@ const ARB_COMP = {
 }
 
 Object.assign(ARB_T.tg, {
-  tabDialogs: '💬 Диалогҳо',
+  tabDialogs: 'Диалогҳо',
   dlgIntro: 'Диалогҳо аз рӯи мавзуъ: аввал диалогро хонед, баъд луғатро омӯзед ва тестро супоред. Дарси навбатӣ танҳо пас аз гузаштани тести дарси ҳозира кушода мешавад.',
   dlgProgress: 'Пешрафт', dlgLockHint: 'Дарси баста пас аз гузаштани тести дарси пешина кушода мешавад.',
   dlgBack: 'Ба рӯйхати диалогҳо', dlgTabDialog: 'Диалог', dlgTabVocab: 'Луғат', dlgTabQuiz: 'Тест',
@@ -5997,7 +6014,7 @@ Object.assign(ARB_T.tg, {
   autoOnlyAdmin: 'Тарҷумаи тасдиқшуда ҳанӯз ворид нашудааст'
 })
 Object.assign(ARB_T.ru, {
-  tabDialogs: '💬 Диалоги',
+  tabDialogs: 'Диалоги',
   dlgIntro: 'Диалоги по темам: сначала прочитайте диалог, затем изучите слова и пройдите тест. Следующий урок откроется только после успешного теста текущего урока.',
   dlgProgress: 'Прогресс', dlgLockHint: 'Закрытый урок откроется после успешного теста предыдущего.',
   dlgBack: 'К списку диалогов', dlgTabDialog: 'Диалог', dlgTabVocab: 'Слова', dlgTabQuiz: 'Тест',
@@ -6826,14 +6843,14 @@ function ArbDialogs({ tt, lang, admin }) {
             return (
               <button type="button" key={item.id} className={`dlg-topic${lock ? ' locked' : ''}${passed(item.id) ? ' passed' : ''}`}
                 disabled={lock} onClick={() => open(item)}>
-                <span className="dlg-icon">{lock ? '🔒' : item.icon}</span>
+                <span className="menu-card-icon dlg-icon"><Icon name={lock ? 'lock' : `dlg_${item.id}`} /></span>
                 <span className="dlg-name"><b>{item.n}.</b> {ru ? item.ru : item.tg}</span>
-                <span className="dlg-state">{passed(item.id) ? `✅ ${state.passed[item.id]}/5` : lock ? '' : '▶'}</span>
+                <span className="dlg-state">{passed(item.id) ? <><Icon name="check" /> {state.passed[item.id]}/5</> : lock ? '' : <Icon name="play" filled />}</span>
               </button>
             )
           })}
         </div>
-        {topics.some(item => !unlocked(item)) && <p className="arb-note">🔒 {tt.dlgLockHint}</p>}
+        {topics.some(item => !unlocked(item)) && <p className="arb-note"><Icon name="lock" /> {tt.dlgLockHint}</p>}
       </div>
     )
   }
@@ -6842,11 +6859,11 @@ function ArbDialogs({ tt, lang, admin }) {
   return (
     <div className="dlg-wrap">
       <button className="secondary-button back-button" type="button" onClick={() => setOpenId('')}>← {tt.dlgBack}</button>
-      <h3 className="dlg-title">{topic.icon} {topic.n}. {ru ? topic.ru : topic.tg}</h3>
+      <h3 className="dlg-title"><span className="menu-card-icon dlg-icon"><Icon name={`dlg_${topic.id}`} /></span> {topic.n}. {ru ? topic.ru : topic.tg}</h3>
       <div className="dlg-tabs">
-        <button type="button" className={part === 'dialog' ? 'active' : ''} onClick={() => setPart('dialog')}>💬 {tt.dlgTabDialog}</button>
-        <button type="button" className={part === 'vocab' ? 'active' : ''} onClick={() => setPart('vocab')}>🔤 {tt.dlgTabVocab}</button>
-        <button type="button" className={part === 'quiz' ? 'active' : ''} onClick={() => { setPart('quiz'); if (!quiz) startQuiz() }}>📝 {tt.dlgTabQuiz}</button>
+        <button type="button" className={part === 'dialog' ? 'active' : ''} onClick={() => setPart('dialog')}><Icon name="chat" /> {tt.dlgTabDialog}</button>
+        <button type="button" className={part === 'vocab' ? 'active' : ''} onClick={() => setPart('vocab')}><Icon name="vocab" /> {tt.dlgTabVocab}</button>
+        <button type="button" className={part === 'quiz' ? 'active' : ''} onClick={() => { setPart('quiz'); if (!quiz) startQuiz() }}><Icon name="quiz" /> {tt.dlgTabQuiz}</button>
       </div>
 
       {part === 'dialog' && (
