@@ -5,6 +5,9 @@ name: Build Android APK
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -64,3 +67,11 @@ jobs:
           name: miftahulhadis-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Publish APK to GitHub Releases (android-latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk Miftahulhadis.apk
+          gh release delete android-latest --yes --cleanup-tag || true
+          gh release create android-latest Miftahulhadis.apk --prerelease --title "Android APK (latest)" --notes "Debug APK of Miftahulhadis. Opens the live app inside an Android shell. Install: allow installing from unknown sources for Telegram/Chrome, then open the file."
