@@ -7033,7 +7033,7 @@ function arbDaily(pool, today) {
 }
 
 /** Лавҳаи асосии саҳифаи аввал: серия, мақсад, дараҷа, калимаи рӯз. Ба ҳамон хотираи «Такрор» мепайвандад. */
-function HomeDashboard({ lang, onReview }) {
+function HomeDashboard({ lang }) {
   const ru = lang === 'ru'
   const L = (a, b) => (ru ? b : a)
   const today = arbToday()
@@ -7069,7 +7069,6 @@ function HomeDashboard({ lang, onReview }) {
           <button type="button" className="icon-button" aria-label="speak" onClick={() => arbSpeak(word.ar, lang)}><Icon name="speaker" /></button>
         </div>
       )}
-      <button type="button" className="primary-button home-dash-btn" onClick={onReview}><Icon name="cards" /> {L('Такрори имрӯза оғоз кун', 'Начать повторение на сегодня')}</button>
     </section>
   )
 }
@@ -14812,15 +14811,7 @@ function App() {
           )}
 
           {page === 'home' && (
-            <HomeDashboard
-              lang={lang}
-              onReview={() => {
-                const arabic = sections.find(x => x.slug === 'arabic')
-                if (!arabic) return
-                try { sessionStorage.setItem('miftah_arb_open_tab', 'review') } catch { /* хотира дастнорас */ }
-                openSection(arabic)
-              }}
-            />
+            <HomeDashboard lang={lang} />
           )}
 
           {page === 'home' && (
