@@ -1746,3 +1746,4 @@ button.star { cursor: pointer; }
 .srs-badge.on { color: var(--text); }
 .srs-badge .icon { width: 22px; height: 22px; }
 .srs-badge.on .icon { color: var(--gold); }
+.arb-toast { position: fixed; left: 12px; right: 12px; bottom: 84px; z-index: 9999; padding: 12px 14px; border-radius: 14px; background: var(--surface-soft, #222); color: var(--text, #fff); border: 1px solid var(--gold); font-size: 14px; line-height: 1.4; box-shadow: 0 6px 24px rgba(0,0,0,.4); }
