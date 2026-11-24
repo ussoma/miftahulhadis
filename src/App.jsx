@@ -7032,6 +7032,48 @@ function arbDaily(pool, today) {
   return { word: words.length ? words[today % words.length] : null, verb: verbs.length ? verbs[(today * 7) % verbs.length] : null }
 }
 
+/** Лавҳаи асосии саҳифаи аввал: серия, мақсад, дараҷа, калимаи рӯз. Ба ҳамон хотираи «Такрор» мепайвандад. */
+function HomeDashboard({ lang, onReview }) {
+  const ru = lang === 'ru'
+  const L = (a, b) => (ru ? b : a)
+  const today = arbToday()
+  const [state] = useState(arbSrsLoad)
+  const lv = arbLevel(state.xp)
+  const goal = state.goal || 10
+  const n = state.today && state.today.day === today ? state.today.n : 0
+  const streak = state.last === today || state.last === today - 1 ? state.streak : 0
+  const daily = useMemo(() => arbDaily(arbCardPool(), today), [today])
+  const word = daily.word
+  return (
+    <section className="home-dash">
+      <div className="home-dash-row">
+        <div className="home-dash-tile"><Icon name="flame" /><b>{streak}</b><span>{L('рӯз пай дар пай', 'дней подряд')}</span></div>
+        <div className="home-dash-tile">
+          <span className="home-dash-cap">{L('Мақсади имрӯз', 'Цель на сегодня')}</span>
+          <b>{Math.min(n, goal)} / {goal}</b>
+          <div className="srs-bar"><i style={{ width: `${Math.min(100, Math.round((n / goal) * 100))}%` }} /></div>
+        </div>
+        <div className="home-dash-tile">
+          <span className="home-dash-cap">{ru ? lv.level.ru : lv.level.tg}</span>
+          <b>{state.xp} XP</b>
+          <div className="srs-bar"><i style={{ width: `${lv.pct}%` }} /></div>
+        </div>
+      </div>
+      {word && (
+        <div className="home-dash-word">
+          <div>
+            <span className="home-dash-cap"><Icon name="sun" /> {L('Калимаи рӯз', 'Слово дня')}</span>
+            <div className="home-dash-ar">{word.ar}</div>
+            <div className="home-dash-tr">{ru ? word.ru : word.tg}</div>
+          </div>
+          <button type="button" className="icon-button" aria-label="speak" onClick={() => arbSpeak(word.ar, lang)}><Icon name="speaker" /></button>
+        </div>
+      )}
+      <button type="button" className="primary-button home-dash-btn" onClick={onReview}><Icon name="cards" /> {L('Такрори имрӯза оғоз кун', 'Начать повторение на сегодня')}</button>
+    </section>
+  )
+}
+
 function ArbReview({ tt, lang }) {
   const ru = lang === 'ru'
   const L = (a, b) => (ru ? b : a)
@@ -8537,7 +8579,13 @@ function ArbLessons({ rows, lang, admin, db, notify, reload }) {
 
 function ArabicSection({ rows, lang, admin, db, notify, reload, lessonRows }) {
   const tt = ARB_T[lang] || ARB_T.tg
-  const [tab, setTab] = useState('sarf')
+  const [tab, setTab] = useState(() => {
+    try {
+      const want = sessionStorage.getItem('miftah_arb_open_tab')
+      if (want) { sessionStorage.removeItem('miftah_arb_open_tab'); return want }
+    } catch { /* хотира дастнорас */ }
+    return 'sarf'
+  })
   const [sighaView, setSighaView] = useState(null)
   const tableRef = useRef(null)
   const [query, setQuery] = useState('')
@@ -14761,6 +14809,18 @@ function App() {
                 <p className="miftah-banner-subtitle">{t.bannerSource}</p>
               </div>
             </section>
+          )}
+
+          {page === 'home' && (
+            <HomeDashboard
+              lang={lang}
+              onReview={() => {
+                const arabic = sections.find(x => x.slug === 'arabic')
+                if (!arabic) return
+                try { sessionStorage.setItem('miftah_arb_open_tab', 'review') } catch { /* хотира дастнорас */ }
+                openSection(arabic)
+              }}
+            />
           )}
 
           {page === 'home' && (
