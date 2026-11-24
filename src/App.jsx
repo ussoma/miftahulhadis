@@ -134,6 +134,11 @@ const ICONS = {
   dlg_travel: 'M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z',
   dlg_hotel: 'M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 10h4a1 1 0 0 1 1 1v10M3 21h18M8 8h3M8 12h3M8 16h3',
   lock: 'M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3',
+  flame: 'M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z',
+  star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
+  trophy: 'M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M10 17h4',
+  cards: 'M4 7h12v13H4zM8 4h12v13',
+  sun: `${circ(12, 12, 4)}M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4`,
   check: `${circ(12, 12, 9)}M8 12.5l3 3 5-6`,
   chat: 'M4 5h16v11H9l-5 4z',
   vocab: 'M4 6h16M4 12h10M4 18h7',
@@ -5991,7 +5996,7 @@ const ARB_COMP = {
 }
 
 Object.assign(ARB_T.tg, {
-  tabDialogs: 'Диалогҳо',
+  tabDialogs: 'Диалогҳо', tabReview: 'Такрор',
   dlgIntro: 'Диалогҳо аз рӯи мавзуъ: аввал диалогро хонед, баъд луғатро омӯзед ва тестро супоред. Дарси навбатӣ танҳо пас аз гузаштани тести дарси ҳозира кушода мешавад.',
   dlgProgress: 'Пешрафт', dlgLockHint: 'Дарси баста пас аз гузаштани тести дарси пешина кушода мешавад.',
   dlgBack: 'Ба рӯйхати диалогҳо', dlgTabDialog: 'Диалог', dlgTabVocab: 'Луғат', dlgTabQuiz: 'Тест',
@@ -6014,7 +6019,7 @@ Object.assign(ARB_T.tg, {
   autoOnlyAdmin: 'Тарҷумаи тасдиқшуда ҳанӯз ворид нашудааст'
 })
 Object.assign(ARB_T.ru, {
-  tabDialogs: 'Диалоги',
+  tabDialogs: 'Диалоги', tabReview: 'Повторение',
   dlgIntro: 'Диалоги по темам: сначала прочитайте диалог, затем изучите слова и пройдите тест. Следующий урок откроется только после успешного теста текущего урока.',
   dlgProgress: 'Прогресс', dlgLockHint: 'Закрытый урок откроется после успешного теста предыдущего.',
   dlgBack: 'К списку диалогов', dlgTabDialog: 'Диалог', dlgTabVocab: 'Слова', dlgTabQuiz: 'Тест',
@@ -6797,6 +6802,256 @@ function arbSpeak(text) {
   } catch { return false }
 }
 
+/* =====================================================================
+   Такрори фосиладор (Leitner), серия, XP, нишонҳо, калимаи рӯз.
+   Ҳама дар хотираи дастгоҳ (localStorage) нигоҳ дошта мешавад.
+   ===================================================================== */
+const ARB_SRS_KEY = 'miftah_arb_srs_v1'
+const ARB_SRS_GAP = [0, 1, 2, 4, 8, 16, 32]
+const ARB_SRS_LEARNED_BOX = 3
+const ARB_SRS_EMPTY = { cards: {}, xp: 0, streak: 0, best: 0, last: 0, reviews: 0, goal: 10, today: { day: 0, n: 0 }, badges: {} }
+
+function arbToday(now = new Date()) {
+  return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000)
+}
+function arbSrsLoad() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ARB_SRS_KEY) || '{}')
+    if (parsed && typeof parsed === 'object' && parsed.cards) return { ...ARB_SRS_EMPTY, ...parsed, today: { ...ARB_SRS_EMPTY.today, ...(parsed.today || {}) } }
+  } catch { /* хотира дастнорас ё вайрон */ }
+  return { ...ARB_SRS_EMPTY, cards: {}, today: { day: 0, n: 0 }, badges: {} }
+}
+function arbSrsSave(state) {
+  try { localStorage.setItem(ARB_SRS_KEY, JSON.stringify(state)) } catch { /* хотира пур аст */ }
+}
+/** Серияро барои рӯзи имрӯз нав мекунад (як маротиба дар як рӯз). */
+function arbSrsTouch(state, today) {
+  if (state.last === today) return state
+  const streak = state.last === today - 1 ? state.streak + 1 : 1
+  return { ...state, streak, best: Math.max(state.best || 0, streak), last: today }
+}
+/** Натиҷаи як корт: ok=true қуттиро боло мебарад, ok=false ба қуттии 0 бармегардонад. */
+function arbSrsRate(state, id, ok, today) {
+  const st = state.cards[id] || { box: 0, due: today, seen: 0, ok: 0 }
+  const box = ok ? Math.min(st.box + 1, ARB_SRS_GAP.length - 1) : 0
+  const card = { box, due: today + ARB_SRS_GAP[box], seen: st.seen + 1, ok: st.ok + (ok ? 1 : 0) }
+  let next = arbSrsTouch({ ...state, cards: { ...state.cards, [id]: card } }, today)
+  const n = next.today && next.today.day === today ? next.today.n : 0
+  next = { ...next, xp: next.xp + (ok ? 10 : 2), reviews: next.reviews + 1, today: { day: today, n: n + 1 } }
+  return next
+}
+function arbSrsAward(points, today = arbToday()) {
+  const state = arbSrsTouch(arbSrsLoad(), today)
+  const next = { ...state, xp: state.xp + points }
+  arbSrsSave(next)
+  return next
+}
+function arbSrsLearned(state) {
+  return Object.values(state.cards).filter(c => c.box >= ARB_SRS_LEARNED_BOX).length
+}
+const ARB_LEVELS = [
+  { xp: 0, tg: 'Мубтадӣ', ru: 'Начинающий' },
+  { xp: 200, tg: 'Толиб', ru: 'Ученик' },
+  { xp: 800, tg: 'Мутақаддим', ru: 'Продвинутый' },
+  { xp: 2500, tg: 'Муҷтаҳид', ru: 'Усердный' },
+  { xp: 6000, tg: 'Олим', ru: 'Знаток' }
+]
+function arbLevel(xp) {
+  let idx = 0
+  ARB_LEVELS.forEach((lv, i) => { if (xp >= lv.xp) idx = i })
+  const next = ARB_LEVELS[idx + 1] || null
+  return { idx, level: ARB_LEVELS[idx], next, pct: next ? Math.round(((xp - ARB_LEVELS[idx].xp) / (next.xp - ARB_LEVELS[idx].xp)) * 100) : 100 }
+}
+const ARB_BADGES = [
+  { id: 's3', icon: 'flame', tg: '3 рӯз пай дар пай', ru: '3 дня подряд', test: s => s.best >= 3 },
+  { id: 's7', icon: 'flame', tg: '7 рӯз пай дар пай', ru: '7 дней подряд', test: s => s.best >= 7 },
+  { id: 's30', icon: 'flame', tg: '30 рӯз пай дар пай', ru: '30 дней подряд', test: s => s.best >= 30 },
+  { id: 'r1', icon: 'cards', tg: 'Аввалин такрор', ru: 'Первое повторение', test: s => s.reviews >= 1 },
+  { id: 'r100', icon: 'cards', tg: '100 такрор', ru: '100 повторений', test: s => s.reviews >= 100 },
+  { id: 'l25', icon: 'star', tg: '25 калимаи омӯхташуда', ru: '25 выученных слов', test: s => arbSrsLearned(s) >= 25 },
+  { id: 'l100', icon: 'star', tg: '100 калимаи омӯхташуда', ru: '100 выученных слов', test: s => arbSrsLearned(s) >= 100 },
+  { id: 'l500', icon: 'trophy', tg: '500 калимаи омӯхташуда', ru: '500 выученных слов', test: s => arbSrsLearned(s) >= 500 },
+  { id: 'd1', icon: 'chat', tg: 'Диалоги аввал гузашт', ru: 'Первый диалог пройден', test: () => Object.keys((arbDlgLoad().passed) || {}).length >= 1 },
+  { id: 'd12', icon: 'trophy', tg: 'Ҳамаи диалогҳо гузаштанд', ru: 'Все диалоги пройдены', test: () => Object.keys((arbDlgLoad().passed) || {}).length >= 12 }
+]
+function arbBadgesEarned(state) {
+  return ARB_BADGES.filter(b => { try { return b.test(state) } catch { return false } }).map(b => b.id)
+}
+
+let ARB_CARD_POOL = null
+/** Ҳамаи кортҳо: калимаҳои тарҷумашуда, феълҳо, луғати диалогҳо. */
+function arbCardPool() {
+  if (ARB_CARD_POOL) return ARB_CARD_POOL
+  const out = []
+  ARB_BIG_TR.split('\n').forEach(line => {
+    const [ar, tg, ru] = line.split('|')
+    if (ar && tg) out.push({ id: `w:${arbKey(ar)}`, kind: 'word', ar, tg, ru: ru || tg })
+  })
+  try {
+    arbQuizPool().forEach(v => {
+      if (v.past && v.tg) out.push({ id: `v:${v.root}|${v.wazn}`, kind: 'verb', ar: v.past, sub: v.pres, tg: v.tg, ru: v.ru || v.tg })
+    })
+  } catch { /* ҳисоби феълҳо номумкин */ }
+  arbDialogs().forEach(d => d.vocab.forEach(w => out.push({ id: `d:${arbKey(w.ar)}`, kind: 'dialog', ar: w.ar, tg: w.tg, ru: w.ru || w.tg })))
+  const seen = new Set()
+  ARB_CARD_POOL = out.filter(c => (seen.has(c.id) ? false : (seen.add(c.id), true)))
+  return ARB_CARD_POOL
+}
+function arbRng(seed) {
+  let a = seed >>> 0
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
+}
+/** Ҷаласа: аввал кортҳое, ки мӯҳлаташон расидааст, баъд кортҳои нав. kind: all|word|verb|dialog */
+function arbSrsSession(state, pool, today, size, kind = 'all', seed = today) {
+  const list = pool.filter(c => kind === 'all' || c.kind === kind)
+  const due = list.filter(c => state.cards[c.id] && state.cards[c.id].due <= today)
+    .sort((a, b) => state.cards[a.id].due - state.cards[b.id].due || state.cards[a.id].box - state.cards[b.id].box)
+  const picked = due.slice(0, size)
+  if (picked.length < size) {
+    const rnd = arbRng(seed)
+    const fresh = list.filter(c => !state.cards[c.id])
+    const take = size - picked.length
+    const used = new Set()
+    for (let i = 0; i < take && used.size < fresh.length; i += 1) {
+      let j = Math.floor(rnd() * fresh.length)
+      while (used.has(j)) j = (j + 1) % fresh.length
+      used.add(j); picked.push(fresh[j])
+    }
+  }
+  return picked
+}
+function arbDaily(pool, today) {
+  const words = pool.filter(c => c.kind === 'word'), verbs = pool.filter(c => c.kind === 'verb')
+  return { word: words.length ? words[today % words.length] : null, verb: verbs.length ? verbs[(today * 7) % verbs.length] : null }
+}
+
+function ArbReview({ tt, lang }) {
+  const ru = lang === 'ru'
+  const L = (a, b) => (ru ? b : a)
+  const today = arbToday()
+  const [state, setState] = useState(arbSrsLoad)
+  const pool = useMemo(arbCardPool, [])
+  const [kind, setKind] = useState('all')
+  const [queue, setQueue] = useState(null)
+  const [shown, setShown] = useState(false)
+  const [stat, setStat] = useState({ ok: 0, no: 0, xp: 0 })
+  const [showBadges, setShowBadges] = useState(false)
+
+  const lv = arbLevel(state.xp)
+  const dayN = state.today && state.today.day === today ? state.today.n : 0
+  const goal = state.goal || 10
+  const due = pool.filter(c => state.cards[c.id] && state.cards[c.id].due <= today).length
+  const earned = arbBadgesEarned(state)
+  const daily = useMemo(() => arbDaily(pool, today), [pool, today])
+  const streakLive = state.last === today || state.last === today - 1 ? state.streak : 0
+  const back = c => (ru ? c.ru : c.tg)
+
+  const start = () => {
+    const q = arbSrsSession(state, pool, today, goal, kind).map(c => c.id)
+    setQueue(q); setShown(false); setStat({ ok: 0, no: 0, xp: 0 })
+  }
+  const rate = ok => {
+    const id = queue[0]
+    const next = arbSrsRate(state, id, ok, today)
+    setState(next); arbSrsSave(next)
+    setStat(s => ({ ok: s.ok + (ok ? 1 : 0), no: s.no + (ok ? 0 : 1), xp: s.xp + (ok ? 10 : 2) }))
+    setQueue(q => (ok ? q.slice(1) : [...q.slice(1), q[0]]))
+    setShown(false)
+  }
+  const byId = useMemo(() => new Map(pool.map(c => [c.id, c])), [pool])
+  const card = queue && queue.length ? byId.get(queue[0]) : null
+
+  if (queue) {
+    return (
+      <div className="srs-wrap">
+        <button className="secondary-button back-button" type="button" onClick={() => setQueue(null)}>← {tt.dlgBack}</button>
+        {card ? (
+          <>
+            <p className="srs-count">{L('Боқӣ', 'Осталось')}: {queue.length}</p>
+            <div className="srs-card" onClick={() => setShown(true)} role="button" tabIndex={0}>
+              <div className="srs-kind">{card.kind === 'verb' ? L('Феъл', 'Глагол') : card.kind === 'dialog' ? L('Диалог', 'Диалог') : L('Калима', 'Слово')}</div>
+              <div className="srs-ar">{card.ar}</div>
+              {card.sub && <div className="srs-sub">{card.sub}</div>}
+              {shown ? <div className="srs-back">{back(card)}</div> : <div className="srs-hint">{L('Барои дидани тарҷума пахш кунед', 'Нажмите, чтобы увидеть перевод')}</div>}
+              <button type="button" className="icon-button srs-speak" aria-label="speak" onClick={e => { e.stopPropagation(); arbSpeak(card.ar) }}><Icon name="speaker" /></button>
+            </div>
+            {shown ? (
+              <div className="srs-rate">
+                <button type="button" className="srs-no" onClick={() => rate(false)}>{L('Намедонистам', 'Не знал')}</button>
+                <button type="button" className="srs-ok" onClick={() => rate(true)}>{L('Медонистам', 'Знал')}</button>
+              </div>
+            ) : (
+              <button type="button" className="primary-button srs-show" onClick={() => setShown(true)}>{L('Нишон деҳ', 'Показать')}</button>
+            )}
+          </>
+        ) : (
+          <div className="srs-done">
+            <Icon name="trophy" />
+            <h3>{L('Ҷаласа тамом шуд!', 'Сессия завершена!')}</h3>
+            <p>{L('Дуруст', 'Верно')}: {stat.ok} · {L('Хато', 'Ошибок')}: {stat.no} · +{stat.xp} XP</p>
+            <button type="button" className="primary-button" onClick={start}>{L('Боз як ҷаласа', 'Ещё сессию')}</button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="srs-wrap">
+      <div className="srs-stats">
+        <div className="srs-stat"><Icon name="flame" /><b>{streakLive}</b><span>{L('рӯз пай дар пай', 'дней подряд')}</span></div>
+        <div className="srs-stat"><Icon name="star" /><b>{state.xp}</b><span>XP</span></div>
+        <div className="srs-stat"><Icon name="check" /><b>{arbSrsLearned(state)}</b><span>{L('омӯхташуда', 'выучено')}</span></div>
+      </div>
+      <p className="srs-level"><b>{ru ? lv.level.ru : lv.level.tg}</b>{lv.next ? ` → ${ru ? lv.next.ru : lv.next.tg}` : ''}</p>
+      <div className="srs-bar"><i style={{ width: `${lv.pct}%` }} /></div>
+      <p className="srs-goal">{L('Мақсади имрӯз', 'Цель на сегодня')}: {Math.min(dayN, goal)} / {goal}</p>
+      <div className="srs-bar"><i style={{ width: `${Math.min(100, Math.round((dayN / goal) * 100))}%` }} /></div>
+
+      <div className="srs-chips">
+        {[['all', L('Ҳама', 'Все')], ['word', L('Калимаҳо', 'Слова')], ['verb', L('Феълҳо', 'Глаголы')], ['dialog', L('Диалогҳо', 'Диалоги')]].map(([k, name]) => (
+          <button key={k} type="button" className={kind === k ? 'active' : ''} onClick={() => setKind(k)}>{name}</button>
+        ))}
+      </div>
+      <button type="button" className="primary-button srs-start" onClick={start}>
+        <Icon name="cards" /> {L('Оғози такрор', 'Начать повторение')}{due ? ` · ${due} ${L('барои имрӯз', 'на сегодня')}` : ''}
+      </button>
+      <div className="srs-goal-set">
+        {L('Дар як рӯз', 'В день')}:{' '}
+        {[5, 10, 20].map(n => (
+          <button key={n} type="button" className={goal === n ? 'active' : ''} onClick={() => { const next = { ...state, goal: n }; setState(next); arbSrsSave(next) }}>{n}</button>
+        ))}
+      </div>
+
+      {(daily.word || daily.verb) && (
+        <div className="srs-daily">
+          <h4><Icon name="sun" /> {L('Калимаи рӯз', 'Слово дня')}</h4>
+          {[daily.word, daily.verb].filter(Boolean).map(c => (
+            <div key={c.id} className="srs-daily-row">
+              <span className="srs-daily-ar">{c.ar}{c.sub ? ` · ${c.sub}` : ''}</span>
+              <span>{back(c)}</span>
+              <button type="button" className="icon-button" aria-label="speak" onClick={() => arbSpeak(c.ar)}><Icon name="speaker" /></button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button type="button" className="secondary-button srs-badges-toggle" onClick={() => setShowBadges(v => !v)}>
+        <Icon name="trophy" /> {L('Нишонҳо', 'Награды')}: {earned.length} / {ARB_BADGES.length}
+      </button>
+      {showBadges && (
+        <div className="srs-badges">
+          {ARB_BADGES.map(b => (
+            <div key={b.id} className={`srs-badge${earned.includes(b.id) ? ' on' : ''}`}>
+              <Icon name={earned.includes(b.id) ? b.icon : 'lock'} /><span>{ru ? b.ru : b.tg}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const ARB_DLG_PASS = 4
 
 function ArbDialogs({ tt, lang, admin }) {
@@ -6827,6 +7082,7 @@ function ArbDialogs({ tt, lang, admin }) {
       const next = { ...state, passed: { ...state.passed, [topic.id]: best } }
       setState(next)
       arbDlgSave(next)
+      if (!(state.passed && state.passed[topic.id])) arbSrsAward(30)
     }
   }
   const open = item => { setOpenId(item.id); setPart('dialog'); setQuiz(null); setDone(null) }
@@ -9315,6 +9571,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessonRows }) {
         <button type="button" className={tab === 'sarf' ? 'active' : ''} onClick={() => setTab('sarf')}>{tt.tabSarf}</button>
         <button type="button" className={tab === 'babs' ? 'active' : ''} onClick={() => setTab('babs')}>{tt.tabBabs}</button>
         <button type="button" className={tab === 'dialogs' ? 'active' : ''} onClick={() => setTab('dialogs')}>{tt.tabDialogs}</button>
+        <button type="button" className={tab === 'review' ? 'active' : ''} onClick={() => setTab('review')}>{tt.tabReview}</button>
         <button type="button" className={tab === 'theory' ? 'active' : ''} onClick={() => setTab('theory')}>{tt.tabTheory}</button>
         <button type="button" className={tab === 'nahw' ? 'active' : ''} onClick={() => setTab('nahw')}>{tt.tabNahw}</button>
         <button type="button" className={tab === 'drill' ? 'active' : ''} onClick={() => setTab('drill')}>{tt.tabDrill}</button>
@@ -9324,6 +9581,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessonRows }) {
       {tab === 'sarf' && renderSarf()}
       {tab === 'babs' && <ArbBabPages tt={tt} lang={lang} openVerb={(root, wazn) => { setTab('sarf'); openVerb(root, wazn) }} />}
       {tab === 'dialogs' && <ArbDialogs tt={tt} lang={lang} admin={admin} />}
+      {tab === 'review' && <ArbReview tt={tt} lang={lang} />}
       {tab === 'drill' && <ArbDrill tt={tt} lang={lang} />}
       {tab === 'sent' && <ArbSentences tt={tt} lang={lang} />}
       {tab === 'nahw' && renderTheory('nahw')}
