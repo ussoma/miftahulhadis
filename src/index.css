@@ -1747,3 +1747,13 @@ button.star { cursor: pointer; }
 .srs-badge .icon { width: 22px; height: 22px; }
 .srs-badge.on .icon { color: var(--gold); }
 .arb-toast { position: fixed; left: 12px; right: 12px; bottom: 84px; z-index: 9999; padding: 12px 14px; border-radius: 14px; background: var(--surface-soft, #222); color: var(--text, #fff); border: 1px solid var(--gold); font-size: 14px; line-height: 1.4; box-shadow: 0 6px 24px rgba(0,0,0,.4); }
+
+/* луғати курси Мадина */
+.med-wrap { display: grid; gap: 10px; }
+.med-list { display: grid; gap: 8px; }
+.med-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--surface); }
+.med-ar { display: grid; gap: 2px; text-align: right; direction: rtl; }
+.med-ar .arb-cell { font-family: 'Amiri', 'Scheherazade New', serif; font-size: 26px; background: transparent; border: 0; color: inherit; text-align: right; padding: 0; cursor: pointer; }
+.med-pl { font-family: 'Amiri', 'Scheherazade New', serif; font-size: 18px; color: var(--muted); direction: rtl; }
+.med-tr { display: grid; gap: 2px; font-size: 15px; }
+.med-n { font-size: 12px; color: var(--muted); }
