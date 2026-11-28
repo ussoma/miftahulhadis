@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './index.css'
+import ArbAssistant from './arabic-ai/ArbAssistant.jsx'
 
 const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL || '').trim()
 const KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
@@ -6004,7 +6005,7 @@ Object.assign(ARB_T.tg, {
   dlgCheck: 'Санҷидан', dlgPassed: '🎉 Табрик! Тест гузашт, дарси навбатӣ кушода шуд.',
   dlgFailed: 'Ҳанӯз кифоя нест. Диалог ва луғатро такрор кунед ва аз нав кӯшиш намоед.',
   dlgRetry: 'Аз нав', dlgNext: 'Дарси навбатӣ',
-  tabBabs: '🧩 22 боби сарф', tabNahw: '📚 Наҳв', tabDrill: '✍️ Машқҳо', tabTheoryShort: '📖 Назария',
+  tabBabs: '🧩 22 боби сарф', tabNahw: '📚 Наҳв', tabDrill: '✍️ Машқҳо', tabAi: '🤖 Ёрдамчӣ', tabTheoryShort: '📖 Назария',
   babIntro: 'Ҳар бобро пахш кунед: вазн, феъли намунавӣ, маъно, масдар, исми фоил/мафъул, маълум ва маҷҳул, мисолҳо ва машқҳо.',
   babGroup1: 'А. Сулосии муҷаррад — 6 боб (1–6)', babGroup2: 'Б. Сулосии мазид — 12 боб (7–18)', babGroup3: 'В. Рубоъӣ — 4 боб (19–22)',
   babBack: 'Ба рӯйхати бобҳо', babWord: 'Боби', babExample: 'Феъли намунавӣ', babBuild: 'Тарзи сохтан',
@@ -6027,7 +6028,7 @@ Object.assign(ARB_T.ru, {
   dlgCheck: 'Проверить', dlgPassed: '🎉 Поздравляем! Тест пройден, следующий урок открыт.',
   dlgFailed: 'Пока недостаточно. Повторите диалог и слова и попробуйте ещё раз.',
   dlgRetry: 'Заново', dlgNext: 'Следующий урок',
-  tabBabs: '🧩 22 породы', tabNahw: '📚 Грамматика', tabDrill: '✍️ Упражнения', tabTheoryShort: '📖 Теория',
+  tabBabs: '🧩 22 породы', tabNahw: '📚 Грамматика', tabDrill: '✍️ Упражнения', tabAi: '🤖 Помощник', tabTheoryShort: '📖 Теория',
   babIntro: 'Нажмите на породу: вазн, образцовый глагол, значение, масдар, причастия, залоги, примеры и упражнения.',
   babGroup1: 'А. Трёхкоренные мухаррад — 6 пород (1–6)', babGroup2: 'Б. Трёхкоренные мазид — 12 пород (7–18)', babGroup3: 'В. Четырёхкоренные — 4 породы (19–22)',
   babBack: 'К списку пород', babWord: 'Порода', babExample: 'Образцовый глагол', babBuild: 'Образование',
@@ -6809,8 +6810,60 @@ function arbPickVoice() {
     return ar.find(v => /^ar[-_]SA$/i.test(v.lang)) || ar[0] || null
   } catch { return null }
 }
-/** Хондани матни арабӣ. Агар дастгоҳ овози арабӣ надошта бошад, ба корбар паём медиҳад (на хомӯшӣ). */
-function arbSpeak(text, lang = 'tg') {
+/* Овози абрӣ (/api/tts, Azure): талаффузи аслии арабӣ ва русӣ дар ҳар телефон.
+   Агар сервер танзим нашуда бошад ё хато диҳад, ба овози худи дастгоҳ мегузарем. */
+let ARB_CLOUD_OFF = false
+let ARB_AUDIO = null
+let ARB_PLAY_ID = 0
+function arbStopAll() {
+  ARB_PLAY_ID += 1
+  try { if (ARB_AUDIO) ARB_AUDIO.pause() } catch { /* ignore */ }
+  try { window.speechSynthesis && window.speechSynthesis.cancel() } catch { /* ignore */ }
+}
+function arbCloudPlay(text, ttsLang) {
+  return new Promise(resolve => {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim()
+    if (ARB_CLOUD_OFF || !clean || typeof Audio === 'undefined') { resolve(false); return }
+    let settled = false
+    const finish = ok => { if (!settled) { settled = true; resolve(ok) } }
+    try {
+      if (!ARB_AUDIO) ARB_AUDIO = new Audio()
+      const a = ARB_AUDIO
+      a.onended = () => finish(true)
+      a.onerror = () => { ARB_CLOUD_OFF = true; finish(false) }
+      let tg = ''
+      try { tg = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || '' } catch { /* ignore */ }
+      a.src = `/api/tts?lang=${ttsLang}&text=${encodeURIComponent(clean)}${tg ? `&tg=${encodeURIComponent(tg)}` : ''}`
+      const p = a.play()
+      if (p && p.catch) p.catch(() => { if (!settled) { ARB_CLOUD_OFF = true; finish(false) } })
+      setTimeout(() => { if (!settled && a.paused && a.currentTime === 0) { ARB_CLOUD_OFF = true; finish(false) } }, 8000)
+    } catch { finish(false) }
+  })
+}
+/** Хондани тарҷумаи русӣ (барои диалогҳо). */
+async function arbSpeakRu(text) {
+  if (await arbCloudPlay(text, 'ru')) return true
+  return new Promise(resolve => {
+    try {
+      if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { resolve(false); return }
+      const u = new window.SpeechSynthesisUtterance(String(text || ''))
+      u.lang = 'ru-RU'
+      const ru = (window.speechSynthesis.getVoices() || []).find(v => /^ru/i.test(v.lang || ''))
+      if (ru) u.voice = ru
+      u.onend = () => resolve(true)
+      u.onerror = () => resolve(false)
+      window.speechSynthesis.speak(u)
+    } catch { resolve(false) }
+  })
+}
+/** Хондани матни арабӣ: аввал овози абрӣ, баъд овози дастгоҳ. */
+async function arbSpeak(text, lang = 'tg') {
+  arbStopAll()
+  if (await arbCloudPlay(text, 'ar')) return true
+  return arbSpeakDevice(text, lang)
+}
+/** Хондани матни арабӣ бо овози дастгоҳ. Агар дастгоҳ овози арабӣ надошта бошад, ба корбар паём медиҳад (на хомӯшӣ). */
+function arbSpeakDevice(text, lang = 'tg') {
   const noVoice = lang === 'ru'
     ? 'На этом устройстве нет арабского голоса. Включите арабский язык в настройках телефона: Универсальный доступ / Речь / Голоса.'
     : 'Дар ин дастгоҳ овози арабӣ нест. Дар танзимоти телефон овози арабиро фаъол кунед: Махсус имкониятҳо / Нутқ / Овозҳо.'
@@ -7271,12 +7324,27 @@ function ArbDialogs({ tt, lang, admin }) {
       </div>
 
       {part === 'dialog' && (
+        <button type="button" className="secondary-button dlg-playall" onClick={async () => {
+          arbStopAll()
+          const id = ARB_PLAY_ID
+          for (const line of topic.lines) {
+            if (id !== ARB_PLAY_ID) return
+            const ok = await arbCloudPlay(line.ar, 'ar')
+            if (!ok) { arbSpeakDevice(line.ar, lang); return }
+            if (id !== ARB_PLAY_ID) return
+            if (ru) await arbSpeakRu(line.ru)
+            await new Promise(r => setTimeout(r, 400))
+          }
+        }}>▶ {ru ? 'Прослушать весь диалог (арабский + русский)' : 'Гӯш кардани тамоми диалог'}</button>
+      )}
+      {part === 'dialog' && (
         <div className="dlg-chat">
           {topic.lines.map((line, i) => (
             <div key={i} className={`dlg-bubble ${i % 2 ? 'right' : 'left'}`}>
               <div className="dlg-ar" dir="rtl">{line.ar}</div>
               <div className="dlg-tr">{ru ? line.ru : line.tg}</div>
               <button type="button" className="mini-btn dlg-speak" onClick={() => arbSpeak(line.ar, lang)} aria-label="🔊">🔊</button>
+              {ru && <button type="button" className="mini-btn dlg-speak dlg-speak-ru" onClick={() => { arbStopAll(); arbSpeakRu(line.ru) }} aria-label="RU">🔊 RU</button>}
             </div>
           ))}
         </div>
@@ -9730,6 +9798,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessonRows }) {
         <button type="button" className={tab === 'theory' ? 'active' : ''} onClick={() => setTab('theory')}>{tt.tabTheory}</button>
         <button type="button" className={tab === 'nahw' ? 'active' : ''} onClick={() => setTab('nahw')}>{tt.tabNahw}</button>
         <button type="button" className={tab === 'drill' ? 'active' : ''} onClick={() => setTab('drill')}>{tt.tabDrill}</button>
+        <button type="button" className={tab === 'ai' ? 'active' : ''} onClick={() => setTab('ai')}>{tt.tabAi || '🤖 Ёрдамчӣ'}</button>
         <button type="button" className={tab === 'sent' ? 'active' : ''} onClick={() => setTab('sent')}>{tt.tabSent}</button>
         <button type="button" className={tab === 'lessons' ? 'active' : ''} onClick={() => setTab('lessons')}>{tt.tabLessons}</button>
       </div>
@@ -9739,6 +9808,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessonRows }) {
       {tab === 'review' && <ArbReview tt={tt} lang={lang} />}
       {tab === 'medina' && <ArbMedina tt={tt} lang={lang} />}
       {tab === 'drill' && <ArbDrill tt={tt} lang={lang} />}
+      {tab === 'ai' && <ArbAssistant lang={lang} stopAll={arbStopAll} playRu={arbSpeakRu} playAr={async text => (await arbCloudPlay(text, 'ar')) || arbSpeakDevice(text, lang)} />}
       {tab === 'sent' && <ArbSentences tt={tt} lang={lang} />}
       {tab === 'nahw' && renderTheory('nahw')}
       {tab === 'theory' && renderTheory('theory')}
