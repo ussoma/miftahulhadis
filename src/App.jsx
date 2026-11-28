@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './index.css'
+import ArbAssistant from './arabic-ai/ArbAssistant.jsx'
 
 const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL || '').trim()
 const KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
@@ -6004,7 +6005,7 @@ Object.assign(ARB_T.tg, {
   dlgCheck: 'Санҷидан', dlgPassed: '🎉 Табрик! Тест гузашт, дарси навбатӣ кушода шуд.',
   dlgFailed: 'Ҳанӯз кифоя нест. Диалог ва луғатро такрор кунед ва аз нав кӯшиш намоед.',
   dlgRetry: 'Аз нав', dlgNext: 'Дарси навбатӣ',
-  tabBabs: '🧩 22 боби сарф', tabNahw: '📚 Наҳв', tabDrill: '✍️ Машқҳо', tabTheoryShort: '📖 Назария',
+  tabBabs: '🧩 22 боби сарф', tabNahw: '📚 Наҳв', tabDrill: '✍️ Машқҳо', tabAi: '🤖 Ёрдамчӣ', tabTheoryShort: '📖 Назария',
   babIntro: 'Ҳар бобро пахш кунед: вазн, феъли намунавӣ, маъно, масдар, исми фоил/мафъул, маълум ва маҷҳул, мисолҳо ва машқҳо.',
   babGroup1: 'А. Сулосии муҷаррад — 6 боб (1–6)', babGroup2: 'Б. Сулосии мазид — 12 боб (7–18)', babGroup3: 'В. Рубоъӣ — 4 боб (19–22)',
   babBack: 'Ба рӯйхати бобҳо', babWord: 'Боби', babExample: 'Феъли намунавӣ', babBuild: 'Тарзи сохтан',
@@ -6027,7 +6028,7 @@ Object.assign(ARB_T.ru, {
   dlgCheck: 'Проверить', dlgPassed: '🎉 Поздравляем! Тест пройден, следующий урок открыт.',
   dlgFailed: 'Пока недостаточно. Повторите диалог и слова и попробуйте ещё раз.',
   dlgRetry: 'Заново', dlgNext: 'Следующий урок',
-  tabBabs: '🧩 22 породы', tabNahw: '📚 Грамматика', tabDrill: '✍️ Упражнения', tabTheoryShort: '📖 Теория',
+  tabBabs: '🧩 22 породы', tabNahw: '📚 Грамматика', tabDrill: '✍️ Упражнения', tabAi: '🤖 Помощник', tabTheoryShort: '📖 Теория',
   babIntro: 'Нажмите на породу: вазн, образцовый глагол, значение, масдар, причастия, залоги, примеры и упражнения.',
   babGroup1: 'А. Трёхкоренные мухаррад — 6 пород (1–6)', babGroup2: 'Б. Трёхкоренные мазид — 12 пород (7–18)', babGroup3: 'В. Четырёхкоренные — 4 породы (19–22)',
   babBack: 'К списку пород', babWord: 'Порода', babExample: 'Образцовый глагол', babBuild: 'Образование',
@@ -6830,7 +6831,9 @@ function arbCloudPlay(text, ttsLang) {
       const a = ARB_AUDIO
       a.onended = () => finish(true)
       a.onerror = () => { ARB_CLOUD_OFF = true; finish(false) }
-      a.src = `/api/tts?lang=${ttsLang}&text=${encodeURIComponent(clean)}`
+      let tg = ''
+      try { tg = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || '' } catch { /* ignore */ }
+      a.src = `/api/tts?lang=${ttsLang}&text=${encodeURIComponent(clean)}${tg ? `&tg=${encodeURIComponent(tg)}` : ''}`
       const p = a.play()
       if (p && p.catch) p.catch(() => { if (!settled) { ARB_CLOUD_OFF = true; finish(false) } })
       setTimeout(() => { if (!settled && a.paused && a.currentTime === 0) { ARB_CLOUD_OFF = true; finish(false) } }, 8000)
@@ -9795,6 +9798,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessonRows }) {
         <button type="button" className={tab === 'theory' ? 'active' : ''} onClick={() => setTab('theory')}>{tt.tabTheory}</button>
         <button type="button" className={tab === 'nahw' ? 'active' : ''} onClick={() => setTab('nahw')}>{tt.tabNahw}</button>
         <button type="button" className={tab === 'drill' ? 'active' : ''} onClick={() => setTab('drill')}>{tt.tabDrill}</button>
+        <button type="button" className={tab === 'ai' ? 'active' : ''} onClick={() => setTab('ai')}>{tt.tabAi || '🤖 Ёрдамчӣ'}</button>
         <button type="button" className={tab === 'sent' ? 'active' : ''} onClick={() => setTab('sent')}>{tt.tabSent}</button>
         <button type="button" className={tab === 'lessons' ? 'active' : ''} onClick={() => setTab('lessons')}>{tt.tabLessons}</button>
       </div>
@@ -9804,6 +9808,7 @@ function ArabicSection({ rows, lang, admin, db, notify, reload, lessonRows }) {
       {tab === 'review' && <ArbReview tt={tt} lang={lang} />}
       {tab === 'medina' && <ArbMedina tt={tt} lang={lang} />}
       {tab === 'drill' && <ArbDrill tt={tt} lang={lang} />}
+      {tab === 'ai' && <ArbAssistant lang={lang} stopAll={arbStopAll} playRu={arbSpeakRu} playAr={async text => (await arbCloudPlay(text, 'ar')) || arbSpeakDevice(text, lang)} />}
       {tab === 'sent' && <ArbSentences tt={tt} lang={lang} />}
       {tab === 'nahw' && renderTheory('nahw')}
       {tab === 'theory' && renderTheory('theory')}

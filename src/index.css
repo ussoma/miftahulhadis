@@ -1776,4 +1776,30 @@ button.star { cursor: pointer; }
 
 /* Овози абрӣ дар диалогҳо */
 .dlg-playall { width: 100%; margin: 4px 0 10px; }
-.dlg-speak-ru { margin-inline-start: 6px; font-size: 11px; }
+.dlg-speak.dlg-speak-ru { right: 48px; font-size: 11px; }
+
+/* ---- Забони арабӣ: Ёрдамчии AI ---- */
+.ai-wrap { display: grid; gap: 10px; }
+.ai-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ai-switch { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text); cursor: pointer; }
+.ai-switch input { width: 18px; height: 18px; accent-color: var(--gold); }
+.ai-chat { display: flex; flex-direction: column; gap: 8px; min-height: 240px; }
+.ai-msg { position: relative; max-width: 88%; padding: 10px 12px; border-radius: 16px; font-size: 15px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.ai-msg.model { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 4px; }
+.ai-msg.user { align-self: flex-end; background: var(--gold); color: var(--text-dark); border-bottom-right-radius: 4px; }
+.ai-msg .ai-text:lang(ar), .ai-msg [dir="auto"] { unicode-bidi: plaintext; }
+.ai-speak { margin-top: 6px; }
+.ai-think { opacity: .7; font-style: italic; }
+.ai-err { margin: 0; font-size: 13px; color: #f0a0a0; }
+.ai-rec { margin: 0; font-size: 13px; color: #f08080; animation: aiPulse 1s ease-in-out infinite; }
+@keyframes aiPulse { 50% { opacity: .4; } }
+.ai-left, .ai-credit { margin: 0; text-align: center; font-size: 12px; }
+.ai-form { position: sticky; bottom: 76px; display: flex; gap: 8px; align-items: center; padding: 8px; background: var(--surface-deep); border: 1px solid var(--border); border-radius: 16px; }
+.ai-form input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 15px; padding: 8px 4px; outline: none; }
+.ai-mic { flex: none; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); font-size: 18px; cursor: pointer; }
+.ai-mic.on { background: #c0392b; border-color: #c0392b; }
+.ai-send { flex: none; padding: 10px 14px; }
+.ai-send:disabled, .ai-mic:disabled { opacity: .45; }
+.ai-clear { border: 0; background: none; color: var(--gold); font: inherit; font-size: 14px; cursor: pointer; padding: 4px 0; }
+.ai-end { height: 64px; flex: none; }
+.dlg-bubble:has(.dlg-speak-ru) .dlg-ar { padding-right: 92px; }
