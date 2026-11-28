@@ -1773,3 +1773,51 @@ button.star { cursor: pointer; }
 .home-dash-tr { font-size: 15px; color: var(--gold); }
 .home-dash-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .home-dash-btn .icon { width: 20px; height: 20px; }
+
+/* ---- Забони арабӣ: Тестҳо ---- */
+.arb-tests { display: grid; gap: 12px; }
+.arb-t-list { display: grid; gap: 8px; }
+.arb-t-item {
+  display: grid; gap: 3px; text-align: start; width: 100%;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 14px; padding: 12px 14px; font: inherit; cursor: pointer;
+}
+.arb-t-item b { font-size: 15px; font-weight: 600; }
+.arb-t-item small { color: var(--muted); font-size: 12px; }
+.arb-t-item:active { background: var(--surface-soft); }
+.arb-t-link { justify-self: start; border: 0; background: none; color: var(--gold); font: inherit; font-size: 14px; padding: 4px 0; cursor: pointer; }
+.arb-t-player { display: grid; gap: 10px; }
+.arb-t-rule { background: var(--surface-deep); border: 1px dashed rgba(211, 185, 127, .3); border-radius: 12px; padding: 10px 12px; }
+.arb-t-prog { height: 5px; background: var(--surface-deep); border-radius: 5px; overflow: hidden; }
+.arb-t-prog i { display: block; height: 100%; background: var(--gold); transition: width .2s; }
+.arb-t-q { margin: 0; font-size: 17px; line-height: 1.45; color: var(--text); font-weight: 600; }
+.arb-t-opt { font-family: inherit; font-size: 15px; text-align: start; color: var(--text); }
+.arb-t-opt.is-ar { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 22px; text-align: center; color: var(--gold-soft); }
+.arb-t-big { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 34px; line-height: 1.7; text-align: center; color: var(--gold-soft); }
+.arb-t-ar { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 22px; color: var(--gold-soft); }
+.arb-t-row, .arb-t-ans { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.arb-t-ans { min-height: 56px; align-items: center; padding: 8px; border: 1.5px dashed var(--border); border-radius: 14px; }
+.arb-t-ans.is-right { border-color: rgba(80, 180, 110, .9); background: rgba(80, 180, 110, .15); }
+.arb-t-ans.is-wrong { border-color: rgba(200, 80, 80, .9); background: rgba(200, 80, 80, .15); }
+.arb-t-tile {
+  min-width: 46px; border: 1px solid var(--border); background: var(--surface-soft); color: var(--gold-soft);
+  border-radius: 12px; padding: 6px 12px; font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 24px; cursor: pointer;
+}
+.arb-t-tile:disabled { opacity: .3; cursor: default; }
+.arb-t-tile.is-fixed { opacity: .55; cursor: default; }
+.arb-t-tile.is-sel { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(211, 185, 127, .35); }
+.arb-t-tile.is-right { background: rgba(80, 180, 110, .35); border-color: rgba(80, 180, 110, .9); }
+.arb-t-tile.is-wrong { background: rgba(200, 80, 80, .3); border-color: rgba(200, 80, 80, .9); }
+.arb-t-pal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.arb-t-pal button {
+  display: grid; gap: 0; justify-items: center; border: 1px solid var(--border); background: var(--surface);
+  color: var(--gold-soft); border-radius: 10px; padding: 4px 2px; cursor: pointer; font: inherit;
+}
+.arb-t-pal button span { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 26px; line-height: 1.3; }
+.arb-t-pal button small { font-size: 10px; color: var(--muted); }
+.arb-t-pal button.active { background: var(--gold); color: var(--text-dark); }
+.arb-t-check { width: 100%; }
+.arb-t-check:disabled { opacity: .45; }
+.arb-t-exp { font-size: 14px; line-height: 1.55; color: var(--text); background: var(--surface-deep); border-radius: 12px; padding: 10px 12px; }
+.arb-t-result { text-align: center; justify-items: center; }
+.arb-t-emoji { font-size: 52px; }
