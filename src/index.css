@@ -1773,3 +1773,7 @@ button.star { cursor: pointer; }
 .home-dash-tr { font-size: 15px; color: var(--gold); }
 .home-dash-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .home-dash-btn .icon { width: 20px; height: 20px; }
+
+/* Овози абрӣ дар диалогҳо */
+.dlg-playall { width: 100%; margin: 4px 0 10px; }
+.dlg-speak-ru { margin-inline-start: 6px; font-size: 11px; }

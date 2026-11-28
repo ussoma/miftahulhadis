@@ -6809,8 +6809,58 @@ function arbPickVoice() {
     return ar.find(v => /^ar[-_]SA$/i.test(v.lang)) || ar[0] || null
   } catch { return null }
 }
-/** Хондани матни арабӣ. Агар дастгоҳ овози арабӣ надошта бошад, ба корбар паём медиҳад (на хомӯшӣ). */
-function arbSpeak(text, lang = 'tg') {
+/* Овози абрӣ (/api/tts, Azure): талаффузи аслии арабӣ ва русӣ дар ҳар телефон.
+   Агар сервер танзим нашуда бошад ё хато диҳад, ба овози худи дастгоҳ мегузарем. */
+let ARB_CLOUD_OFF = false
+let ARB_AUDIO = null
+let ARB_PLAY_ID = 0
+function arbStopAll() {
+  ARB_PLAY_ID += 1
+  try { if (ARB_AUDIO) ARB_AUDIO.pause() } catch { /* ignore */ }
+  try { window.speechSynthesis && window.speechSynthesis.cancel() } catch { /* ignore */ }
+}
+function arbCloudPlay(text, ttsLang) {
+  return new Promise(resolve => {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim()
+    if (ARB_CLOUD_OFF || !clean || typeof Audio === 'undefined') { resolve(false); return }
+    let settled = false
+    const finish = ok => { if (!settled) { settled = true; resolve(ok) } }
+    try {
+      if (!ARB_AUDIO) ARB_AUDIO = new Audio()
+      const a = ARB_AUDIO
+      a.onended = () => finish(true)
+      a.onerror = () => { ARB_CLOUD_OFF = true; finish(false) }
+      a.src = `/api/tts?lang=${ttsLang}&text=${encodeURIComponent(clean)}`
+      const p = a.play()
+      if (p && p.catch) p.catch(() => { if (!settled) { ARB_CLOUD_OFF = true; finish(false) } })
+      setTimeout(() => { if (!settled && a.paused && a.currentTime === 0) { ARB_CLOUD_OFF = true; finish(false) } }, 8000)
+    } catch { finish(false) }
+  })
+}
+/** Хондани тарҷумаи русӣ (барои диалогҳо). */
+async function arbSpeakRu(text) {
+  if (await arbCloudPlay(text, 'ru')) return true
+  return new Promise(resolve => {
+    try {
+      if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { resolve(false); return }
+      const u = new window.SpeechSynthesisUtterance(String(text || ''))
+      u.lang = 'ru-RU'
+      const ru = (window.speechSynthesis.getVoices() || []).find(v => /^ru/i.test(v.lang || ''))
+      if (ru) u.voice = ru
+      u.onend = () => resolve(true)
+      u.onerror = () => resolve(false)
+      window.speechSynthesis.speak(u)
+    } catch { resolve(false) }
+  })
+}
+/** Хондани матни арабӣ: аввал овози абрӣ, баъд овози дастгоҳ. */
+async function arbSpeak(text, lang = 'tg') {
+  arbStopAll()
+  if (await arbCloudPlay(text, 'ar')) return true
+  return arbSpeakDevice(text, lang)
+}
+/** Хондани матни арабӣ бо овози дастгоҳ. Агар дастгоҳ овози арабӣ надошта бошад, ба корбар паём медиҳад (на хомӯшӣ). */
+function arbSpeakDevice(text, lang = 'tg') {
   const noVoice = lang === 'ru'
     ? 'На этом устройстве нет арабского голоса. Включите арабский язык в настройках телефона: Универсальный доступ / Речь / Голоса.'
     : 'Дар ин дастгоҳ овози арабӣ нест. Дар танзимоти телефон овози арабиро фаъол кунед: Махсус имкониятҳо / Нутқ / Овозҳо.'
@@ -7271,12 +7321,27 @@ function ArbDialogs({ tt, lang, admin }) {
       </div>
 
       {part === 'dialog' && (
+        <button type="button" className="secondary-button dlg-playall" onClick={async () => {
+          arbStopAll()
+          const id = ARB_PLAY_ID
+          for (const line of topic.lines) {
+            if (id !== ARB_PLAY_ID) return
+            const ok = await arbCloudPlay(line.ar, 'ar')
+            if (!ok) { arbSpeakDevice(line.ar, lang); return }
+            if (id !== ARB_PLAY_ID) return
+            if (ru) await arbSpeakRu(line.ru)
+            await new Promise(r => setTimeout(r, 400))
+          }
+        }}>▶ {ru ? 'Прослушать весь диалог (арабский + русский)' : 'Гӯш кардани тамоми диалог'}</button>
+      )}
+      {part === 'dialog' && (
         <div className="dlg-chat">
           {topic.lines.map((line, i) => (
             <div key={i} className={`dlg-bubble ${i % 2 ? 'right' : 'left'}`}>
               <div className="dlg-ar" dir="rtl">{line.ar}</div>
               <div className="dlg-tr">{ru ? line.ru : line.tg}</div>
               <button type="button" className="mini-btn dlg-speak" onClick={() => arbSpeak(line.ar, lang)} aria-label="🔊">🔊</button>
+              {ru && <button type="button" className="mini-btn dlg-speak dlg-speak-ru" onClick={() => { arbStopAll(); arbSpeakRu(line.ru) }} aria-label="RU">🔊 RU</button>}
             </div>
           ))}
         </div>
