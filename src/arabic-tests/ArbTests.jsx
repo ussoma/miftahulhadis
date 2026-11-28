@@ -1,6 +1,5 @@
-// «Тестҳо»: машқҳо ва «Саволу ҷавоб» аз барномаи «Дарсҳои забони арабӣ» (zaboni-arabi).
-// Маълумот (drills.js, nahw.js, verbs.js, review.js, review2.js) айнан аз он ҷо гирифта шудааст
-// ва дар худи барнома, бе сервер, кор мекунад.
+// «Тестҳо»-и бахши забони арабӣ: машқҳо ва «Саволу ҷавоб» аз рӯи китобҳо.
+// Маълумот дар drills.js, nahw.js, verbs.js, review.js, review2.js; ҳамааш дар худи барнома кор мекунад.
 import React, { useEffect, useState } from 'react'
 
 const PER = 30

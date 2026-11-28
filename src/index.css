@@ -1774,7 +1774,7 @@ button.star { cursor: pointer; }
 .home-dash-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .home-dash-btn .icon { width: 20px; height: 20px; }
 
-/* ---- Тестҳо (аз барномаи «Дарсҳои забони арабӣ») ---- */
+/* ---- Забони арабӣ: Тестҳо ---- */
 .arb-tests { display: grid; gap: 12px; }
 .arb-t-list { display: grid; gap: 8px; }
 .arb-t-item {

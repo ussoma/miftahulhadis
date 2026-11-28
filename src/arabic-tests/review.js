@@ -1,5 +1,5 @@
 // Extra review questions for «Саволу ҷавоб» (practice only). Format: [question, [right, wrong1, wrong2, wrong3], explanation]
-// The right answer is always first here; the server shuffles the options.
+// The right answer is always first here; the options are shuffled when a set is built.
 export const REVIEW = {
   "Амсила": {
     1: [
